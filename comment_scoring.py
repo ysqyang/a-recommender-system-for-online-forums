@@ -117,6 +117,7 @@ corpus = ['我昨天去上海了',
           '下周要下雪了'
           ]
 
+
 stopwords = get_stopwords('./stopwords.txt')
 
 corpus = [tokenize(doc, stopwords) for doc in corpus]
@@ -126,20 +127,40 @@ dictionary = corpora.Dictionary(corpus)
 for id_ in dictionary:
     print(id_, dictionary[id_])
 
-'''
 corpus = [dictionary.doc2bow(text) for text in corpus]
 
 print(corpus)
-'''
+
 tfidf = models.TfidfModel(corpus)
 
 converted = tfidf[corpus]
-
+term_weights = {}
 for doc in converted:
-    print(doc)
+    max_weight = max([x[1] for x in doc])
+    for word in doc:
+        term_weights[word[0]] = term_weights.get(word[0], 0) + word[1]/max_weight
 
+print(term_weights)
 
+term_weights = {}
+for doc in converted:
+    max_weight = max([x[1] for x in doc])
+    for word in doc:
+        term_weights[dictionary[word[0]]] = term_weights.get(dictionary[word[0]], 0) + word[1]/max_weight
 
+print(term_weights)
+'''
+
+G = nx.Graph()
+G.add_nodes_from([12423, 36781, 71842, 61359, 50127])
+G.add_edge(12423, 71842, weight=10)
+G.add_edge(61359, 50127, weight=5)
+G.add_edge(71842, 36781, weight=4)
+G.add_edge(12423, 61359, weight=2)
+G.add_edge(36781, 50127, weight=7)
+
+print(nx.pagerank(G))
+'''
 
 
 

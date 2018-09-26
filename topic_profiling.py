@@ -28,41 +28,42 @@ def build_corpus(text_ids, fetch_text_fn, save_to_disk):
 
 	return [fetch_text_fn(id_) for id_ in text_ids]
 
-def preprocess_corpus(corpus, preprocess_fn):
+def preprocess_corpus(raw_corpus, preprocess_fn, stopwords_dict):
 	'''
 	Preprocesses a corpus to a desired representation
 	Args:
-	corpus:        corpus file path (a string) or reference
+	raw_corpus:    raw_corpus file path (a string) or reference
 	               to corpus (python list) stored in memory
-	preprocess_fn: function to preprocess corpus
+	preprocess_fn: function to preprocess (e.g., tokenize and 
+	               filter) raw corpus
+	Returns:
+	Preprocessed corpus stored in memory
 	'''
-	if type(corpus) == str:
-		with open(corpus, 'rw') as f:
-			
+	if type(raw_corpus) == str: # if corpus is a path
+		corpus = []
+		stream = Corpus_for_streaming(raw_corpus)
+		for text in stream:
+			corpus.append(preprocess_fn(text, stopwords_dict))
+		return corpus
+	
+	return [preprocess_fn(text, stopwords_dict) for text in raw_corpus] 
 
-
-
-def term_importance(text_ids, fetch_text_fn, tokenize_fn, 
-	                weight_fn, model, stopwords_dict):
+def term_importance(corpus, weight_fn, model):
 	'''
 	Computes word importance in a corpus with weighted docs
 	Args:
 	texts:     list of text id's
 	weight_fn: function to compute weight for each text
-	model:     language model 
+	model:     language model to convert corpus to a desirable 
+	           represention
 	'''
-	corpus = []
-	for id_, text in texts.items():
-		corpus.append(tokenize_fn(text, stopwords_dict))
-
 	dictionary = corpora.Dictionary(corpus)
 	corpus = [dictionary.doc2bow(text) for text in corpus]
-
 	language_model = model(corpus)
-	converted = tfidf[corpus]
+	converted = language_model[corpus]
+	weights = weight_fn()
 
-	for doc in converted:
-	    print(doc)
+def 
 
 
 
