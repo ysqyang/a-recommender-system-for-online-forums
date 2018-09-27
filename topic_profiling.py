@@ -20,13 +20,16 @@ def build_corpus(text_ids, fetch_text_fn, save_to_disk):
     text_ids:      list of text id's
     fetch_text_fn: function to fetch text from 
     save_ro_disk:  whether to save the built corpus to disk  
+    Returns:
+    path to corpus file if save_to_disk is true or raw_corpus 
+    if save_to_disk is false 
     '''
     if save_to_disk:
-        with open('corpus.txt', 'w') as f:
+        with open('./corpus.txt', 'w') as f:
             for id_ in text_ids:
                 f.write(fetch_text_fn(id_))
 
-        return None
+        return 
 
     return [fetch_text_fn(id_) for id_ in text_ids]
 
@@ -51,6 +54,9 @@ def preprocess_corpus(raw_corpus, preprocess_fn, stopwords_set):
     
     return [preprocess_fn(text, stopwords_set) for text in raw_corpus] 
 
+def get_weights():
+    
+
 def word_importance(corpus, weights, model):
     '''
     Computes word importance in a weighted corpus
@@ -59,6 +65,8 @@ def word_importance(corpus, weights, model):
     weights:   list of text weights
     model:     language model to convert corpus to a desirable 
                represention (e.g., tf-idf)
+    Returns:
+    dict of word importance values
     '''
     dictionary = corpora.Dictionary(corpus)
     for id_ in dictionary:
@@ -80,7 +88,7 @@ def word_importance(corpus, weights, model):
 
     return word_weights
 
-
+'''
 raw_corpus = ['我昨天去上海了',
           '今天天气好热，不过下周的天气会很舒服',
           '他们在犹豫晚上要不要出去吃饭，后来还是在家里吃饭了',
@@ -101,7 +109,7 @@ print(corpus)
 
 word_weights = word_importance(corpus, weights, models.TfidfModel)
 print(word_weights)
-
+'''
 
 
 
