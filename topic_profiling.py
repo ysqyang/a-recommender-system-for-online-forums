@@ -4,13 +4,24 @@ import comment_scoring
 import random
 import collections
 
-class Corpus_for_streaming(object):
-    def __init__(self, path):
-        self.path = path
+class Corpus_stream(object):
+    '''
+    Corpus object for streaming preprocessed texts
+    '''
+    def __init__(self, corpus_path, stopwords_path, preprocess_fn, dictionary):
+        self.corpus_path = corpus_path
+        self.stopwords_path = stopwords_path
+        self.preprocess_fn = preprocess_fn
+        self.dictionary = dictionary
 
     def __iter__(self):
-        with open(self.path, 'r') as f:
-            yield f.readline()
+        with open(self.corpus_path, 'r') as f:
+            while True:
+                raw_text = f.readline().strip()
+                if raw_text == '':
+                    break
+                yield self.dictionary.doc2bow(
+                    self.preprocess_fn(raw_text, self.stopwords_path))
 
 def build_corpus(text_ids, fetch_text_fn, save_to_disk):
     '''
@@ -33,83 +44,46 @@ def build_corpus(text_ids, fetch_text_fn, save_to_disk):
 
     return [fetch_text_fn(id_) for id_ in text_ids]
 
-def preprocess_corpus(raw_corpus, preprocess_fn, stopwords_set):
-    '''
-    Preprocesses a corpus to a desired representation
-    Args:
-    raw_corpus:     raw_corpus file path (a string) or reference
-                    to corpus (python list) stored in memory
-    preprocess_fn:  function to preprocess (e.g., tokenize and 
-                    filter) raw corpus
-    stopwords_dict: path of stopword dictionary for use in preprocessing
-    Returns:
-    Preprocessed corpus stored in memory
-    '''
-    if type(raw_corpus) == str: # if corpus is a path
-        corpus = []
-        stream = Corpus_for_streaming(raw_corpus)
-        for text in stream:
-            corpus.append(preprocess_fn(text, stopwords_set))
-        return corpus
-    
-    return [preprocess_fn(text, stopwords_set) for text in raw_corpus] 
+def build_dictionary(corpus_path, preprocess_fn, stopwords_path):
+    return corpora.Dictionary(preprocess_fn(line.rstrip(), stopwords_path) 
+                              for line in open(corpus_path, 'r')) 
 
-def get_weights():
-    
-
-def word_importance(corpus, weights, model):
+def word_importance(corpus_path, stopwords_path, preprocess_fn, 
+                    dictionary, model, normalize):
     '''
     Computes word importance in a weighted corpus
     Args:
-    corpus:    corpus containing weighted texts
-    weights:   list of text weights
-    model:     language model to convert corpus to a desirable 
-               represention (e.g., tf-idf)
+    corpus_path:    raw text file path
+    stopwords_path: stopword file path
+    preprocess_fn:  function to preprocess raw text
+    dictionary:     gensim Dictionary object
+    model:          language model to convert corpus to a desirable 
+                    represention (e.g., tf-idf)
+    normalize:      whether to normalize the representation obtained from model
     Returns:
     dict of word importance values
     '''
-    dictionary = corpora.Dictionary(corpus)
     for id_ in dictionary:
         print(id_, dictionary[id_])
-
-    corpus = [dictionary.doc2bow(text) for text in corpus]
-    language_model = model(corpus)
-    converted = language_model[corpus]
-    max_text_weight = max(weights)
+    stream = Corpus_stream(corpus_path, stopwords_path, preprocess_fn, dictionary)
+    language_model = model(stream, normalize=normalize)
 
     word_weights = collections.defaultdict(float)
-    for text, text_weight in zip(converted, weights):
-        print('text,', text, 'weight, ', text_weight)
-        max_word_weight = max([x[1] for x in text])
-        text_weight_norm = text_weight/max_text_weight
-        for word in text:
+    for text in stream:
+        converted = language_model[text]
+        max_word_weight = max([x[1] for x in converted])
+        for word in converted:
             word_weight_norm = word[1]/max_word_weight
-            word_weights[dictionary[word[0]]] += text_weight_norm*word_weight_norm
+            word_weights[word[0]] += word_weight_norm
 
     return word_weights
 
-'''
-raw_corpus = ['我昨天去上海了',
-          '今天天气好热，不过下周的天气会很舒服',
-          '他们在犹豫晚上要不要出去吃饭，后来还是在家里吃饭了',
-          '你后天要去北京，北京这几天雾霾很厉害',
-          '她儿子考上了清华大学',
-          '最近股票跌得很厉害',
-          '今年高考她没考好',
-          '这两年经济不景气啊',
-          '下周要下雪了'
-          ]
 
-weights = [random.random() for _ in range(len(raw_corpus))]
-print(weights)
+corpus_path, stopwords_path = './corpus.txt', './stopwords.txt'
+dictionary = build_dictionary(corpus_path, comment_scoring.preprocess, stopwords_path)
 
-stopwords_set = comment_scoring.get_stopwords('./stopwords.txt')
-corpus = preprocess_corpus(raw_corpus, comment_scoring.tokenize, stopwords_set)
-print(corpus)
+word_weights = word_importance(corpus_path, stopwords_path, comment_scoring.preprocess, dictionary, models.TfidfModel, False)
 
-word_weights = word_importance(corpus, weights, models.TfidfModel)
 print(word_weights)
-'''
-
 
 

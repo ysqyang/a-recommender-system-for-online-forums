@@ -4,34 +4,23 @@ import jieba
 from gensim import corpora, models, similarities
 import numpy as np
 
-def get_stopwords(path):
+def preprocess(text, stopwords_path):
     '''
-    Creates stopword set in memory from a file 
-    specified by the path arg
-    Args:
-    path: path for the file containing stopwords
-    '''
-    n = 0
-    stopwords = set()
-    # load stopwords dictionary
-    with open(path, 'r') as f:
-        while True:
-            stopword = f.readline().rstrip('\n')
-            if stopword == '':
-                break
-            n += 1
-            stopwords.add(stopword)
-
-    return stopwords
-
-def tokenize(text, stopwords_set):
-    '''
-    Tokenize Chinese text to a list of words
+    Tokenize Chinese text to a list of words and 
+    convert to bag-of-words representation
     Args:
     text:          text to be tokenized
     stopwords_set: set of stopwords
     '''
-    return [word for word in jieba.lcut(text) if word not in stopwords_set]  
+    stopwords = set()
+    # load stopwords dictionary to create stopword set
+    with open(stopwords_path, 'r') as f:
+        while True:
+            stopword = f.readline().rstrip('\n')
+            if stopword == '':
+                break
+            stopwords.add(stopword)
+    return [word for word in jieba.lcut(text) if word not in stopwords]  
 
 def text_vector(text, tokenize_fn):
     '''
@@ -105,17 +94,6 @@ def comment_importance(graphs, coefficients, alphas):
     '''
     return sum([c*pagerank(g, a) for g, c, a in 
                zip(graphs, coefficients, alphas)])
-
-corpus = ['我昨天去上海了',
-          '今天天气好热，不过下周的天气会很舒服',
-          '他们在犹豫晚上要不要出去吃饭，后来还是在家里吃饭了',
-          '你后天要去北京，北京这几天雾霾很厉害',
-          '她儿子考上了清华大学',
-          '最近股票跌得很厉害',
-          '今年高考她没考好',
-          '这两年经济不景气啊',
-          '下周要下雪了'
-          ]
 
 '''
 stopwords = get_stopwords('./stopwords.txt')
