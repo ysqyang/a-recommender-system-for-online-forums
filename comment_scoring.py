@@ -117,7 +117,7 @@ corpus = ['我昨天去上海了',
           '下周要下雪了'
           ]
 
-
+'''
 stopwords = get_stopwords('./stopwords.txt')
 
 corpus = [tokenize(doc, stopwords) for doc in corpus]
@@ -149,7 +149,7 @@ for doc in converted:
         term_weights[dictionary[word[0]]] = term_weights.get(dictionary[word[0]], 0) + word[1]/max_weight
 
 print(term_weights)
-'''
+
 
 G = nx.Graph()
 G.add_nodes_from([12423, 36781, 71842, 61359, 50127])
