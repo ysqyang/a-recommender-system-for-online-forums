@@ -3,6 +3,7 @@ import jieba
 import comment_scoring
 import random
 import collections
+import pandas
 
 class Corpus_stream(object):
     '''
