@@ -3,7 +3,10 @@ import jieba
 import comment_scoring
 import random
 import collections
-import pandas
+import pandas as pd
+from sklearn import preprocessing
+import numpy as np
+import csv
 
 class Corpus_stream(object):
     '''
@@ -24,26 +27,31 @@ class Corpus_stream(object):
                 yield self.dictionary.doc2bow(
                     self.preprocess_fn(raw_text, self.stopwords_path))
 
-def build_corpus(text_ids, fetch_text_fn, save_to_disk):
+
+def build_corpus(in_file_path, out_file_path):
     '''
-    Builds a corpus from texts, optionally saves the built 
-    corpus to disk
-    Args:
-    text_ids:      list of text id's
-    fetch_text_fn: function to fetch text from 
-    save_ro_disk:  whether to save the built corpus to disk  
+    Builds raw corpus from a csv file containing the original database
+    Args: 
+    in_file_path:  path for input file
+    out_file_path: path for output file   
     Returns:
-    path to corpus file if save_to_disk is true or raw_corpus 
-    if save_to_disk is false 
+    path for raw corpus file 
     '''
-    if save_to_disk:
-        with open('./corpus.txt', 'w') as f:
-            for id_ in text_ids:
-                f.write(fetch_text_fn(id_))
+    index_to_textid = {}
+    d = collections.defaultdict(int)
+    with open(in_file_path, 'r') as in_file, open(out_file_path, 'w') as out_file
+        cnt = 0
+        reader = csv.reader(in_file)
+        writer = csv.writer(out_file)
+        for line in reader:
+            d[len(line)] += 1
+            index_to_text_id[int(line[''])] = cnt
+            writer.writeline(line[3])
+            cnt += 1
 
-        return 
+    print(d)
 
-    return [fetch_text_fn(id_) for id_ in text_ids]
+    return out_file_path
 
 def build_dictionary(corpus_path, preprocess_fn, stopwords_path):
     return corpora.Dictionary(preprocess_fn(line.rstrip(), stopwords_path) 
@@ -79,12 +87,41 @@ def word_importance(corpus_path, stopwords_path, preprocess_fn,
 
     return word_weights
 
-
+'''
 corpus_path, stopwords_path = './corpus.txt', './stopwords.txt'
 dictionary = build_dictionary(corpus_path, comment_scoring.preprocess, stopwords_path)
+'''
+def compute_scores(df, features):
+    '''
+    Computes scores for each text
+    Args:
+    df:       Pandas dataframe object containing original database
+    features: list of attributes to include in computing scores
+    weights:  list of weights for the attributes in features
+    '''
+    # normalize weights
+    norm_weights = [wt/sum(weights) for wt in weights]
 
-word_weights = word_importance(corpus_path, stopwords_path, comment_scoring.preprocess, dictionary, models.TfidfModel, False)
+    for feature in features:
+        print(feature, max(df[feature]), min(df[feature]))
 
-print(word_weights)
+    # normalize features using min-max-scaler
+    scaler = preprocessing.MinMaxScaler()
+    df[features] = scaler.fit_transform(df[features])
 
 
+    scores = df.apply(lambda x:np.dot(x[features], norm_weights), axis=1)
+
+    return scores.to_dict()
+
+def create_data_frame(path, error_bad_lines):
+    return pd.read_csv(path, error_bad_lines=error_bad_lines)
+
+df = create_data_frame('./topics_0.csv', False)
+features = ['GOLDUSEFULNUM', 'USEFULNUM', 'TOTALPCPOINT', 'TOPICPCPOINT', 'TOTALVIEWNUM', 'TOTALREPLYNUM']
+weights=[1]*6
+
+
+scores = compute_scores(df, features)
+
+print(scores)
