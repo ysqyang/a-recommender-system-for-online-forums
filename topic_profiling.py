@@ -6,8 +6,7 @@ import collections
 import pandas as pd
 from sklearn import preprocessing
 import numpy as np
-import csv
-
+import pymysql
 class Corpus_stream(object):
     '''
     Corpus object for streaming preprocessed texts
@@ -28,30 +27,37 @@ class Corpus_stream(object):
                     self.preprocess_fn(raw_text, self.stopwords_path))
 
 
-def build_corpus(in_file_path, out_file_path):
+def build_corpus(db_info, topic_table, reply_table, out_file_path):
     '''
     Builds raw corpus from a csv file containing the original database
     Args: 
-    in_file_path:  path for input file
-    out_file_path: path for output file   
+    db_info:       database information needed for connection
+    
     Returns:
     path for raw corpus file 
     '''
-    index_to_textid = {}
-    d = collections.defaultdict(int)
-    with open(in_file_path, 'r') as in_file, open(out_file_path, 'w') as out_file
-        cnt = 0
-        reader = csv.reader(in_file)
-        writer = csv.writer(out_file)
-        for line in reader:
-            d[len(line)] += 1
-            index_to_text_id[int(line[''])] = cnt
-            writer.writeline(line[3])
-            cnt += 1
+    db = pymysql.connect(*db_info)
+    cursor_topic = db.cursor()
+    sql_topic = '''SELECT TOPICID, BODY FROM topics_info
+                   WHERE TOPICID = {}'''.format(topic_id)
+    raw_corpus = collections.defaultdict(list)
 
-    print(d)
+    try:
+        cursor.execute(sql_topic)
+        while True:
+            topic = cursor_topic.fetchone()
+            topic_id = topic[0]
+            sql_reply = '''SELECT REPLYID, FROM reply_info
+                           WHERE TOPICID = {}'''.format(topic_id)
+            cursor_reply = db.cursor()
+            cursur_reply.execute(sql_reply)
+            replies = cursor_reply.fectchall()
+            for reply in replies:
+                raw_corpus[topic_id] = 
+                
 
-    return out_file_path
+
+
 
 def build_dictionary(corpus_path, preprocess_fn, stopwords_path):
     return corpora.Dictionary(preprocess_fn(line.rstrip(), stopwords_path) 
