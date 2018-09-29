@@ -35,58 +35,97 @@ def build_corpus(db_info, out_file_path_prefix):
     db_info:              database information needed for connection
     out_file_path_prefix: path prefix for raw corpus files
     Returns:
-    
+    Dictionary mapping reply ID's to corpus indices for each topic 
     '''
     reply_id_to_corpus_index = {}
     try:
         db = pymysql.connect(*db_info)
-        with db.cursor() as cursor_topic:
-            sql_topic = 'SELECT TOPICID, BODY FROM topics_info_{}'.format()
-            cursor_topic.execute(sql_topic)
-            # outer loop over topics
-            while True:
-                topic = cursor_topic.fetchone()
-                with open(os.join(out_file_path_prefix, 'topic_{}'.format()), 'w') as f:
-                    topic_id = topic[0]
-                    f.write(topic[1])
-                    # retrieve all replies under this topic ID
-                    with db.cursor() as cursor_reply:
-                        sql_reply = '''SELECT REPLYID, BODY FROM reply_info
-                                       WHERE TOPICID = {}'''.format(topic_id)
-                        cursor_reply.execute(sql_reply)
-                        # inner loop over replies to given topic
-                        while True:
-                            reply = cursor_reply.fetchone()
-                            f.write(reply[1].replace('\n', '')+'\n')
+        for i in range(10): 
+            with db.cursor() as cursor_topic:
+                sql_topic = 'SELECT TOPICID, BODY FROM topics_info_{}'.format(i)
+                cursor_topic.execute(sql_topic)
+                # outer loop over topics
+                for (topic_id, content) in cursor_topic:
+                    reply_id_to_corpus_index[topic_id] = {}
+                    with open(os.join(out_file_path_prefix, 
+                        'topic_{}'.format(topic_id)), 'w') as f:
+                        f.write(content.replace('\n', '')+'\n')
+                        # retrieve all replies under this topic ID
+                        for j in range(10):
+                            with db.cursor() as cursor_reply:
+                                sql_reply = '''SELECT REPLYID, BODY FROM replies_info_{}
+                                               WHERE TOPICID = {}'''.format(j, topic_id)
+                                cursor_reply.execute(sql_reply)
+                                # inner loop over replies to given topic
+                                idx = 1 # replies start with index 1 in corpus
+                                for (reply_id, content) in cursor_reply:
+                                    # reply[0] and reply[1] are reply_id and 
+                                    # content, respectively
+                                    reply_id_to_corpus_index[topic_id][reply_id] = idx
+                                    f.write(content.replace('\n', '')+'\n')
+                                    idx += 1
 
     finally:
-        connection.close()
-                
+        db.close()
 
+    return reply_id_to_corpus_index
+                
 def build_dictionary(corpus_path, preprocess_fn, stopwords_path):
+    '''
+    Builds a dictionary from a processed corpus
+    Args:
+    corpus_path:    path for raw corpus file
+    preprocess_fn:  function to preprocess raw text
+    stopwords_path: stopword file path
+    '''
     return corpora.Dictionary(preprocess_fn(line.rstrip(), stopwords_path) 
                               for line in open(corpus_path, 'r')) 
 
-def compute_scores(df, features):
+def compute_scores(db_info, topic_ids, id_to_index, features, weights):
     '''
-    Computes scores for each text
+    Computes importance scores for replies under each topic
     Args:
-    df:       Pandas dataframe object containing original database
-    features: list of attributes to include in computing scores
-    weights:  list of weights for the attributes in features
+    db_info:       database information needed for connection
+    topic_ids:   list of all topic id's in the database
+    id_to_index: dictionary mapping under each topic
+    features:    attributes to include in importance evaluation
+    weights:     weights associated with attributes in features
+    Returns:
+    importance scores for replies under each topic
     '''
     # normalize weights
     norm_weights = [wt/sum(weights) for wt in weights]
-
-    for feature in features:
-        print(feature, max(df[feature]), min(df[feature]))
-
     # normalize features using min-max-scaler
     scaler = preprocessing.MinMaxScaler()
-    df[features] = scaler.fit_transform(df[features])
 
-def word_importance(corpus_path, stopwords_path, preprocess_fn, 
-                    dictionary, model, normalize):
+    scores = {}
+
+    try:
+        db = pymysql.connect(*db_info)
+        for topic_id in topic_ids:
+            scores[topic_id] = {}
+            for i in range(10):       
+                with db.cursor() as cursor:
+                    attrs = ', '.join(['REPLYID']+features)
+                    sql = '''SELECT {} FROM replies_{}
+                             WHERE TOPICID = {}'''.format(attrs, i, topic_id)
+                    cursor.execute(sql)
+                    replies = cursor.fetchall()
+                    # normalize features using min-max scaler
+                    for j in range(len(features)):
+                        values = [reply[j+1] for reply in replies]
+                        norm_features.append(scaler.fit_transform(values))
+                    for j, (reply_id, ) in enumerate(replies):
+                        norm_feature_vector = [col[j] for col in norm_features]
+                        scores[topic_id][reply_id] = np.dot(norm_feature_vector, norm_weights)
+
+    finally:
+        db.close()
+
+    return scores
+
+def word_importance(path_prefix, corpus_name, stopwords_path, preprocess_fn, 
+                    dictionary, model, normalize, topic_ids, scores, ):
     '''
     Computes word importance in a weighted corpus
     Args:
@@ -100,23 +139,26 @@ def word_importance(corpus_path, stopwords_path, preprocess_fn,
     Returns:
     dict of word importance values
     '''
-    for id_ in dictionary:
-        print(id_, dictionary[id_])
-    stream = Corpus_stream(corpus_path, stopwords_path, preprocess_fn, dictionary)
-    language_model = model(stream, normalize=normalize)
-
-    word_weights = collections.defaultdict(float)
-    for text in stream:
-        converted = language_model[text]
-        max_word_weight = max([x[1] for x in converted])
-        for word in converted:
-            word_weight_norm = word[1]/max_word_weight
-            word_weights[word[0]] += word_weight_norm
+    word_weights = {}
+    for topic_id in topic_ids:
+        word_weights[topic_id] = collections.defaultdict(float)
+        corpus_path = os.join(path_prefix, 'topic_{}'.format(topic_id))
+        stream = Corpus_stream(corpus_path, stopwords_path, preprocess_fn, dictionary)
+        language_model = model(stream, normalize=normalize)    
+        for i, text in enumerate(stream):
+            score = scores[topic_id][]
+            converted = language_model[text]
+            max_word_weight = max([x[1] for x in converted])
+            for word in converted:
+                word_weight_norm = word[1]/max_word_weight
+                word_weights[word[0]] += word_weight_norm
 
     return word_weights
 
 '''
 corpus_path, stopwords_path = './corpus.txt', './stopwords.txt'
 dictionary = build_dictionary(corpus_path, comment_scoring.preprocess, stopwords_path)
-'''
 
+print(word_importance(corpus_path, stopwords_path, comment_scoring.preprocess, 
+                      dictionary, models.TfidfModel, False))
+'''

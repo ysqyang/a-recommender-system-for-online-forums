@@ -1,21 +1,8 @@
 import collections
 import pymysql
+import numpy as np
 
-with open('./doc_sample.txt', 'r') as f, open('./doc_sample1.txt', 'w') as f1:
-	content = f.read()
-	f1.write(content.replace('\n', '')+'\n')
+vals = (3,6,2,5,1,7,4)
+weights = [1,4,3,2]
 
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
+print(np.dot(vals[2:6], weights))
