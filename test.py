@@ -5,48 +5,59 @@ import os
 import re
 import comment_scoring
 from gensim import corpora, models, similarities
+from sklearn import preprocessing
+import pickle
 
 db_info = ('192.168.1.102','tgbweb','tgb123321','taoguba',3307)
 
-class Corpus_stream(object):
-    '''
-    Corpus object for streaming preprocessed texts
-    '''
-    def __init__(self, corpus_path, stopwords_path, preprocess_fn, dictionary):
-        self.corpus_path = corpus_path
-        self.stopwords_path = stopwords_path
-        self.preprocess_fn = preprocess_fn
-        self.dictionary = dictionary
+STOPWORDS = './stopwords.txt'
 
-    def __next__(self):
-        with open(self.corpus_path, 'r') as f:
-            raw_text = f.readline().strip()
-        
-        return self.dictionary.doc2bow(
-             self.preprocess_fn(raw_text, self.stopwords_path))
+def build_dictionary(corpus_stream):
+    return corpora.Dictionary(corpus_stream) 
+
+
+class Stream(object):
+    def __init__(self, preprocess_fn):
+        self.preprocess_fn = preprocess_fn
 
     def __iter__(self):
-        with open(self.corpus_path, 'r') as f:
-            while True:
-                raw_text = f.readline().strip()
-                if raw_text == '':
-                    break
-                yield self.dictionary.doc2bow(
-                    self.preprocess_fn(raw_text, self.stopwords_path))
+        for i in range(4):
+            with open('./corpus_{}.txt'.format(i)) as f:
+                while True:
+                    text = f.readline().strip()
+                    if text == '':
+                        break
+                    yield self.preprocess_fn(text, STOPWORDS)
+
+class Stream_num(object):
+    def __init__(self, vals):
+        self.vals = vals
+
+    def __iter__(self):
+        for val in self.vals:
+            yield val
 
 
-def build_dictionary(corpus_path, preprocess_fn, stopwords_path):
-    '''
-    Builds a dictionary from a processed corpus
-    Args:
-    corpus_path:    path for raw corpus file
-    preprocess_fn:  function to preprocess raw text
-    stopwords_path: stopword file path
-    '''
-    return corpora.Dictionary(preprocess_fn(line.rstrip(), stopwords_path) 
-                              for line in open(corpus_path, 'r')) 
+'''
+stream = Stream(comment_scoring.preprocess)
+dictionary = build_dictionary(stream)
+
+for word_id, word in dictionary.items():
+    print(word_id, word)
+
+corpus = [dictionary.doc2bow(text) for text in stream]
+
+
+for vec in corpus:
+    print(vec)
+'''
 
 i = 0
+if i:
+    print('great')
+else:
+    print('bad')
 
-a, b = 1,2 if i == 0 
-       else 3, 4
+
+
+
