@@ -1,26 +1,6 @@
 import networkx as nx
-import sklearn
-import jieba
 from gensim import corpora, models, similarities
 import numpy as np
-
-def preprocess(text, stopwords_path):
-    '''
-    Tokenize Chinese text to a list of words and 
-    convert to bag-of-words representation
-    Args:
-    text:          text to be tokenized
-    stopwords_set: set of stopwords
-    '''
-    stopwords = set()
-    # load stopwords dictionary to create stopword set
-    with open(stopwords_path, 'r') as f:
-        while True:
-            stopword = f.readline().rstrip('\n')
-            if stopword == '':
-                break
-            stopwords.add(stopword)
-    return [word for word in jieba.lcut(text) if word not in stopwords]  
 
 def text_vector(text, tokenize_fn):
     '''

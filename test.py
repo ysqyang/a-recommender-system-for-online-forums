@@ -1,42 +1,25 @@
+'''
 import collections
 import pymysql
 import numpy as np
 import os
 import re
 import comment_scoring
-from gensim import corpora, models, similarities
-from sklearn import preprocessing
-import pickle
-
-db_info = ('192.168.1.102','tgbweb','tgb123321','taoguba',3307)
-
-STOPWORDS = './stopwords.txt'
-
-def build_dictionary(corpus_stream):
-    return corpora.Dictionary(corpus_stream) 
-
-
+'''
 class Stream(object):
-    def __init__(self, preprocess_fn):
+    def __init__(self, preprocess_fn, dictionary, stopwords):
         self.preprocess_fn = preprocess_fn
+        self.dictionary = dictionary
+        self.stopwords = stopwords
 
     def __iter__(self):
-        for i in range(4):
-            with open('./corpus_{}.txt'.format(i)) as f:
-                while True:
-                    text = f.readline().strip()
-                    if text == '':
-                        break
-                    yield self.preprocess_fn(text, STOPWORDS)
-
-class Stream_num(object):
-    def __init__(self, vals):
-        self.vals = vals
-
-    def __iter__(self):
-        for val in self.vals:
-            yield val
-
+        with open('./sample_corpus.txt', 'r') as f:
+            while True:
+                text = f.readline().strip()
+                if text == '':
+                    break
+                yield self.dictionary.doc2bow(
+                    self.preprocess_fn(text, self.stopwords))
 
 '''
 stream = Stream(comment_scoring.preprocess)
@@ -51,12 +34,9 @@ corpus = [dictionary.doc2bow(text) for text in stream]
 for vec in corpus:
     print(vec)
 '''
+vals = [1,3,5,7,9]
+print(sum(val for val in vals))
 
-i = 0
-if i:
-    print('great')
-else:
-    print('bad')
 
 
 
