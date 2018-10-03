@@ -1,50 +1,39 @@
 import numpy as np
 from sklearn import preprocessing
+import utilities
+import run
+from gensim import corpora
 
 class Stream(object):
-    def __init__(self, preprocess_fn, dictionary, stopwords):
+    def __init__(self, preprocess_fn, stopwords):
         self.preprocess_fn = preprocess_fn
-        self.dictionary = dictionary
         self.stopwords = stopwords
+        self.d = {}
 
     def __iter__(self):
         with open('./sample_corpus.txt', 'r') as f:
+            idx = 0
             while True:
                 text = f.readline().strip()
                 if text == '':
                     break
-                yield self.dictionary.doc2bow(
-                    self.preprocess_fn(text, self.stopwords))
-
-'''
-stream = Stream(comment_scoring.preprocess)
-dictionary = build_dictionary(stream)
-
-for word_id, word in dictionary.items():
-    print(word_id, word)
-
-corpus = [dictionary.doc2bow(text) for text in stream]
+                self.d[text[0]] = idx
+                idx += 1
+                yield self.preprocess_fn(text, self.stopwords)
 
 
-for vec in corpus:
-    print(vec)
-'''
-norm_weights = [1,1,1,1]
-scaler = preprocessing.MinMaxScaler(copy=False)
-replies = [(2,1,5,3,9),
-        (21,4,31,19,15),
-        (5,2,18,4,8),
-        (23,7,4,55,32)]
 
-# normalize features using min-max scaler
-features_norm = scaler.fit_transform(np.array(replies)[..., 1:])
+stopwords = utilities.load_stopwords('./stopwords.txt')
 
-print(features_norm)
+stream = Stream(utilities.preprocess, stopwords)
 
-    
-for (reply_id, _, _, _), feature_vec in zip(replies, features_norm):
-    print(reply_id, end=' ')
-    print(np.dot(feature_vec, norm_weights))
+print(stream.d)
+
+dictionary = corpora.Dictionary(stream)
+
+print(stream.d)
+
+
 
 
 

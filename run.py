@@ -2,6 +2,7 @@ import pymysql
 import topic_profiling
 import utilities
 import stream
+from gensim import corpora
 
 _STOPWORDS = './stopwords.txt'
 _DB_INFO = ('192.168.1.102','tgbweb','tgb123321','taoguba',3307)
@@ -10,64 +11,17 @@ _IMPORTANCE_FEATURES = []
 _WEIGHTS = []
 _SAVE_PATH = './word_importance'
 
-def establish_database_connection(db_info):
-    '''
-    Establishes a connection to the database specified by db_info
-    Args:
-    db_info: a tuple of (host, user, password, database, port)
-    Returns:
-    A database connection object
-    '''
-    return pymysql.connect(*db_info)
-
-def load_topic_id_to_table_num_dict(path):
-    '''
-    Loads the mapping from topic id to table number from disk:
-    Args:
-    path: path of file containing the mapping
-    Returns:
-    A dictionary containing topic id to table number mapping
-    '''
-    try:
-        with open(path, 'rb') as f:
-            mapping = pickle.load(f)
-        return mapping
-    except:
-        print('File does not exist. Run utilities.py first to create it')
-
-def load_stopwords(stopwords_path):
-    '''
-    Creates a set of stopwords from a file specified by
-    soptowrds_path
-    Args:
-    stopwords_path: path of stopwords file
-    Returns:
-    A set containing all stopwords
-    '''
-    stopwords = set()
-    # load stopwords dictionary to create stopword set
-    with open(stopwords_path, 'r') as f:
-        n = 1
-        while True:
-            stopword = f.readline().strip('\n')
-            if stopword == '':
-                break
-            stopwords.add(stopword)
-            n += 1
-
-    return stopwords|{'\n', ' '}
-
 def main():
-    stopwords = load_stopwords(_STOPWORDS)
-    db = establish_database_connection(DB_INFO)
-    tid_to_table = load_topic_id_to_table_num_dict(db, _TOPIC_ID_TO_TABLE_NUM)
+    stopwords = utilities.load_stopwords(_STOPWORDS)
+    db = pymysql.connect(*db_info)
+    tid_to_table = utilities.load_topic_id_to_table_num_dict(db, _TOPIC_ID_TO_TABLE_NUM)
     word_weights = {}
 
     # create a Corpus_under_topic object for each topic
     for topic_id in tid_to_table:
         corpus = stream.Corpus_under_topic(db, topic_id, tid_to_table, 
                                 stopwords, utilities.preprocess)
-        dictionary = topic_profiling.build_dictionary(corpus)
+        dictionary = corpora.Dictionary(corpus)
         scores = topic_profiling.compute_scores(db, topic_id, _IMPORTANCE_FEATURES, 
                                 weights, corpus.reply_id_to_corpus_index)        
         word_weights[topic_id] = topic_profiling.word_weights(corpus, dictionary, 
