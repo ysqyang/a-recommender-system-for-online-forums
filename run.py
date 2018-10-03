@@ -35,8 +35,30 @@ def load_topic_id_to_table_num_dict(path):
     except:
     	print('File does not exist. Run utilities.py first to create it')
 
+def load_stopwords(stopwords_path):
+    '''
+    Creates a set of stopwords from a file specified by
+    soptowrds_path
+    Args:
+    stopwords_path: path of stopwords file
+    Returns:
+    A set containing all stopwords
+    '''
+    stopwords = set()
+    # load stopwords dictionary to create stopword set
+    with open(stopwords_path, 'r') as f:
+        n = 1
+        while True:
+            stopword = f.readline().strip('\n')
+            if stopword == '':
+                break
+            stopwords.add(stopword)
+            n += 1
+
+    return stopwords|{'\n', ' '}
+
 def main():
-	stopwords = utilities.load_stopwords(_STOPWORDS)
+	stopwords = load_stopwords(_STOPWORDS)
     db = establish_database_connection(DB_INFO)
     tid_to_table = load_topic_id_to_table_num_dict(db, _TOPIC_ID_TO_TABLE_NUM)
     word_weights = {}

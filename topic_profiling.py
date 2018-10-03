@@ -23,26 +23,23 @@ def compute_scores(db, topic_id, features, weights, id_to_index):
     importance scores for replies
     '''
     # normalize weights
-    norm_weights = [wt/sum(weights) for wt in weights]
-    # normalize features using min-max-scaler
-    scaler = preprocessing.MinMaxScaler()
+    s = sum(weights)
+    norm_weights = [wt/s for wt in weights]
+    
     scores = {}
-
     for i in range(10):       
         with db.cursor() as cursor:
             attrs = ', '.join(['REPLYID']+features)
             sql = '''SELECT {} FROM replies_{}
                      WHERE TOPICID = {}'''.format(attrs, i, topic_id)
             cursor.execute(sql)
-            replies = cursor.fetchall()
-            # normalize features one by one using min-max scaler
-            for j in range(len(features)):
-                values = [reply[j+1] for reply in replies]
-                norm_features.append(scaler.fit_transform(values))
-            for j, (reply_id, ) in enumerate(replies):
-                corpus_index = id_to_index[reply_id]
-                norm_feature_vector = [col[j] for col in norm_features]
-                scores[corpus_index] = np.dot(norm_feature_vector, norm_weights)
+            results = cursor.fetchall()
+            # normalize features using min-max scaler
+            features_norm = scaler.fit_transform(np.array(results)[..., 1:])
+
+            for res, feature_vec in zip(results, features_norm):
+                corpus_index = id_to_index[res[0]]
+                scores[corpus_index] = np.dot(feature_vec, norm_weights)
 
     return scores
 

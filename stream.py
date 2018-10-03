@@ -1,3 +1,5 @@
+# Class definitions for streaming data from the database
+
 class Corpus_under_topic(object):
     '''
     Corpus object for streaming and preprocessing 
