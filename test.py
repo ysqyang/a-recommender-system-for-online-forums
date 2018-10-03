@@ -1,11 +1,6 @@
-'''
-import collections
-import pymysql
 import numpy as np
-import os
-import re
-import comment_scoring
-'''
+from sklearn import preprocessing
+
 class Stream(object):
     def __init__(self, preprocess_fn, dictionary, stopwords):
         self.preprocess_fn = preprocess_fn
@@ -34,8 +29,22 @@ corpus = [dictionary.doc2bow(text) for text in stream]
 for vec in corpus:
     print(vec)
 '''
-vals = [1,3,5,7,9]
-print(sum(val for val in vals))
+norm_weights = [1,1,1,1]
+scaler = preprocessing.MinMaxScaler(copy=False)
+replies = [(2,1,5,3,9),
+        (21,4,31,19,15),
+        (5,2,18,4,8),
+        (23,7,4,55,32)]
+
+# normalize features using min-max scaler
+features_norm = scaler.fit_transform(np.array(replies)[..., 1:])
+
+print(features_norm)
+
+    
+for (reply_id, _, _, _), feature_vec in zip(replies, features_norm):
+    print(reply_id, end=' ')
+    print(np.dot(feature_vec, norm_weights))
 
 
 

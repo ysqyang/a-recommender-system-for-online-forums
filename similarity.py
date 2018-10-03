@@ -1,23 +1,14 @@
 from gensim import corpora
 import utilities
 import copy
+import numpy as np
 import collections
+import math
 from pprint import pprint
+import run
 # import stream
 
-'''
-_TEXT = ['我昨天去上海了',
-         '今天天气好热，不过下周的天气会很舒服',
-         '他们在犹豫晚上要不要出去吃饭，后来还是在家里吃饭了',
-         '你后天要去北京，北京这几天雾霾很厉害',
-         '她儿子考上了清华大学',
-         '最近股票跌得很厉害',
-         '今年高考她没考好',
-         '这两年经济不景气啊',
-         '下周要下雪了'
-         ]
 
-'''
 class Corpus_all_topics(object):
     '''
     Corpus object for streaming and preprocessing 
@@ -72,12 +63,11 @@ def compute_word_frequency(dictionary, corpus_all_topics):
 
     return word_freq_doc, word_freq_corpus
 
-def compute_word_probability(dictionary, word_freq_doc, word_freq_corpus, coeff):
+def compute_word_probability(tok2id, word_freq_doc, word_freq_corpus, coeff):
     '''
-    Computes word probabilities w.r.t. each document in the corpus
+    Computes the word probabilities w.r.t. each document in the corpus
     Args:
-    dictionary:          gensim dictionary object created from 
-                         corpus_all_topics
+    tok2id:              token-to-id mapping 
     word_freq_in_docs:   list of word frequencies in each document
     word_freq_in_corpus: dictionary of word frequencies in the entire corpus
     coeff:               contribution coefficient for in-document word frequency
@@ -86,9 +76,9 @@ def compute_word_probability(dictionary, word_freq_doc, word_freq_corpus, coeff)
     '''
     word_prob_doc = []
     for word_freq in word_freq_doc:
-        word_probs = {}
+        word_prob = {}
         # iterate through all words by id
-        for word_id in dictionary.token2id.values():
+        for word_id in tok2id.values():
             # contribution from word frequency in corpus 
             word_prob[word_id] = (1-coeff)*word_freq_corpus[word_id]
             # contribution from word frequency in document
@@ -98,43 +88,67 @@ def compute_word_probability(dictionary, word_freq_doc, word_freq_corpus, coeff)
 
     return word_prob_doc
 
-def compute_joint_probability(dictionary, profile_words, word_prob_doc):
+def compute_joint_probability(tok2id, profile_word_ids, word_prob_doc):
     '''
-    Computes the unnormialized joint probability of observing target_word
+    Computes the joint probability of observing target_word
     and profile_words together in corpus
     Args:
-    dictionary:    gensim dictionary object created from 
-                   corpus_all_topics
-    profile_words: list words that represent a discussion thread
-                   (i.e., topic with all replies)
-    word_prob_doc: word probabilities w.r.t. each document
+    tok2id:              token-to-id mapping 
+    profile_words_ids: list of word id's that represent a discussion thread
+                       (i.e., topic with all replies)
+    word_prob_doc:     word probabilities w.r.t. each document
     Returns:
-    Unnormialized joint probability of observing each dictionary word 
+    Joint probability of observing each dictionary word 
     along with the profile words together in corpus
     '''
-    tok2id = dictionary.token2id
-    profile_word_ids = [tok2id(w) for w in profile_words]
     joint_prob = [0]*len(tok2id)
     # compute the join probability of observing each dictionary
     # word together with profile words 
-    for word_id in dictionary.token2id.values():        
-        prob = 1 if word_id in profile_word_ids else vec[word_id]
+    for word_id in tok2id.values():        
         # iterate through each document in corpus
         for vec in word_prob_doc:
-            # compute the joint probability for each doc 
+            # compute the joint probability for each doc
+            # convert to natural log to avoid numerical issues
+            log_prob = 0 if word_id in profile_word_ids else math.log(vec[word_id])
             for profile_word_id in profile_word_ids:
-                prob *= vec[profile_word_id]
-
+                log_prob += math.log(vec[profile_word_id])
             # assuming uniform prior distribution over all docs in corpus,
             # the joint probability is the sum of joint probabilities over
             # all docs
-            joint_prob[word_id] += prob
+            joint_prob[word_id] += math.exp(log_prob)
 
+    # normalize the probabilities
+    s = sum(joint_prob)
+    for i in range(len(joint_prob)):
+        joint_prob[i] /= s
+ 
     return joint_prob 
 
+def compute_similarity(tok2id, profile_word_ids, word_prob_doc):
+    '''
+    Computes the joint probability of observing target_word
+    and profile_words together in corpus
+    Args:
+    tok2id:            token-to-id mapping 
+    profile_words_ids: list of word id's that represent a discussion thread
+                       (i.e., topic with all replies)
+    word_prob_doc:     word probabilities w.r.t. each document
+    Returns:
+    Joint probability of observing each dictionary word 
+    along with the profile words together in corpus
+    '''
+
+    for word_id in tok2id.values():
+        if 
 
 
-'''
+
+
+
+
+
+
+
 
 _CORPUS = './sample_corpus.txt'
 _STOPWORDS = './stopwords.txt'
@@ -143,19 +157,22 @@ stopwords = run.load_stopwords(_STOPWORDS)
 corpus = Corpus_all_topics(_CORPUS, stopwords, utilities.preprocess)
 
 dictionary = corpora.Dictionary(corpus)
+print(dictionary.token2id)
 
 in_docs, in_corpus = compute_word_frequency(dictionary, corpus)
 
 print(in_docs)
 print(in_corpus)
 
-probs = compute_word_probability(dictionary, in_docs, in_corpus, 0.5)
+word_prob_doc = compute_word_probability(dictionary, in_docs, in_corpus, 0.5)
 
-for vec in probs:
-    print(sum(vec.values()))
+pprint(word_prob_doc)
 
+profile_words = ['北京', '雾', '霾']
 
+joint_prob = compute_joint_probability(dictionary, profile_words, word_prob_doc)
 
+print(joint_prob)
 
 
 
