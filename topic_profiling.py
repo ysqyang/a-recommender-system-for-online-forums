@@ -16,10 +16,9 @@ def get_scores(db, topic_id, features, weights, id_to_index):
     importance scores for replies
     '''
     # normalize weights
-    s = sum(weights)
+    s, scores, scaler = sum(weights), {}, preprocessing.MinMaxScaler() 
     norm_weights = [wt/s for wt in weights]
-    
-    scores = {}
+
     for i in range(10):       
         with db.cursor() as cursor:
             attrs = ', '.join(['REPLYID']+features)
@@ -30,8 +29,8 @@ def get_scores(db, topic_id, features, weights, id_to_index):
             # normalize features using min-max scaler
             features_norm = scaler.fit_transform(np.array(results)[..., 1:])
 
-            for res, feature_vec in zip(results, features_norm):
-                corpus_index = id_to_index[res[0]]
+            for result, feature_vec in zip(results, features_norm):
+                corpus_index = id_to_index[result[0]]
                 scores[corpus_index] = np.dot(feature_vec, norm_weights)
 
     return scores
@@ -47,11 +46,11 @@ def get_word_weights(corpus_under_topic, dictionary, topic_id, model,
                         represention (e.g., tf-idf)
     normalize:          whether to normalize the representation 
     scores:             list of reply scores under each topic
-    alpha:              weight associated with topic content itself
+    alpha:              contribution coefficient for the topic content 
     Returns:
     dict of word importance values
     '''
-    word_weights = collections.defaultdict(float)
+    word_weight = collections.defaultdict(float)
 
     corpus_bow = [dictionary.doc2bow(doc) for doc in corpus_under_topic]
     language_model = model(corpus_bow, normalize=normalize)    
@@ -64,12 +63,12 @@ def get_word_weights(corpus_under_topic, dictionary, topic_id, model,
         coeff, score_norm = 1-alpha, scores[i]/max_score if i else alpha, 1 
         for word in converted:
             word_weight_norm = word[1]/max_word_weight
-            word_weights[word[0]] += coeff*score_norm*word_weight_norm
+            word_weight[word[0]] += coeff*score_norm*word_weight_norm
 
-    return word_weights
+    return word_weight
 
-def get_word_weights_all_topics(db, tid_to_table, features, weights, 
-                                preprocess_fn, stopwords, normalize):
+def get_word_weights_all(db, tid_to_table, features, weights, preprocess_fn, 
+                         stopwords, normalize, alpha):
 
     '''
     Computes word weight dictionary for all discussion threads
@@ -84,18 +83,48 @@ def get_word_weights_all_topics(db, tid_to_table, features, weights,
                    represention (e.g., tf-idf)
     normalize:     whether to normalize the representation 
     '''
-    word_weights = {}
+    word_weight = {}
 
     # create a Corpus_under_topic object for each topic
     for topic_id in tid_to_table:
         corpus = stream.Corpus_under_topic(db, topic_id, 
                                            tid_to_table[topic_id], 
-                                           stopwords, preprocess_fn)
+                                           preprocess_fn, stopwords)
+        
         dictionary = corpora.Dictionary(corpus)
+        
         scores = get_scores(db, topic_id, features, weights, 
                             corpus.reply_id_to_corpus_index)        
-        word_weights[topic_id] = get_word_weights(
+        
+        word_weight[topic_id] = get_word_weights(
                                  corpus, dictionary, topic_id, 
-                                 model, normalize, scores)
+                                 model, normalize, scores, alpha)
 
-    return word_weights 
+    return word_weight
+
+def get_top_k_words(word_weight, k):
+    '''
+    Get the top k most important words for a topic
+    Args:
+    word_weight: dictionary mapping words to weights
+    k:           number of words to represent the topic
+    Returns:
+    Top k most important words for a topic
+    '''
+    if k > len(word_weight):
+        k = len(word_weight)
+
+    word_weight = [(w, word_weight[w]) for w in word_weight]
+    
+    word_weight.sort(key=lambda x:x[1], reverse=True)
+
+    return [x[0] for x in word_weight[:k]] 
+    
+
+
+
+
+
+
+
+

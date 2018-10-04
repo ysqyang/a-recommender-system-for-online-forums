@@ -6,7 +6,7 @@ class Corpus_under_topic(object):
     texts from the topics_info and replies_info tables
     '''
     def __init__(self, database, topic_id, table_num, 
-                 stopwords, preprocess_fn):
+                 preprocess_fn, stopwords):
         self.cursor = database.cursor()
         self.topic_id = topic_id
         self.table_num = table_num
@@ -40,7 +40,7 @@ class Corpus_all_topics(object):
     Corpus object for streaming and preprocessing 
     texts from topics_info tables
     '''
-    def __init__(self, database, stopwords, preprocess_fn):
+    def __init__(self, database, preprocess_fn, stopwords):
         self.cursor = database.cursor()
         self.stopwords = stopwords 
         self.preprocess_fn = preprocess_fn
