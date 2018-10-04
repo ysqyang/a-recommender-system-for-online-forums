@@ -1,4 +1,3 @@
-import pymysql
 import topic_profiling
 import utilities
 import stream
@@ -13,22 +12,21 @@ _SAVE_PATH = './word_importance'
 
 def main():
     stopwords = utilities.load_stopwords(_STOPWORDS)
-    db = pymysql.connect(*db_info)
-    tid_to_table = utilities.load_topic_id_to_table_num_dict(db, _TOPIC_ID_TO_TABLE_NUM)
-    word_weights = {}
+    db = utilities.connect_to_database(DB_INFO)
+    tid_to_table = utilities.load_topic_id_to_table_num(db, _TOPIC_ID_TO_TABLE_NUM)
 
-    # create a Corpus_under_topic object for each topic
-    for topic_id in tid_to_table:
-        corpus = stream.Corpus_under_topic(db, topic_id, tid_to_table, 
-                                stopwords, utilities.preprocess)
-        dictionary = corpora.Dictionary(corpus)
-        scores = topic_profiling.compute_scores(db, topic_id, _IMPORTANCE_FEATURES, 
-                                weights, corpus.reply_id_to_corpus_index)        
-        word_weights[topic_id] = topic_profiling.word_weights(corpus, dictionary, 
-                                corpus.topic_id, model, normalize, scores)
+    word_weights = topic_profiling.get_word_weights_all_topics(
+                                db, tid_to_table, _IMPORTANCE_FEATURES, _WEIGHTS, 
+                                utilities.preprocess, stopwords, normalize)
 
+    # save the word weights dictionary to file
     with open(_SAVE_PATH, 'w') as f:
         pickle.dump(word_weights, f)
+
+    # 
+
+
+
 
 if __name__ == '__main__':
     main()

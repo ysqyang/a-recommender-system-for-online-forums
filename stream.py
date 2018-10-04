@@ -5,20 +5,19 @@ class Corpus_under_topic(object):
     Corpus object for streaming and preprocessing 
     texts from the topics_info and replies_info tables
     '''
-    def __init__(self, database, topic_id, topic_id_to_tbl_num, 
+    def __init__(self, database, topic_id, table_num, 
                  stopwords, preprocess_fn):
         self.cursor = database.cursor()
         self.topic_id = topic_id
-        self.topic_id_to_tbl_num = topic_id_to_tbl_num
+        self.table_num = table_num
         self.stopwords = stopwords 
         self.preprocess_fn = preprocess_fn
         self.reply_id_to_corpus_index = {}
         
     def __iter__(self):
         # iteration starts with the topic content first
-        table_num = self.topic_id_to_tbl_num[self.topic_id]
         sql = '''SELECT BODY FROM topics_info_{}
-                 WHERE TOPICID = {}'''.format(table_num, self.topic_id)
+                 WHERE TOPICID = {}'''.format(self.table_num, self.topic_id)
         self.cursor.execute(sql)
         topic_content = ' '.join(self.cursor.fetchone().split())
         yield self.preprocess_fn(topic_content, self.stopwords)

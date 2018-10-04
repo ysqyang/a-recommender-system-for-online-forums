@@ -1,16 +1,9 @@
 from gensim import corpora, models
 import collections
 from sklearn import preprocessing
+import stream
 
-def build_dict(corpus_under_topic):
-    '''
-    Builds a dictionary from corpus_under_topic
-    Args:
-    corpus_under_topic: Corpus_under_topic object for a given topic 
-    '''
-    return corpora.Dictionary(corpus_under_topic)
-
-def compute_scores(db, topic_id, features, weights, id_to_index):
+def get_scores(db, topic_id, features, weights, id_to_index):
     '''
     Computes importance scores for replies under each topic
     Args:
@@ -43,8 +36,8 @@ def compute_scores(db, topic_id, features, weights, id_to_index):
 
     return scores
 
-def word_importance(corpus_under_topic, dictionary, topic_id, model, 
-                    normalize, scores, alpha=0.7):
+def get_word_weights(corpus_under_topic, dictionary, topic_id, model, 
+                 normalize, scores, alpha=0.7):
     '''
     Computes word importance in a weighted corpus
     Args:
@@ -60,12 +53,12 @@ def word_importance(corpus_under_topic, dictionary, topic_id, model,
     '''
     word_weights = collections.defaultdict(float)
 
-    corpus = [dictionary.doc2bow(doc) for doc in corpus_under_topic]
-    language_model = model(corpus, normalize=normalize)    
+    corpus_bow = [dictionary.doc2bow(doc) for doc in corpus_under_topic]
+    language_model = model(corpus_bow, normalize=normalize)    
 
     # get the max score under each topic for normalization purposes
     max_score = max(scores)
-    for i, doc in enumerate(corpus):
+    for i, doc in enumerate(corpus_bow):
         converted = language_model[doc]
         max_word_weight = max([x[1] for x in converted])
         coeff, score_norm = 1-alpha, scores[i]/max_score if i else alpha, 1 
@@ -75,12 +68,34 @@ def word_importance(corpus_under_topic, dictionary, topic_id, model,
 
     return word_weights
 
-'''
-corpus_path = './corpus.txt'
-dictionary = build_dictionary(corpus_path, comment_scoring.preprocess, stopw)
+def get_word_weights_all_topics(db, tid_to_table, features, weights, 
+                                preprocess_fn, stopwords, normalize):
 
-print(word_importance(corpus_path, stopwords_path, comment_scoring.preprocess, 
-                      dictionary, models.TfidfModel, False))
-'''
+    '''
+    Computes word weight dictionary for all discussion threads
+    Args:
+    db:            database connection
+    tid_to_table:  dictioanry mapping topic id's to table numbers
+    features:      attributes to include in importance evaluation
+    weights:       weights associated with attributes in features
+    preprocess_fn: function to preprocess original text 
+    stopwords:     set of stopwords
+    model:         language model to convert corpus to a desirable 
+                   represention (e.g., tf-idf)
+    normalize:     whether to normalize the representation 
+    '''
+    word_weights = {}
 
+    # create a Corpus_under_topic object for each topic
+    for topic_id in tid_to_table:
+        corpus = stream.Corpus_under_topic(db, topic_id, 
+                                           tid_to_table[topic_id], 
+                                           stopwords, preprocess_fn)
+        dictionary = corpora.Dictionary(corpus)
+        scores = get_scores(db, topic_id, features, weights, 
+                            corpus.reply_id_to_corpus_index)        
+        word_weights[topic_id] = get_word_weights(
+                                 corpus, dictionary, topic_id, 
+                                 model, normalize, scores)
 
+    return word_weights 

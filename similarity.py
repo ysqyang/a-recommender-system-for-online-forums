@@ -160,7 +160,7 @@ word_prob_doc = get_word_probability(tok2id, in_docs, in_corpus, 0.5)
 
 pprint(word_prob_doc)
 
-profile_word_ids = [7, 10, 11]
+profile_word_ids = [1]
 
 prob_topic_profile = get_probability_given_topic_profile(tok2id, profile_word_ids, word_prob_doc)
 
