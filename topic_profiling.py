@@ -35,25 +35,23 @@ def get_scores(db, topic_id, features, weights, id_to_index):
 
     return scores
 
-def get_word_weights(corpus_under_topic, dictionary, topic_id, model, 
-                 normalize, scores, alpha=0.7):
+def get_word_weight(corpus_under_topic, dictionary, scores, alpha=0.7, 
+                     smartirs='atn'):
     '''
     Computes word importance in a weighted corpus
     Args:
     corpus_under_topic: Corpus_under_topic object for a given topic 
-    topic_id:           integer topic identifier
-    model:              language model to convert corpus to a desirable 
-                        represention (e.g., tf-idf)
-    normalize:          whether to normalize the representation 
+    dictionary:         gensim dictionary object created from corpus
     scores:             list of reply scores under each topic
-    alpha:              contribution coefficient for the topic content 
+    alpha:              contribution coefficient for the topic content
+    smartirs:           tf-idf weighting variants 
     Returns:
     dict of word importance values
     '''
     word_weight = collections.defaultdict(float)
 
     corpus_bow = [dictionary.doc2bow(doc) for doc in corpus_under_topic]
-    language_model = model(corpus_bow, normalize=normalize)    
+    language_model = models.TfidfModel(corpus_bow, smartirs=smartirs)
 
     # get the max score under each topic for normalization purposes
     max_score = max(scores)
@@ -67,8 +65,8 @@ def get_word_weights(corpus_under_topic, dictionary, topic_id, model,
 
     return word_weight
 
-def get_word_weights_all(db, tid_to_table, features, weights, preprocess_fn, 
-                         stopwords, normalize, alpha):
+def get_word_weight_all(db, tid_to_table, features, weights, preprocess_fn, 
+                         stopwords, alpha=0.7, smartirs='atn'):
 
     '''
     Computes word weight dictionary for all discussion threads
@@ -79,11 +77,12 @@ def get_word_weights_all(db, tid_to_table, features, weights, preprocess_fn,
     weights:       weights associated with attributes in features
     preprocess_fn: function to preprocess original text 
     stopwords:     set of stopwords
-    model:         language model to convert corpus to a desirable 
-                   represention (e.g., tf-idf)
-    normalize:     whether to normalize the representation 
+    alpha:         contribution coefficient for the topic content   
+    smartirs:           tf-idf weighting variants
+    Returns:
+    Word importance values for all topics
     '''
-    word_weight = {}
+    weight = {}
 
     # create a Corpus_under_topic object for each topic
     for topic_id in tid_to_table:
@@ -96,11 +95,10 @@ def get_word_weights_all(db, tid_to_table, features, weights, preprocess_fn,
         scores = get_scores(db, topic_id, features, weights, 
                             corpus.reply_id_to_corpus_index)        
         
-        word_weight[topic_id] = get_word_weights(
-                                 corpus, dictionary, topic_id, 
-                                 model, normalize, scores, alpha)
+        weight[topic_id] = get_word_weight(corpus, dictionary, 
+                                            scores, alpha, smartirs)
 
-    return word_weight
+    return weight
 
 def get_top_k_words(word_weight, k):
     '''

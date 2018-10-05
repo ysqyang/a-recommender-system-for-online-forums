@@ -6,6 +6,7 @@ from scipy import stats
 import collections
 import math
 from pprint import pprint
+from datetime import date, datetime
 # import stream
 
 class Corpus_all_topics(object):
@@ -166,14 +167,49 @@ def get_similarity_all(db, preprocess_fn, stopwords, profile_words, coeff):
 
     return similarity_all
 
+def adjust_for_time_decay(tid_to_index, tid_to_date, similarity_all, T):
+    adjusted = {}
+    today = date.today()
 
+    # construct an array of day differences between today and posting dates 
+    # corresponding to topic corpus
+    time_factor = [None for _ in range(len(tid_to_index))]
+    for tid in tid_to_index:
+        corpus_idx = tid_to_index[tid]
+        date_str = tid_to_date[tid]
+        tid_date = datetime.strptime(date_str, '%m/%d/%Y %H:%M').date()
+        print((today-tid_date).days)
+        time_factor[corpus_idx] = math.exp((today-tid_date).days/T)
+
+    print('time_factor: ', time_factor)
+    for tid in tid_to_date:
+        adjusted[tid] = np.multiply(similarity_all[tid], time_factor)
+
+    return adjusted
+
+'''
 _CORPUS = './sample_corpus.txt'
 _STOPWORDS = './stopwords.txt'
 stopwords = utilities.load_stopwords(_STOPWORDS)
 
 profile_words = {0:['雾', '霾'], 1:['股票']}
 
-print(get_similarity_all(_CORPUS, utilities.preprocess, stopwords, profile_words, 0.5))
+similarity_all = get_similarity_all(_CORPUS, utilities.preprocess, stopwords, profile_words, 0.5)
+
+
+print(similarity_all)
+'''
+T = 365
+
+tid_to_date = {141: '11/14/2017 9:47', 50: '12/4/2017 22:33'}
+
+tid_to_index = {141: 1, 50: 0}
+
+similarity_all = {141: [0.214, 1.035], 50: [0.098, 0.847]}
+
+print(adjust_for_time_decay(tid_to_index, tid_to_date, similarity_all, T))
+
+
 
 
 
