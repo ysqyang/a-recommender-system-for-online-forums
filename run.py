@@ -21,7 +21,7 @@ def main(args):
     db = utilities.connect_to_database(DB_INFO)
     tid_to_table = utilities.load_topic_id_to_table_num(db, _TOPIC_ID_TO_TABLE_NUM)
     tid_to_date = utilities.load_topic_id_to_date(db, _TOPIC_ID_TO_DATE)
-    word_weight = topic_profiling.get_word_weights_all(
+    word_weight = topic_profiling.get_word_weight_all(
                                 db, tid_to_table, _IMPORTANCE_FEATURES, _WEIGHTS, 
                                 utilities.preprocess, stopwords, args.alpha, 
                                 args.smartirs)
@@ -34,15 +34,13 @@ def main(args):
     profile_words = {tid:topic_profiling.get_top_k_words(weight, args.k)
                      for tid, weight in word_weight.items()}
 
-    similarity_all = similarity.get_similarity_all(db, utilities.preprocess, stopwords, 
-                                    profile_words, args.beta)
+    tid_to_index, similarity_all = similarity.get_similarity_all(db, 
+                                   utilities.preprocess, stopwords, profile_words, args.beta)
 
     with open(_SAVE_PATH_2, 'w') as f:
         pickle.dump(similarity_all, f)
 
-    adjust_for_time_decay(tid_to_index, tid_to_date, similarity_all, args.T) 
-
-
+    adjust_for_time(tid_to_date, similarity_all, args.T) 
 
 
 if __name__ == '__main__': 

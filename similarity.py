@@ -122,20 +122,21 @@ def get_prob_topic_profile(tok2id, profile_word_ids, word_prob_doc):
     
     return prob
 
-def get_similarity(prob_topic_profile, word_prob_doc):
+def get_similarity(prob_topic_profile, index_to_tid, word_prob_doc):
     '''
     Computes the similarity scores between a topic profile and 
     the documents in the corpus
     Args:
     prob_topic_profile: word probabilities given a topic profile
+    index_to_tid:       mapping from corpus index to topic_id
     word_prob_doc:      word probabilities w.r.t. each document
     Returns:
     Similarity scores between a topic profile and the documents 
     in the corpus
     '''
-    similarities = []
-    for vec in word_prob_doc:
-        similarities.append(stats.entropy(pk=prob_topic_profile, qk=vec))
+    similarities = {}
+    for i, vec in enumerate(word_prob_doc):
+        similarities[index_to_tid[i]] = stats.entropy(pk=prob_topic_profile, qk=vec)
 
     return similarities
 
@@ -151,7 +152,7 @@ def get_similarity_all(db, preprocess_fn, stopwords, profile_words, coeff):
     coeff:         contribution coefficient for in-document word frequency  
                    in computing word frequency in document
     Returns:
-    Similarity scores between a topic profile and each documents in the corpus
+    Similarity matrix between between topics in the form of a doubly nested dict
     '''
     corpus = Corpus_all_topics(db, preprocess_fn, stopwords)
     dictionary = corpora.Dictionary(corpus)
@@ -165,27 +166,31 @@ def get_similarity_all(db, preprocess_fn, stopwords, profile_words, coeff):
         prob = get_prob_topic_profile(tok2id, profile_word_ids, prob_doc)
         similarity_all[topic_id] = get_similarity(prob, prob_doc)
 
-    return similarity_all
+    return corpus.topic_id_to_corpus_index, similarity_all
 
-def adjust_for_time_decay(tid_to_index, tid_to_date, similarity_all, T):
-    adjusted = {}
+def adjust_for_time(tid_to_date, similarity_all, T):
+    '''
+    Adjust the similarity matrix for time difference
+    Args:
+    tid_to_date:    mapping from topic id to posting date
+    similarity_all: Similarity matrix between between topics
+    T:              time attenuation factor
+    Returns:
+    adjusted similarity matrix
+    '''
     today = date.today()
-
     # construct an array of day differences between today and posting dates 
     # corresponding to topic corpus
-    time_factor = [None for _ in range(len(tid_to_index))]
-    for tid in tid_to_index:
-        corpus_idx = tid_to_index[tid]
-        date_str = tid_to_date[tid]
-        tid_date = datetime.strptime(date_str, '%m/%d/%Y %H:%M').date()
-        print((today-tid_date).days)
-        time_factor[corpus_idx] = math.exp((today-tid_date).days/T)
+    for topic_id, similarity in similarity_all.items():
+        print(topic_id)
+        for topic_id_1 in similarity:
+            date_str = tid_to_date[topic_id_1]
+            tid_date = datetime.strptime(date_str, '%m/%d/%Y %H:%M').date()  
+            print(topic_id_1)
+            print((today-tid_date).days)
+            similarity[topic_id_1] *= math.exp((today-tid_date).days/T)
 
-    print('time_factor: ', time_factor)
-    for tid in tid_to_date:
-        adjusted[tid] = np.multiply(similarity_all[tid], time_factor)
-
-    return adjusted
+    return similarity_all
 
 '''
 _CORPUS = './sample_corpus.txt'
@@ -203,11 +208,13 @@ T = 365
 
 tid_to_date = {141: '11/14/2017 9:47', 50: '12/4/2017 22:33'}
 
-tid_to_index = {141: 1, 50: 0}
+similarity_all = {141: {141: 0.01, 50: 1.035}, 50: {50: 0.008, 141: 0.748}}
 
-similarity_all = {141: [0.214, 1.035], 50: [0.098, 0.847]}
+pprint(similarity_all)
 
-print(adjust_for_time_decay(tid_to_index, tid_to_date, similarity_all, T))
+adjust_for_time(tid_to_date, similarity_all, T)
+
+pprint(similarity_all)
 
 
 
