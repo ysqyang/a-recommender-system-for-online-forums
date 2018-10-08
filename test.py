@@ -9,6 +9,8 @@ import pandas as pd
 from pprint import pprint
 import time
 from datetime import date, datetime
+import pymysql
+import pickle
 '''
 class Stream(object):
     def __init__(self, topic_id, preprocess_fn, stopwords):
@@ -131,24 +133,57 @@ profile_words = {tid:get_top_k_words(weight, 3)
 pprint(profile_words)
 
 '''
-today = date.today()
-print(today)
 
 
-s = '8/17/2017'
-past = datetime.strptime('8/17/2017', '%m/%d/%Y')
+_STOPWORDS = 'stopwords.txt'
+_DB_INFO = ('192.168.1.102','tgbweb','tgb123321','taoguba',3307)
+_TOPIC_ID_TO_TABLE_NUM = './topic_id_to_table_num'
+_TOPIC_ID_TO_DATE = './topic_id_to_date'
+_IMPORTANCE_FEATURES = ['USEFULNUM', 'GOLDUSEFULNUM', 'TOTALPCPOINT'] 
+_WEIGHTS = [1, 1, 1]
+_SAVE_PATH_WORD_IMPORTANCE = './word_importance'
+_SAVE_PATH_SIMILARITY = './similarity'
+_SAVE_PATH_SIMILARITY_ADJUSTED = './similarity_adjusted'
 
-print(past.date())
+stopwords = utilities.load_stopwords(_STOPWORDS)
+print('stopwords loaded')
+db = utilities.connect_to_database(_DB_INFO)
+print('connection to database established')
+tid_to_table = utilities.load_topic_id_to_table_num(db, _TOPIC_ID_TO_TABLE_NUM)
+print('topic-id-to-table-number mapping loaded')
+tid_to_date = utilities.load_topic_id_to_date(db, _TOPIC_ID_TO_DATE)
+print('topic-id-to-post-date mapping loaded')
 
-print((today-past.date()).days)
+#print(len(tid_to_table),len(tid_to_date))
+#print(tid_to_table.keys())
 
+cnt = 0
 
+for tid in tid_to_table:
+    corpus = stream.Corpus_under_topic(db, tid, 
+                                   tid_to_table[tid], 
+                                   utilities.preprocess, stopwords)
 
+    dictionary = corpora.Dictionary(corpus)
+    l1 = l2 = 0
+    cursor = db.cursor()
+    for i in range(10):
+        sql = '''SELECT REPLYID FROM replies_{}
+                     WHERE TOPICID = {}'''.format(i, tid)
 
+        cursor.execute(sql)
+        if len(cursor.fetchall()) > 0:
+            l1 += 1
 
+        sql = '''SELECT REPLYID FROM replies_info_{}
+                     WHERE TOPICID = {}'''.format(i, tid)
+        cursor.execute(sql)
+        if len(cursor.fetchall()) > 0:
+            l2 += 1
 
-
-
+    if l1 > 1 or l2 > 1:
+        print(tid)
+        print(l1, l2)
 
 
 

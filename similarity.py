@@ -166,7 +166,7 @@ def get_similarity_all(db, preprocess_fn, stopwords, profile_words, coeff):
         prob = get_prob_topic_profile(tok2id, profile_word_ids, prob_doc)
         similarity_all[topic_id] = get_similarity(prob, prob_doc)
 
-    return corpus.topic_id_to_corpus_index, similarity_all
+    return similarity_all
 
 def adjust_for_time(tid_to_date, similarity_all, T):
     '''
@@ -203,7 +203,7 @@ similarity_all = get_similarity_all(_CORPUS, utilities.preprocess, stopwords, pr
 
 
 print(similarity_all)
-'''
+
 T = 365
 
 tid_to_date = {141: '11/14/2017 9:47', 50: '12/4/2017 22:33'}
@@ -215,7 +215,7 @@ pprint(similarity_all)
 adjust_for_time(tid_to_date, similarity_all, T)
 
 pprint(similarity_all)
-
+'''
 
 
 

@@ -16,12 +16,13 @@ def load_stopwords(stopwords_path):
     with open(stopwords_path, 'r') as f:
         n = 1
         while True:
-            stopword = f.readline().strip('\n')
+            stopword = f.readline()
             if stopword == '':
                 break
-            stopwords.add(stopword)
+            stopwords.add(stopword.strip('\n'))
             n += 1
 
+    print(len(stopwords))
     return stopwords|{'\n', ' '}
 
 def load_topic_id_to_table_num(db, path):
@@ -42,8 +43,34 @@ def load_topic_id_to_table_num(db, path):
         for i in range(10):
             sql = 'SELECT TOPICID FROM topics_info_{}'.format(i)
             cursor.execute(sql)
-            for topic_id in cursor:
+            for (topic_id,) in cursor:
                 mapping[topic_id] = i
+
+        with open(path, 'wb') as f:
+            pickle.dump(mapping, f)
+
+    return mapping
+
+def load_topic_id_to_date(db, path):
+    '''
+    Loads the mapping from topic id to posting date from disk:
+    Args:
+    db:   database connection
+    path: path of file containing the mapping
+    Returns:
+    A dictionary containing topic id to posting date mapping
+    '''
+    try:
+        with open(path, 'rb') as f:
+            mapping = pickle.load(f)
+    except:
+        mapping = {}
+        cursor = db.cursor()
+        for i in range(10):
+            sql = 'SELECT TOPICID, POSTDATE FROM topics_{}'.format(i)
+            cursor.execute(sql)
+            for topic_id, date in cursor:
+                mapping[topic_id] = date
 
         with open(path, 'wb') as f:
             pickle.dump(mapping, f)

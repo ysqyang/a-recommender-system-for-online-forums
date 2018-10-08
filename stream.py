@@ -13,15 +13,16 @@ class Corpus_under_topic(object):
         self.stopwords = stopwords 
         self.preprocess_fn = preprocess_fn
         self.reply_id_to_corpus_index = {}
-        
+
     def __iter__(self):
         # iteration starts with the topic content first
         sql = '''SELECT BODY FROM topics_info_{}
                  WHERE TOPICID = {}'''.format(self.table_num, self.topic_id)
         self.cursor.execute(sql)
-        topic_content = ' '.join(self.cursor.fetchone().split())
+        (topic_content, ) = self.cursor.fetchone()
+        topic_content = ' '.join(topic_content.split())
         yield self.preprocess_fn(topic_content, self.stopwords)
-        
+
         # iterates through replies under this topic id
         for i in range(10):
             sql = '''SELECT REPLYID, BODY FROM replies_info_{}
@@ -58,3 +59,4 @@ class Corpus_all_topics(object):
                     text = ' '.join(content.split())
                     idx += 1
                     yield self.preprocess_fn(text, self.stopwords)
+

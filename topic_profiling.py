@@ -2,6 +2,8 @@ from gensim import corpora, models
 import collections
 from sklearn import preprocessing
 import stream
+import numpy as np
+import sys
 
 def get_scores(db, topic_id, features, weights, id_to_index):
     '''
@@ -26,12 +28,14 @@ def get_scores(db, topic_id, features, weights, id_to_index):
                      WHERE TOPICID = {}'''.format(attrs, i, topic_id)
             cursor.execute(sql)
             results = cursor.fetchall()
+            if len(results) == 0:
+                continue
             # normalize features using min-max scaler
             features_norm = scaler.fit_transform(np.array(results)[..., 1:])
-
             for result, feature_vec in zip(results, features_norm):
-                corpus_index = id_to_index[result[0]]
-                scores[corpus_index] = np.dot(feature_vec, norm_weights)
+                if result[0] in id_to_index:
+                    corpus_index = id_to_index[result[0]]
+                    scores[corpus_index] = np.dot(feature_vec, norm_weights)
 
     return scores
 
@@ -48,20 +52,33 @@ def get_word_weight(corpus_under_topic, dictionary, scores, alpha=0.7,
     Returns:
     dict of word importance values
     '''
-    word_weight = collections.defaultdict(float)
-
     corpus_bow = [dictionary.doc2bow(doc) for doc in corpus_under_topic]
     language_model = models.TfidfModel(corpus_bow, smartirs=smartirs)
 
+    # if there is no replies under this topic, use augmentedterm frequency
+    # as word weight
+    if len(corpus_bow) == 1:
+        if len(corpus_bow[0]) == 0:
+            return {}
+        max_freq = max(x[1] for x in corpus_bow[0])
+        return {x[0]:0.5+0.5*x[1]/max_freq for x in corpus_bow[0]}
+
+    word_weight = collections.defaultdict(float)
     # get the max score under each topic for normalization purposes
     max_score = max(scores)
+
     for i, doc in enumerate(corpus_bow):
+        if len(doc) == 0:
+            continue
         converted = language_model[doc]
+        if len(converted) == 0:
+            continue
         max_word_weight = max([x[1] for x in converted])
-        coeff, score_norm = 1-alpha, scores[i]/max_score if i else alpha, 1 
-        for word in converted:
-            word_weight_norm = word[1]/max_word_weight
-            word_weight[word[0]] += coeff*score_norm*word_weight_norm
+        coeff = 1-alpha if i else alpha
+        score_norm = scores[i]/max_score if i else 1 
+        for word_id, weight in converted:
+            word_weight_norm = weight/max_word_weight
+            word_weight[word_id] += coeff*score_norm*word_weight_norm
 
     return word_weight
 
@@ -93,8 +110,8 @@ def get_word_weight_all(db, tid_to_table, features, weights, preprocess_fn,
         dictionary = corpora.Dictionary(corpus)
         
         scores = get_scores(db, topic_id, features, weights, 
-                            corpus.reply_id_to_corpus_index)        
-        
+                            corpus.reply_id_to_corpus_index) 
+
         weight[topic_id] = get_word_weight(corpus, dictionary, 
                                             scores, alpha, smartirs)
 
