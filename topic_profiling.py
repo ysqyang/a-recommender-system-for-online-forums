@@ -4,16 +4,18 @@ from sklearn import preprocessing
 import stream
 import numpy as np
 import sys
+import warnings
 
-def get_scores(db, topic_id, features, weights, id_to_index):
+def get_scores(db, topic_id, features, weights, rid_to_index, tid_to_reply_table):
     '''
     Computes importance scores for replies under each topic
     Args:
-    db:          pymysql database connection 
-    topic_id:    integer identifier for a topic
-    features:    attributes to include in importance evaluation
-    weights:     weights associated with attributes in features
-    id_to_index: mapping from reply id to corpus index
+    db:                 pymysql database connection 
+    topic_id:           integer identifier for a topic
+    features:           attributes to include in importance evaluation
+    weights:            weights associated with attributes in features
+    rid_to_index:       mapping from reply id to corpus index
+    tid_to_reply_table: mapping from topic id to replies table number
     Returns:
     importance scores for replies
     '''
@@ -21,20 +23,22 @@ def get_scores(db, topic_id, features, weights, id_to_index):
     s, scores, scaler = sum(weights), {}, preprocessing.MinMaxScaler() 
     norm_weights = [wt/s for wt in weights]
 
-    for i in range(10):       
-        with db.cursor() as cursor:
-            attrs = ', '.join(['REPLYID']+features)
-            sql = '''SELECT {} FROM replies_{}
-                     WHERE TOPICID = {}'''.format(attrs, i, topic_id)
-            cursor.execute(sql)
-            results = cursor.fetchall()
-            if len(results) == 0:
-                continue
-            # normalize features using min-max scaler
+    reply_table_num = tid_to_reply_table[topic_id]     
+    with db.cursor() as cursor:
+        attrs = ', '.join(['REPLYID']+features)
+        sql = '''SELECT {} FROM replies_{}
+                 WHERE TOPICID = {}'''.format(attrs, reply_table_num, topic_id)
+        cursor.execute(sql)
+        results = cursor.fetchall()
+        if len(results) == 0:
+            return scores
+        # normalize features using min-max scaler
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
             features_norm = scaler.fit_transform(np.array(results)[..., 1:])
             for result, feature_vec in zip(results, features_norm):
-                if result[0] in id_to_index:
-                    corpus_index = id_to_index[result[0]]
+                if result[0] in rid_to_index:
+                    corpus_index = rid_to_index[result[0]]
                     scores[corpus_index] = np.dot(feature_vec, norm_weights)
 
     return scores
@@ -82,29 +86,33 @@ def get_word_weight(corpus_under_topic, dictionary, scores, alpha=0.7,
 
     return word_weight
 
-def get_word_weight_all(db, tid_to_table, features, weights, preprocess_fn, 
-                         stopwords, alpha=0.7, smartirs='atn'):
+def get_word_weight_all(db, tid_to_table, tid_to_reply_table, features, 
+                        weights, preprocess_fn, stopwords, alpha=0.7, 
+                        smartirs='atn'):
 
     '''
     Computes word weight dictionary for all discussion threads
     Args:
-    db:            database connection
-    tid_to_table:  dictioanry mapping topic id's to table numbers
-    features:      attributes to include in importance evaluation
-    weights:       weights associated with attributes in features
-    preprocess_fn: function to preprocess original text 
-    stopwords:     set of stopwords
-    alpha:         contribution coefficient for the topic content   
+    db:                 database connection
+    tid_to_table:       dictionary mapping topic id to topic table number
+    tid_to_reply_table: dictionary mapping topic id to reply table number
+    features:           attributes to include in importance evaluation
+    weights:            weights associated with attributes in features
+    preprocess_fn:      function to preprocess original text 
+    stopwords:          set of stopwords
+    alpha:              contribution coefficient for the topic content   
     smartirs:           tf-idf weighting variants
     Returns:
     Word importance values for all topics
     '''
-    weight = {}
-
+    percentage, weight = .05, {}
+    n_topic_ids = len(tid_to_table)
+    print('Computing word weights for all topics')
     # create a Corpus_under_topic object for each topic
-    for topic_id in tid_to_table:
+    for i, topic_id in enumerate(tid_to_table):
         corpus = stream.Corpus_under_topic(db, topic_id, 
-                                           tid_to_table[topic_id], 
+                                           tid_to_table[topic_id],
+                                           tid_to_reply_table[topic_id], 
                                            preprocess_fn, stopwords)
         
         dictionary = corpora.Dictionary(corpus)
@@ -113,7 +121,11 @@ def get_word_weight_all(db, tid_to_table, features, weights, preprocess_fn,
                             corpus.reply_id_to_corpus_index) 
 
         weight[topic_id] = get_word_weight(corpus, dictionary, 
-                                            scores, alpha, smartirs)
+                                           scores, alpha, smartirs)
+
+        if i+1 == int(n_topic_ids*percentage):
+            print('{} finished'.format(percentage))
+            percentage += .05
 
     return weight
 

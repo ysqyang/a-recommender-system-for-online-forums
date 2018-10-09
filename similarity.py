@@ -182,12 +182,11 @@ def adjust_for_time(tid_to_date, similarity_all, T):
     # construct an array of day differences between today and posting dates 
     # corresponding to topic corpus
     for topic_id, similarity in similarity_all.items():
-        print(topic_id)
         for topic_id_1 in similarity:
+            if topic_id_1 not in tid_to_date:
+                continue
             date_str = tid_to_date[topic_id_1]
             tid_date = datetime.strptime(date_str, '%m/%d/%Y %H:%M').date()  
-            print(topic_id_1)
-            print((today-tid_date).days)
             similarity[topic_id_1] *= math.exp((today-tid_date).days/T)
 
     return similarity_all

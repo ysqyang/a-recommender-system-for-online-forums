@@ -154,7 +154,7 @@ print('topic-id-to-table-number mapping loaded')
 tid_to_date = utilities.load_topic_id_to_date(db, _TOPIC_ID_TO_DATE)
 print('topic-id-to-post-date mapping loaded')
 
-#print(len(tid_to_table),len(tid_to_date))
+print(len(tid_to_table),len(tid_to_date))
 #print(tid_to_table.keys())
 
 cnt = 0

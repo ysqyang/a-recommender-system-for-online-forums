@@ -1,6 +1,7 @@
 import pickle
 import jieba
 import pymysql
+import stream
 
 def load_stopwords(stopwords_path):
     '''
@@ -22,14 +23,23 @@ def load_stopwords(stopwords_path):
             stopwords.add(stopword.strip('\n'))
             n += 1
 
-    print(len(stopwords))
     return stopwords|{'\n', ' '}
+
+def get_database(db_info):
+    '''
+    Connect to a database specified by db_info
+    Args:
+    db_info:  (host, user, password, database, port, charset)
+    Returns:
+    A pymysql database connection object
+    '''
+    return stream.Database(*db_info)
 
 def load_topic_id_to_table_num(db, path):
     '''
     Loads the mapping from topic id to table number from disk:
     Args:
-    db:   database connection
+    db:   database 
     path: path of file containing the mapping
     Returns:
     A dictionary containing topic id to table number mapping
@@ -39,12 +49,11 @@ def load_topic_id_to_table_num(db, path):
             mapping = pickle.load(f)
     except:
         mapping = {}
-        cursor = db.cursor()
         for i in range(10):
             sql = 'SELECT TOPICID FROM topics_info_{}'.format(i)
-            cursor.execute(sql)
-            for (topic_id,) in cursor:
-                mapping[topic_id] = i
+            with db.query(sql) as cursor:
+                for (topic_id,) in cursor:
+                    mapping[topic_id] = i
 
         with open(path, 'wb') as f:
             pickle.dump(mapping, f)
@@ -55,7 +64,7 @@ def load_topic_id_to_date(db, path):
     '''
     Loads the mapping from topic id to posting date from disk:
     Args:
-    db:   database connection
+    db:   database
     path: path of file containing the mapping
     Returns:
     A dictionary containing topic id to posting date mapping
@@ -65,27 +74,45 @@ def load_topic_id_to_date(db, path):
             mapping = pickle.load(f)
     except:
         mapping = {}
-        cursor = db.cursor()
         for i in range(10):
             sql = 'SELECT TOPICID, POSTDATE FROM topics_{}'.format(i)
-            cursor.execute(sql)
-            for topic_id, date in cursor:
-                mapping[topic_id] = date
+            with db,query(sql) as cursor:    
+                for topic_id, date in cursor:
+                    mapping[topic_id] = date
 
         with open(path, 'wb') as f:
             pickle.dump(mapping, f)
 
     return mapping
 
-def connect_to_database(db_info):
+def load_topic_id_to_reply_table(db, topic_ids, path):
     '''
-    Connect to a database specified by db_info
+    Loads the mapping from topic id to reply table number from disk:
     Args:
-    db_info:  (host, user, password, database, port)
+    db:        database 
+    topic_ids: list of al topic_ids
+    path:      path of file containing the mapping
     Returns:
-    A pymysql database connection object
+    A dictionary containing topic id to reply table number mapping
     '''
-    return pymysql.connect(*db_info)
+    try:
+        with open(path, 'rb') as f:
+            mapping = pickle.load(f)
+    except:
+        for tid in topic_ids:
+            i, mapping = 0, {}
+            while i < 10:
+                sql = 'SELECT * FROM replies_{} WHERE TOPICID = {}'.format(i, tid)
+                with db.query(sql) as cursor:
+                    if cursor.fetchone() is not None:
+                        mapping[tid] = i
+                        break
+                i += 1
+
+        with open(path, 'wb') as f:
+            pickle.dump(mapping, f)
+
+    return mapping
 
 def preprocess(text, stopwords):
     '''
