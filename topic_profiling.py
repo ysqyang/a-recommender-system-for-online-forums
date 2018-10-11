@@ -10,7 +10,7 @@ def get_scores(db, topic_id, features, weights, rid_to_index, tid_to_reply_table
     '''
     Computes importance scores for replies under each topic
     Args:
-    db:                 pymysql database connection 
+    db:                 database
     topic_id:           integer identifier for a topic
     features:           attributes to include in importance evaluation
     weights:            weights associated with attributes in features
@@ -24,11 +24,10 @@ def get_scores(db, topic_id, features, weights, rid_to_index, tid_to_reply_table
     norm_weights = [wt/s for wt in weights]
 
     reply_table_num = tid_to_reply_table[topic_id]     
-    with db.cursor() as cursor:
-        attrs = ', '.join(['REPLYID']+features)
-        sql = '''SELECT {} FROM replies_{}
-                 WHERE TOPICID = {}'''.format(attrs, reply_table_num, topic_id)
-        cursor.execute(sql)
+    attrs = ', '.join(['REPLYID']+features)
+    sql = '''SELECT {} FROM replies_{}
+             WHERE TOPICID = {}'''.format(attrs, reply_table_num, topic_id)
+    with db.query(sql) as cursor:
         results = cursor.fetchall()
         if len(results) == 0:
             return scores
@@ -107,7 +106,7 @@ def get_word_weight_all(db, tid_to_table, tid_to_reply_table, features,
     '''
     percentage, weight = .05, {}
     n_topic_ids = len(tid_to_table)
-    print('Computing word weights for all topics')
+    print('Computing word weights for all topics...')
     # create a Corpus_under_topic object for each topic
     for i, topic_id in enumerate(tid_to_table):
         corpus = stream.Corpus_under_topic(db, topic_id, 
@@ -124,7 +123,7 @@ def get_word_weight_all(db, tid_to_table, tid_to_reply_table, features,
                                            scores, alpha, smartirs)
 
         if i+1 == int(n_topic_ids*percentage):
-            print('{} finished'.format(percentage))
+            print('{}% finished'.format(percentage))
             percentage += .05
 
     return weight

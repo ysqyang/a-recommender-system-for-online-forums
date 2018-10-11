@@ -132,9 +132,6 @@ profile_words = {tid:get_top_k_words(weight, 3)
 
 pprint(profile_words)
 
-'''
-
-
 _STOPWORDS = 'stopwords.txt'
 _DB_INFO = ('192.168.1.102','tgbweb','tgb123321','taoguba',3307)
 _TOPIC_ID_TO_TABLE_NUM = './topic_id_to_table_num'
@@ -159,31 +156,12 @@ print(len(tid_to_table),len(tid_to_date))
 
 cnt = 0
 
-for tid in tid_to_table:
-    corpus = stream.Corpus_under_topic(db, tid, 
-                                   tid_to_table[tid], 
-                                   utilities.preprocess, stopwords)
+'''
 
-    dictionary = corpora.Dictionary(corpus)
-    l1 = l2 = 0
-    cursor = db.cursor()
-    for i in range(10):
-        sql = '''SELECT REPLYID FROM replies_{}
-                     WHERE TOPICID = {}'''.format(i, tid)
+n = 10
+s = '{}% finished'.format(n)
+print(s)
 
-        cursor.execute(sql)
-        if len(cursor.fetchall()) > 0:
-            l1 += 1
-
-        sql = '''SELECT REPLYID FROM replies_info_{}
-                     WHERE TOPICID = {}'''.format(i, tid)
-        cursor.execute(sql)
-        if len(cursor.fetchall()) > 0:
-            l2 += 1
-
-    if l1 > 1 or l2 > 1:
-        print(tid)
-        print(l1, l2)
 
 
 

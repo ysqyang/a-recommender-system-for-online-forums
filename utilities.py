@@ -76,7 +76,7 @@ def load_topic_id_to_date(db, path):
         mapping = {}
         for i in range(10):
             sql = 'SELECT TOPICID, POSTDATE FROM topics_{}'.format(i)
-            with db,query(sql) as cursor:    
+            with db.query(sql) as cursor:    
                 for topic_id, date in cursor:
                     mapping[topic_id] = date
 
@@ -99,15 +99,20 @@ def load_topic_id_to_reply_table(db, topic_ids, path):
         with open(path, 'rb') as f:
             mapping = pickle.load(f)
     except:
-        for tid in topic_ids:
-            i, mapping = 0, {}
-            while i < 10:
-                sql = 'SELECT * FROM replies_{} WHERE TOPICID = {}'.format(i, tid)
+        print('Creating topic-id-to-reply-table mapping...')
+        mapping, percentage = {}, .05
+        for i, tid in enumerate(topic_ids):
+            j = 0
+            while j < 10:
+                sql = 'SELECT * FROM replies_{} WHERE TOPICID = {}'.format(j, tid)
                 with db.query(sql) as cursor:
                     if cursor.fetchone() is not None:
-                        mapping[tid] = i
+                        mapping[tid] = j
+                        #print(tid, i)
                         break
-                i += 1
+                j += 1
+
+            print(len(mapping))
 
         with open(path, 'wb') as f:
             pickle.dump(mapping, f)
