@@ -1,5 +1,5 @@
 from gensim import corpora
-import utilities
+import utils
 import copy
 import numpy as np
 from scipy import stats
@@ -194,11 +194,11 @@ def adjust_for_time(tid_to_date, similarity_all, T):
 '''
 _CORPUS = './sample_corpus.txt'
 _STOPWORDS = './stopwords.txt'
-stopwords = utilities.load_stopwords(_STOPWORDS)
+stopwords = utils.load_stopwords(_STOPWORDS)
 
 profile_words = {0:['雾', '霾'], 1:['股票']}
 
-similarity_all = get_similarity_all(_CORPUS, utilities.preprocess, stopwords, profile_words, 0.5)
+similarity_all = get_similarity_all(_CORPUS, utils.preprocess, stopwords, profile_words, 0.5)
 
 
 print(similarity_all)

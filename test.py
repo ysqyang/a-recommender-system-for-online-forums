@@ -1,6 +1,6 @@
 import numpy as np
 from sklearn import preprocessing
-import utilities
+import utils
 import random
 from gensim import corpora, models
 import collections
@@ -102,7 +102,7 @@ def get_top_k_words(word_weight, k):
 
 topics = [22, 14]
 weights = [1,4,2,5]
-stopwords = utilities.load_stopwords('./stopwords.txt')
+stopwords = utils.load_stopwords('./stopwords.txt')
 
 results = {}
 results[22] = [(95,)+tuple(random.randrange(10) for _ in range(4)),
@@ -122,7 +122,7 @@ results[14] = [(11,)+tuple(random.randrange(10) for _ in range(4)),
 print(results[14])
 
 
-word_weight = get_word_weights_all(topics, results, weights, utilities.preprocess, 
+word_weight = get_word_weights_all(topics, results, weights, utils.preprocess, 
                                    stopwords)
 
 print(word_weight)
@@ -142,13 +142,13 @@ _SAVE_PATH_WORD_IMPORTANCE = './word_importance'
 _SAVE_PATH_SIMILARITY = './similarity'
 _SAVE_PATH_SIMILARITY_ADJUSTED = './similarity_adjusted'
 
-stopwords = utilities.load_stopwords(_STOPWORDS)
+stopwords = utils.load_stopwords(_STOPWORDS)
 print('stopwords loaded')
-db = utilities.connect_to_database(_DB_INFO)
+db = utils.connect_to_database(_DB_INFO)
 print('connection to database established')
-tid_to_table = utilities.load_topic_id_to_table_num(db, _TOPIC_ID_TO_TABLE_NUM)
+tid_to_table = utils.load_topic_id_to_table_num(db, _TOPIC_ID_TO_TABLE_NUM)
 print('topic-id-to-table-number mapping loaded')
-tid_to_date = utilities.load_topic_id_to_date(db, _TOPIC_ID_TO_DATE)
+tid_to_date = utils.load_topic_id_to_date(db, _TOPIC_ID_TO_DATE)
 print('topic-id-to-post-date mapping loaded')
 
 print(len(tid_to_table),len(tid_to_date))
@@ -157,10 +157,34 @@ print(len(tid_to_table),len(tid_to_date))
 cnt = 0
 
 '''
+_DB_INFO = ('192.168.1.102','tgbweb','tgb123321','taoguba', 3307, 'utf8mb4')
+_TOPIC_ID_TO_TABLE_NUM = './topic_id_to_table_num'
+_TOPIC_ID_TO_DATE = './topic_id_to_date'
+_TOPIC_ID_TO_REPLY_TABLE_NUM = './topic_id_to_reply_table_num'
 
-n = 10
-s = '{}% finished'.format(n)
-print(s)
+db = utils.get_database(_DB_INFO)
+tid_to_table = utils.load_mapping(_TOPIC_ID_TO_TABLE_NUM)
+
+new_topic_records = []
+
+for i in range(10):
+    print(i, end=' ')
+    sql = 'SELECT * FROM topics_{}'.format(i)
+    with db.query(sql) as cursor:
+        for rec in cursor:
+            if rec['TOPICID'] not in tid_to_table:
+                new_topic_records.append(rec)
+
+print(len(new_topic_records))
+
+d1 = utils.update_tid_to_table_num_mapping(new_topic_records, _TOPIC_ID_TO_TABLE_NUM)
+d2 = utils.update_tid_to_reply_table_num_mapping(db, new_topic_records, _TOPIC_ID_TO_REPLY_TABLE_NUM)
+d3 = utils.update_tid_to_date_mapping(new_topic_records, _TOPIC_ID_TO_DATE)
+
+
+
+
+
 
 
 

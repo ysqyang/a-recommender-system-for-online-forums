@@ -6,7 +6,7 @@ import numpy as np
 import sys
 import warnings
 
-def get_scores(db, topic_id, features, weights, rid_to_index, tid_to_reply_table):
+def get_scores(db, topic_id, features, weights, rid_to_index, reply_table_num):
     '''
     Computes importance scores for replies under each topic
     Args:
@@ -20,13 +20,16 @@ def get_scores(db, topic_id, features, weights, rid_to_index, tid_to_reply_table
     importance scores for replies
     '''
     # normalize weights
+    if not reply_table_num:
+        return {}
+        
     s, scores, scaler = sum(weights), {}, preprocessing.MinMaxScaler() 
     norm_weights = [wt/s for wt in weights]
-
-    reply_table_num = tid_to_reply_table[topic_id]     
+     
     attrs = ', '.join(['REPLYID']+features)
     sql = '''SELECT {} FROM replies_{}
              WHERE TOPICID = {}'''.format(attrs, reply_table_num, topic_id)
+
     with db.query(sql) as cursor:
         results = cursor.fetchall()
         if len(results) == 0:
@@ -104,27 +107,32 @@ def get_word_weight_all(db, tid_to_table, tid_to_reply_table, features,
     Returns:
     Word importance values for all topics
     '''
-    percentage, weight = .05, {}
+    percentage, weight = .01, {}
     n_topic_ids = len(tid_to_table)
     print('Computing word weights for all topics...')
     # create a Corpus_under_topic object for each topic
     for i, topic_id in enumerate(tid_to_table):
+        if topic_id in tid_to_reply_table:
+            reply_table_num = tid_to_reply_table[topic_id]
+        else:
+            reply_table_num = None
         corpus = stream.Corpus_under_topic(db, topic_id, 
                                            tid_to_table[topic_id],
-                                           tid_to_reply_table[topic_id], 
+                                           reply_table_num, 
                                            preprocess_fn, stopwords)
         
         dictionary = corpora.Dictionary(corpus)
         
         scores = get_scores(db, topic_id, features, weights, 
-                            corpus.reply_id_to_corpus_index) 
+                            corpus.reply_id_to_corpus_index, 
+                            reply_table_num) 
 
         weight[topic_id] = get_word_weight(corpus, dictionary, 
                                            scores, alpha, smartirs)
 
         if i+1 == int(n_topic_ids*percentage):
             print('{}% finished'.format(percentage))
-            percentage += .05
+            percentage += .01
 
     return weight
 
