@@ -4,16 +4,7 @@ import pymysql
 import stream
 
 def load_stopwords(stopwords_path):
-    '''
-    Creates a set of stopwords from a file specified by
-    soptowrds_path
-    Args:
-    stopwords_path: path of stopwords file
-    Returns:
-    A set containing all stopwords
-    '''
     stopwords = set()
-    # load stopwords dictionary to create stopword set
     with open(stopwords_path, 'r') as f:
         n = 1
         while True:
@@ -26,13 +17,6 @@ def load_stopwords(stopwords_path):
     return stopwords|{'\n', ' '}
 
 def get_database(db_info):
-    '''
-    Connect to a database specified by db_info
-    Args:
-    db_info:  (host, user, password, database, port, charset, cursorclass)
-    Returns:
-    A pymysql database connection object
-    '''
     return stream.Database(*db_info)
 
 def create_topic_id_to_table_num(db, path):
@@ -84,29 +68,36 @@ def load_mapping(path):
         mapping = pickle.load(f)
     return mapping
 
-def update_tid_to_table_num_mapping(new_topic_records, path):
+def get_new_topics(db, existing):
+    new_topic_records = []
+
+    for i in range(10):
+        sql = 'SELECT * FROM topics_{}'.format(i)
+        with db.query(sql) as cursor:
+            for rec in cursor:
+                if rec['TOPICID'] not in existing:
+                    new_topic_records.append(rec)
+
+    print('Found {} new topics'.format(len(new_topic_records)))
+    return new_topic_records
+
+def update_tid_to_table_num_mapping(new_topics, path):
     with open(path, 'rb') as f:
         mapping = pickle.load(f)
 
-    print('number of entries before update: ', len(mapping))
-
-    for rec in new_topic_records:
+    for rec in new_topics:
         mapping[rec['TOPICID']] = rec['USERID']%10
-
-    print('number of entries after update: ', len(mapping))
     
     with open(path, 'wb') as f:
         pickle.dump(mapping, f)
 
     return mapping
 
-def update_tid_to_reply_table_num_mapping(db, new_topic_records, path):
+def update_tid_to_reply_table_num_mapping(db, new_topics, path):
     with open(path, 'rb') as f:
         mapping = pickle.load(f)
 
-    print('number of entries before update: ', len(mapping))
-
-    for rec in new_topic_records:
+    for rec in new_topics:
         tid, j = rec['TOPICID'], 0
         while j < 10:
             sql = 'SELECT * FROM replies_{} WHERE TOPICID = {}'.format(j, tid)
@@ -116,23 +107,17 @@ def update_tid_to_reply_table_num_mapping(db, new_topic_records, path):
                     break
             j += 1
 
-    print('number of entries after update: ', len(mapping))
-
     with open(path, 'wb') as f:
         pickle.dump(mapping, f)
 
     return mapping
 
-def update_tid_to_date_mapping(new_topic_records, path):
+def update_tid_to_date_mapping(new_topics, path):
     with open(path, 'rb') as f:
         mapping = pickle.load(f)
 
-    print('number of entries before update: ', len(mapping))
-
-    for rec in new_topic_records:
+    for rec in new_topics:
         mapping[rec['TOPICID']] = rec['POSTDATE'] 
-
-    print('number of entries after update: ', len(mapping))
 
     with open(path, 'wb') as f:
         pickle.dump(mapping, f)

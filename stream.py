@@ -4,7 +4,7 @@ from pymysql.cursors import Cursor, DictCursor
 
 class Database(object):
     def __init__(self, hostname, username, password, dbname, 
-                 port, charset, cursorclass=Cursor):
+                 port, charset, cursorclass=DictCursor):
         self.hostname = hostname
         self.username = username
         self.password = password

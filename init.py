@@ -43,7 +43,7 @@ def main(args):
     with open(_SAVE_PATH_WORD_WEIGHT, 'wb') as f:
         pickle.dump(word_weight, f)
 
-    
+    print('word weights computed and saved to disk')
 
     # get k most representative words for each topic
     profile_words = {tid:tp.get_top_k_words(weight, args.k)

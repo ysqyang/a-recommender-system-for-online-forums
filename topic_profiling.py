@@ -32,8 +32,6 @@ def get_scores(db, topic_id, features, weights, rid_to_index, reply_table_num):
 
     with db.query(sql) as cursor:
         results = cursor.fetchall()
-        if len(results) == 0:
-            return scores
         # normalize features using min-max scaler
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
@@ -88,12 +86,12 @@ def get_word_weight(corpus_under_topic, dictionary, scores, alpha=0.7,
 
     return word_weight
 
-def get_word_weight_all(db, tid_to_table, tid_to_reply_table, features, 
-                        weights, preprocess_fn, stopwords, alpha=0.7, 
-                        smartirs='atn'):
+def compute_profiles(db, tid_to_table, tid_to_reply_table, features, 
+                    weights, preprocess_fn, stopwords, alpha=0.7, 
+                    smartirs='atn'):
 
     '''
-    Computes word weight dictionary for all discussion threads
+    Computes topic profiles
     Args:
     db:                 database connection
     tid_to_table:       dictionary mapping topic id to topic table number
@@ -105,7 +103,7 @@ def get_word_weight_all(db, tid_to_table, tid_to_reply_table, features,
     alpha:              contribution coefficient for the topic content   
     smartirs:           tf-idf weighting variants
     Returns:
-    Word importance values for all topics
+    Topics profiles in the form of word weight dictionaries
     '''
     percentage, weight = .01, {}
     n_topic_ids = len(tid_to_table)
@@ -135,6 +133,20 @@ def get_word_weight_all(db, tid_to_table, tid_to_reply_table, features,
             percentage += .01
 
     return weight
+
+def update_profiles(db, active_topics, path, topic_id, features, 
+                    weights, rid_to_index, reply_table_num):
+    with open(path, 'rb') as f:
+        scores = pickle.load(f)
+
+    for topic_id in active_topics:
+        scores[topic_id] = get_scores(db, topic_id, features, weights, 
+                                      rid_to_index, reply_table_num)
+
+    with open(path, 'wb') as f:
+        scores = pickle.dump(mapping, f)
+
+    return scores
 
 def get_top_k_words(word_weight, k):
     '''
