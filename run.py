@@ -1,62 +1,63 @@
-import utilities
-import topic_profiling
+import utils
+import topic_profiling as tp
 import similarity
 import argparse
 from gensim import models
 
-_STOPWORDS = './stopwords.txt'
-_DB_INFO = ('192.168.1.102','tgbweb','tgb123321','taoguba', 3307)
-_TOPIC_ID_TO_TABLE_NUM = './topic_id_to_table_num'
-_TOPIC_ID_TO_DATE = './topic_id_to_date'
-_TOPIC_ID_TO_REPLY_TABLE_NUM = './topic_id_to_reply_table_num'
-_IMPORTANCE_FEATURES = ['USEFULNUM', 'GOLDUSEFULNUM', 'TOTALPCPOINT'] 
-_WEIGHTS = [1, 1, 1]
-_SAVE_PATH_WORD_WEIGHT = './word_importance'
-_SAVE_PATH_SIMILARITY = './similarity'
-_SAVE_PATH_SIMILARITY_ADJUSTED = './similarity_adjusted'
 
 def main(args):
-    stopwords = utilities.load_stopwords(_STOPWORDS)
+    stopwords = utils.load_stopwords(const._STOPWORDS)
     print('stopwords loaded')
-    db = utilities.get_database(_DB_INFO)
+    
+    db = utils.get_database(const._DB_INFO)
     print('connection to database established')
-    tid_to_table = utilities.load_topic_id_to_table_num(db, _TOPIC_ID_TO_TABLE_NUM)
-    print('topic-id-to-table-number mapping loaded', len(tid_to_table))
-    tid_to_reply_table = utilities.load_topic_id_to_reply_table(db, tid_to_table.keys(), _TOPIC_ID_TO_REPLY_TABLE_NUM)
-    print('topic-id-to-reply-table-number mapping loaded')
-    tid_to_date = utilities.load_topic_id_to_date(db, _TOPIC_ID_TO_DATE)
-    print('topic-id-to-post-date mapping loaded')
+    
+    tid_to_table = utils.update_topic_id_to_table_num(const._TOPIC_ID_TO_TABLE_NUM,
+                                                      db, args.active_topics)
+    print('topic-id-to-table-number mapping updated')
+    
+    tid_to_reply_table = utils.update_topic_id_to_reply_table(const._TOPIC_ID_TO_REPLY_TABLE_NUM,
+                                                              db, active_topics_path)
+    print('topic-id-to-reply-table-number mapping updated')
+    
+    tid_to_date = utils.update_topic_id_to_date(const._TOPIC_ID_TO_DATE, db, active_topics
+                                                tid_to_table)
+    print('topic-id-to-post-date mapping updated')
 
-    try:
-        with open(_SAVE_PATH_WORD_WEIGHT, 'rb') as f:
-            word_weight = pickle.load(f)
-    except:
-        word_weight = topic_profiling.get_word_weight_all(
-                        db, tid_to_table, _IMPORTANCE_FEATURES, _WEIGHTS, 
-                        utilities.preprocess, stopwords, args.alpha, 
-                        args.smartirs)
-        # save computed word weight data to file
-        with open(_SAVE_PATH_WORD_WEIGHT, 'wb') as f:
-            pickle.dump(word_weight, f)
+    word_weights = tp.compute_profiles(db=db, 
+                                       topic_ids=args.active_topics, 
+                                       tid_to_table=tid_to_table,
+                                       tid_to_reply_table=tid_to_reply_table, 
+                                       features=const._FEATURES, 
+                                       weights=const._WEIGHTS, 
+                                       preprocess_fn=utils.preprocess, 
+                                       stopwords=stopwords, 
+                                       update=True, 
+                                       path=const._WORD_WEIGHTS, 
+                                       alpha=args.alpha, 
+                                       smartirs=args.smartirs)
 
     # get k most representative words for each topic
-    profile_words = {tid:topic_profiling.get_top_k_words(weight, args.k)
-                     for tid, weight in word_weight.items()}
+    profile_words = tp.get_profile_words(topic_ids=topic_ids, 
+                                         word_weights=word_weights,
+                                         k=args.k, 
+                                         update=True, 
+                                         path=const._PROFILE_WORDS)
 
-    try:
-        with open(_SAVE_PATH_SIMILARITY, 'rb') as f:
-            similarity_all = pickle.load(f)
-    except:
-        similarity_all = similarity.get_similarity_all(db,
-                     utilities.preprocess, stopwords, profile_words, args.beta)
-        # save computed similarity data to file
-        with open(_SAVE_PATH_SIMILARITY, 'wb') as f:
-            pickle.dump(similarity_all, f)
+    similarity_all = similarity.get_similarity_all(db, utils.preprocess, 
+                     stopwords, profile_words, args.beta)
+    # save computed similarity data to file
+    with open(const._SAVE_PATH_SIMILARITY, 'wb') as f:
+        pickle.dump(similarity_all, f)
+
+    print('similarity matrices computed and saved to disk')
 
     adjust_for_time(tid_to_date, similarity_all, args.T) 
 
-    with open(_SAVE_PATH_SIMILARITY_ADJUSTED, 'wb') as f:
+    with open(const._SAVE_PATH_SIMILARITY_ADJUSTED, 'wb') as f:
         pickle.dump(similarity_all, f)
+
+    print('adjusted similarity matrices computed and saved to disk')
 
 if __name__ == '__main__': 
     parser = argparse.ArgumentParser()

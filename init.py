@@ -3,18 +3,7 @@ import topic_profiling as tp
 import similarity
 import argparse
 from gensim import models
-from pymysql.cursors import Cursor
-
-_STOPWORDS = './stopwords.txt'
-_DB_INFO = ('192.168.1.102','tgbweb','tgb123321','taoguba', 3307, 'utf8mb4', Cursor)
-_TOPIC_ID_TO_TABLE_NUM = './topic_id_to_table_num'
-_TOPIC_ID_TO_DATE = './topic_id_to_date'
-_TOPIC_ID_TO_REPLY_TABLE_NUM = './topic_id_to_reply_table_num'
-_IMPORTANCE_FEATURES = ['USEFULNUM', 'GOLDUSEFULNUM', 'TOTALPCPOINT'] 
-_WEIGHTS = [1, 1, 1]
-_SAVE_PATH_WORD_WEIGHT = './word_importance'
-_SAVE_PATH_SIMILARITY = './similarity'
-_SAVE_PATH_SIMILARITY_ADJUSTED = './similarity_adjusted'
+import constants as const
 
 def main(args):
     '''
@@ -28,38 +17,47 @@ def main(args):
     tid_to_date = ut.create_topic_id_to_date(db, _TOPIC_ID_TO_DATE)
     print('topic-id-to-post-date mapping created')
     '''
-    stopwords = utils.load_stopwords(_STOPWORDS)
-    db = utils.get_database(_DB_INFO)
-    tid_to_table = utils.load_mapping(_TOPIC_ID_TO_TABLE_NUM)
-    tid_to_reply_table = utils.load_mapping(_TOPIC_ID_TO_REPLY_TABLE_NUM)
-    tid_to_date = utils.load_mapping(_TOPIC_ID_TO_DATE)
+    stopwords = utils.load_stopwords(const._STOPWORDS)
+    db = utils.get_database(const._DB_INFO)
+    tid_to_table = utils.load_mapping(const._TOPIC_ID_TO_TABLE_NUM)
+    tid_to_reply_table = utils.load_mapping(const._TOPIC_ID_TO_REPLY_TABLE_NUM)
+    tid_to_date = utils.load_mapping(const._TOPIC_ID_TO_DATE)
 
-    word_weight = tp.get_word_weight_all(
-                        db, tid_to_table, tid_to_reply_table, _IMPORTANCE_FEATURES, 
-                        _WEIGHTS, utils.preprocess, stopwords, args.alpha, 
-                        args.smartirs)
+    topic_ids = list(tid_to_table.keys())
     
-    # save computed word weight data to file
-    with open(_SAVE_PATH_WORD_WEIGHT, 'wb') as f:
-        pickle.dump(word_weight, f)
-
-    print('word weights computed and saved to disk')
+    word_weights = tp.compute_profiles(db=db, 
+                                       topic_ids=topic_ids, 
+                                       tid_to_table=tid_to_table,
+                                       tid_to_reply_table=tid_to_reply_table, 
+                                       features=const._FEATURES, 
+                                       weights=const._WEIGHTS, 
+                                       preprocess_fn=utils.preprocess, 
+                                       stopwords=stopwords, 
+                                       update=False, 
+                                       path=const._WORD_WEIGHTS, 
+                                       alpha=args.alpha, 
+                                       smartirs=args.smartirs)
 
     # get k most representative words for each topic
-    profile_words = {tid:tp.get_top_k_words(weight, args.k)
-                     for tid, weight in word_weight.items()}
+    profile_words = tp.get_profile_words(topic_ids=topic_ids, 
+                                         word_weights=word_weights,
+                                         k=args.k, 
+                                         update=False, 
+                                         path=const._PROFILE_WORDS)
 
+    
+    
     similarity_all = similarity.get_similarity_all(db, utils.preprocess, 
                      stopwords, profile_words, args.beta)
     # save computed similarity data to file
-    with open(_SAVE_PATH_SIMILARITY, 'wb') as f:
+    with open(const._SIMILARITY, 'wb') as f:
         pickle.dump(similarity_all, f)
 
     print('similarity matrices computed and saved to disk')
 
     adjust_for_time(tid_to_date, similarity_all, args.T) 
 
-    with open(_SAVE_PATH_SIMILARITY_ADJUSTED, 'wb') as f:
+    with open(const._SIMILARITY_ADJUSTED, 'wb') as f:
         pickle.dump(similarity_all, f)
 
     print('adjusted similarity matrices computed and saved to disk')

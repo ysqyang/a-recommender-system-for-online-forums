@@ -11,6 +11,7 @@ import time
 from datetime import date, datetime
 import pymysql
 import pickle
+import constants as const
 '''
 class Stream(object):
     def __init__(self, topic_id, preprocess_fn, stopwords):
@@ -156,7 +157,7 @@ print(len(tid_to_table),len(tid_to_date))
 
 cnt = 0
 
-'''
+
 _DB_INFO = ('192.168.1.102','tgbweb','tgb123321','taoguba', 3307, 'utf8mb4')
 _TOPIC_ID_TO_TABLE_NUM = './topic_id_to_table_num'
 _TOPIC_ID_TO_DATE = './topic_id_to_date'
@@ -182,7 +183,9 @@ d2 = utils.update_tid_to_reply_table_num_mapping(db, new_topic_records, _TOPIC_I
 d3 = utils.update_tid_to_date_mapping(new_topic_records, _TOPIC_ID_TO_DATE)
 
 
+'''
 
+print(const._FEATURES)
 
 
 

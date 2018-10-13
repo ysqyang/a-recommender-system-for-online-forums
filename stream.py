@@ -4,14 +4,14 @@ from pymysql.cursors import Cursor, DictCursor
 
 class Database(object):
     def __init__(self, hostname, username, password, dbname, 
-                 port, charset, cursorclass=DictCursor):
+                 port, charset):
         self.hostname = hostname
         self.username = username
         self.password = password
         self.dbname = dbname
         self.port = port
         self.charset = charset
-        self.cursorclass = cursorclass
+        #self.cursorclass = cursorclass
         
     def connect(self):
         self.conn = pymysql.connect(host=self.hostname,
@@ -19,8 +19,7 @@ class Database(object):
                                     password=self.password,
                                     db=self.dbname,
                                     port=self.port, 
-                                    charset=self.charset,
-                                    cursorclass=self.cursorclass)
+                                    charset=self.charset)
 
     def query(self, sql):
         try:
@@ -58,15 +57,15 @@ class Corpus_under_topic(object):
             topic_content = ' '.join(topic_content.split())
             yield self.preprocess_fn(topic_content, self.stopwords)
 
-        if not self.reply_table_num:
-            return
-        # iterates through replies under this topic id       
-        sql = '''SELECT REPLYID, BODY FROM replies_info_{}
-                 WHERE TOPICID = {}'''.format(self.reply_table_num, self.topic_id)
-        with self.database.query(sql) as cursor:  
-            idx = 1
-            for (reply_id, content) in cursor:
-                if content is not None:
+        if self.reply_table_num:
+            # iterates through replies under this topic id       
+            sql = '''SELECT REPLYID, BODY FROM replies_info_{}
+                     WHERE TOPICID = {}'''.format(self.reply_table_num, self.topic_id)
+            with self.database.query(sql) as cursor:  
+                idx = 1
+                for (reply_id, content) in cursor:
+                    if content is None:
+                        continue
                     self.reply_id_to_corpus_index[reply_id] = idx 
                     text = ' '.join(content.split())
                     idx += 1

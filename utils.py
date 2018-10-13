@@ -24,8 +24,8 @@ def create_topic_id_to_table_num(db, path):
     for i in range(10):
         sql = 'SELECT TOPICID FROM topics_info_{}'.format(i)
         with db.query(sql) as cursor: 
-            for record in cursor:
-                mapping[record['topicid']] = i
+            for (topic_id, ) in cursor:
+                mapping[topic_id] = i
 
     with open(path, 'wb') as f:
         pickle.dump(mapping, f)
@@ -55,8 +55,8 @@ def create_topic_id_to_date(db, path):
     for i in range(10):
         sql = 'SELECT TOPICID, POSTDATE FROM topics_{}'.format(i)
         with db.query(sql) as cursor:    
-            for record in cursor:
-                mapping[rec['TOPICID']] = rec['POSTDATE']
+            for (topic_id, date) in cursor:
+                mapping[topic_id] = date
 
     with open(path, 'wb') as f:
         pickle.dump(mapping, f)
@@ -81,43 +81,62 @@ def get_new_topics(db, existing):
     print('Found {} new topics'.format(len(new_topic_records)))
     return new_topic_records
 
-def update_tid_to_table_num_mapping(new_topics, path):
+def update_tid_to_table_num_mapping(path, db, active_topics):
     with open(path, 'rb') as f:
         mapping = pickle.load(f)
 
-    for rec in new_topics:
-        mapping[rec['TOPICID']] = rec['USERID']%10
-    
-    with open(path, 'wb') as f:
-        pickle.dump(mapping, f)
-
-    return mapping
-
-def update_tid_to_reply_table_num_mapping(db, new_topics, path):
-    with open(path, 'rb') as f:
-        mapping = pickle.load(f)
-
-    for rec in new_topics:
-        tid, j = rec['TOPICID'], 0
-        while j < 10:
-            sql = 'SELECT * FROM replies_{} WHERE TOPICID = {}'.format(j, tid)
+    def get_new_topic_table(topic_id):
+        i = 0
+        while i < 10:
+            sql = '''SELECT * FROM topics_{} WHERE 
+                     TOPICID = {}'''.format(i, topic_id)
             with db.query(sql) as cursor:
                 if cursor.fetchone():
-                    mapping[tid] = j
-                    break
-            j += 1
+                    return i
+            i += 1
+
+        return -1
+
+    for topic_id in active_topics:
+        if topic_id not in mapping:
+            mapping[topic_id] = get_new_topic_table(topic_id)
 
     with open(path, 'wb') as f:
         pickle.dump(mapping, f)
 
     return mapping
 
-def update_tid_to_date_mapping(new_topics, path):
+def update_tid_to_reply_table_num_mapping(path, db, active_topics):
     with open(path, 'rb') as f:
         mapping = pickle.load(f)
 
-    for rec in new_topics:
-        mapping[rec['TOPICID']] = rec['POSTDATE'] 
+    for topic_id in active_topics:
+        if topic_id not in mapping:
+            while j < 10:
+                sql = '''SELECT * FROM replies_{} WHERE 
+                         TOPICID = {}'''.format(j, topic_id)
+                with db.query(sql) as cursor:
+                    if cursor.fetchone():
+                        mapping[topic_id] = j
+                        break
+                j += 1
+
+    with open(path, 'wb') as f:
+        pickle.dump(mapping, f)
+
+    return mapping
+
+def update_tid_to_date_mapping(path, db, active_topics, tid_to_table):
+    with open(path, 'rb') as f:
+        mapping = pickle.load(f)
+
+    for topic_id in active_topics:
+        if topic_id not in mapping:
+            table_num = tid_to_table[topic_id]
+            sql = '''SELECT POSTDATE FROM topics_{} WHERE 
+                     TOPICID = {}'''.format(table_num, topic_id)
+            with db.query(sql) as cursor:
+                mapping[topic_id] = cursor.fetchone()[0]
 
     with open(path, 'wb') as f:
         pickle.dump(mapping, f)

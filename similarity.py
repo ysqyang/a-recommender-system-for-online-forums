@@ -140,7 +140,7 @@ def get_similarity(prob_topic_profile, index_to_tid, word_prob_doc):
 
     return similarities
 
-def get_similarity_all(db, preprocess_fn, stopwords, profile_words, coeff):
+def get_similarity_all(db, topic_ids, preprocess_fn, stopwords, profile_words, coeff):
     '''
     Computes the similarity scores between a topic profile and 
     each documents in the corpus
