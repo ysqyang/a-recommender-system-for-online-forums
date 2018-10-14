@@ -4,7 +4,6 @@ import utils
 import random
 from gensim import corpora, models
 import collections
-import stream
 import pandas as pd
 from pprint import pprint
 import time
@@ -12,13 +11,14 @@ from datetime import date, datetime
 import pymysql
 import pickle
 import constants as const
-'''
+
 class Stream(object):
     def __init__(self, topic_id, preprocess_fn, stopwords):
         self.topic_id = topic_id
         self.preprocess_fn = preprocess_fn
         self.stopwords = stopwords
         self.id_to_index = {}
+        self.model = models.TfidfModel
 
     def __iter__(self):
         with open('./sample_corpus_{}.txt'.format(self.topic_id), 'r') as f:
@@ -32,74 +32,61 @@ class Stream(object):
                 line_no += 1
                 yield self.preprocess_fn(text[5:], self.stopwords)
 
-def get_scores(results, weights, id_to_index):
-    s, scores, scaler = sum(weights), {}, preprocessing.MinMaxScaler()
-    norm_weights = [wt/s for wt in weights]
+    def create_dictionary(self):
+        self.dictionary = corpora.Dictionary(self)
 
-    features_norm = scaler.fit_transform(np.array(results)[..., 1:])
-
-    pprint(features_norm)
-    for result, feature_vec in zip(results, features_norm):
-        corpus_index = id_to_index[result[0]]
-        scores[corpus_index] = np.dot(feature_vec, norm_weights)
-
-    return scores
-
-def get_word_weights(corpus_under_topic, dictionary, scores, alpha=0.7, smartirs='atn'):
-    word_weight = collections.defaultdict(float)
-
-    corpus_bow = [dictionary.doc2bow(doc) for doc in corpus_under_topic]
-    language_model = models.TfidfModel(corpus_bow, smartirs=smartirs)    
-
-    # get the max score under each topic for normalization purposes
-    max_score = max(scores.values())
-    print('max_score:', max_score)
-    for i, doc in enumerate(corpus_bow):
-        converted = language_model[doc]
-        print(converted)
-        max_word_weight = max([x[1] for x in converted])
-        if i == 0:
-            coeff, score_norm = alpha, 1
-        else:
-            coeff, score_norm = 1-alpha, scores[i]/max_score
-        for word in converted:
-            word_weight_norm = word[1]/max_word_weight
-            word_weight[dictionary[word[0]]] += coeff*score_norm*word_weight_norm
-
-    return word_weight
-
-def get_word_weights_all(tid_to_table, results, weights, preprocess_fn, 
-                         stopwords, alpha=0.7, smartirs='atn'):
-
-    word_weight = {}
-
-    # create a Corpus_under_topic object for each topic
-    for topic_id in tid_to_table:
-        corpus = Stream(topic_id, preprocess_fn, stopwords)
+    def get_scores(self, results):
+        self.scores = {}
         
-        dictionary = corpora.Dictionary(corpus)
-        for _id, word in dictionary.items():
-            print(_id, word)
+        s, scaler = sum(weights), preprocessing.MinMaxScaler() 
+        norm_weights = [wt/s for wt in weights]
 
-        print(corpus.id_to_index)
-        
-        scores = get_scores(results[topic_id], weights, corpus.id_to_index)        
-        
-        pprint(scores)
-        word_weight[topic_id] = get_word_weights(
-                                 corpus, dictionary, scores, alpha, smartirs)
+        features_norm = scaler.fit_transform(np.array(results)[..., 1:])
+        print('transformed: ', features_norm)
+        for result, feature_vec in zip(results, features_norm):
+            if result[0] in self.id_to_index:
+                corpus_index = self.id_to_index[result[0]]
+                self.scores[corpus_index] = np.dot(feature_vec, norm_weights)
 
-    return word_weight
+    def get_word_weight(self, alpha=0.7, smartirs='atn'):
+        '''
+        Computes word importance
+        Args:
+        bow:      bag-of-words representation of corpus
+        alpha:    contribution coefficient for the topic content
+        smartirs: tf-idf weighting variants 
+        Returns:
+        dict of word importance values
+        '''
+        self.word_weight = collections.defaultdict(float)
+        corpus_bow = [self.dictionary.doc2bow(doc) for doc in self]
+        language_model = self.model(corpus_bow, smartirs=smartirs)
 
-def get_top_k_words(word_weight, k):
-    if k > len(word_weight):
-        k = len(word_weight)
+        # if there is no replies under this topic, use augmented term frequency
+        # as word weight
+        if len(corpus_bow) == 1 and len(corpus_bow[0]):
+            max_freq = max(x[1] for x in corpus_bow[0])
+            self.word_weight = {x[0]:(1+x[1]/max_freq)/2 for x in corpus_bow[0]}
+            return
 
-    word_weight = [(w, word_weight[w]) for w in word_weight]
-    
-    word_weight.sort(key=lambda x:x[1], reverse=True)
+        # get the max score under each topic for normalization purposes
+        max_score = max(self.scores.values())
 
-    return [x[0] for x in word_weight[:k]] 
+        for i, doc in enumerate(corpus_bow):
+            if len(doc) == 0:
+                continue
+            converted = language_model[doc]
+            print(i, converted)
+            if len(converted) == 0:
+                continue
+            max_word_weight = max([x[1] for x in converted])
+            coeff = 1-alpha if i else alpha
+            score_norm = self.scores[i]/max_score if i else 1 
+            for word_id, weight in converted:
+                word_weight_norm = weight/max_word_weight
+                print(word_id, weight, coeff, score_norm, word_weight_norm)
+                self.word_weight[word_id] += coeff*score_norm*word_weight_norm
+
 
 topics = [22, 14]
 weights = [1,4,2,5]
@@ -112,29 +99,27 @@ results[22] = [(95,)+tuple(random.randrange(10) for _ in range(4)),
               (1004,)+tuple(random.randrange(10) for _ in range(4))
               ]
 
-pprint(results[22])
-
 results[14] = [(11,)+tuple(random.randrange(10) for _ in range(4)),
               (263,)+tuple(random.randrange(10) for _ in range(4)),
               (477,)+tuple(random.randrange(10) for _ in range(4)), 
               (985,)+tuple(random.randrange(10) for _ in range(4))
-             ]
+              ]
 
-print(results[14])
+for _id in topics:
+    pprint(np.array(results[_id]))
+    corpus = Stream(_id, utils.preprocess, stopwords)
+    corpus.create_dictionary()
+    pprint(corpus.id_to_index)
+    pprint(corpus.dictionary.token2id)
+    print(corpus.dictionary[7])
+    corpus.get_scores(results[_id])
+    corpus.get_word_weight()
+    print('scores: ', corpus.scores)
+    print('word weights: ', corpus.word_weight)
 
-
-word_weight = get_word_weights_all(topics, results, weights, utils.preprocess, 
-                                   stopwords)
-
-print(word_weight)
-
-profile_words = {tid:get_top_k_words(weight, 3)
-                     for tid, weight in word_weight.items()}
-
-pprint(profile_words)
-
+'''
 _STOPWORDS = 'stopwords.txt'
-_DB_INFO = ('192.168.1.102','tgbweb','tgb123321','taoguba',3307)
+_DB_INFO = ('192.168.1.102','tgbweb','tgb123321','taoguba', 3307, 'utf8mb4')
 _TOPIC_ID_TO_TABLE_NUM = './topic_id_to_table_num'
 _TOPIC_ID_TO_DATE = './topic_id_to_date'
 _IMPORTANCE_FEATURES = ['USEFULNUM', 'GOLDUSEFULNUM', 'TOTALPCPOINT'] 
@@ -155,14 +140,6 @@ print('topic-id-to-post-date mapping loaded')
 print(len(tid_to_table),len(tid_to_date))
 #print(tid_to_table.keys())
 
-cnt = 0
-
-
-_DB_INFO = ('192.168.1.102','tgbweb','tgb123321','taoguba', 3307, 'utf8mb4')
-_TOPIC_ID_TO_TABLE_NUM = './topic_id_to_table_num'
-_TOPIC_ID_TO_DATE = './topic_id_to_date'
-_TOPIC_ID_TO_REPLY_TABLE_NUM = './topic_id_to_reply_table_num'
-
 db = utils.get_database(_DB_INFO)
 tid_to_table = utils.load_mapping(_TOPIC_ID_TO_TABLE_NUM)
 
@@ -182,14 +159,6 @@ d1 = utils.update_tid_to_table_num_mapping(new_topic_records, _TOPIC_ID_TO_TABLE
 d2 = utils.update_tid_to_reply_table_num_mapping(db, new_topic_records, _TOPIC_ID_TO_REPLY_TABLE_NUM)
 d3 = utils.update_tid_to_date_mapping(new_topic_records, _TOPIC_ID_TO_DATE)
 
-
 '''
-
-print(const._FEATURES)
-
-
-
-
-
 
 
