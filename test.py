@@ -12,6 +12,7 @@ import pymysql
 import pickle
 import constants as const
 
+'''
 class Stream(object):
     def __init__(self, topic_id, preprocess_fn, stopwords):
         self.topic_id = topic_id
@@ -49,15 +50,6 @@ class Stream(object):
                 self.scores[corpus_index] = np.dot(feature_vec, norm_weights)
 
     def get_word_weight(self, alpha=0.7, smartirs='atn'):
-        '''
-        Computes word importance
-        Args:
-        bow:      bag-of-words representation of corpus
-        alpha:    contribution coefficient for the topic content
-        smartirs: tf-idf weighting variants 
-        Returns:
-        dict of word importance values
-        '''
         self.word_weight = collections.defaultdict(float)
         corpus_bow = [self.dictionary.doc2bow(doc) for doc in self]
         language_model = self.model(corpus_bow, smartirs=smartirs)
@@ -117,7 +109,7 @@ for _id in topics:
     print('scores: ', corpus.scores)
     print('word weights: ', corpus.word_weight)
 
-'''
+
 _STOPWORDS = 'stopwords.txt'
 _DB_INFO = ('192.168.1.102','tgbweb','tgb123321','taoguba', 3307, 'utf8mb4')
 _TOPIC_ID_TO_TABLE_NUM = './topic_id_to_table_num'
@@ -139,26 +131,17 @@ print('topic-id-to-post-date mapping loaded')
 
 print(len(tid_to_table),len(tid_to_date))
 #print(tid_to_table.keys())
-
-db = utils.get_database(_DB_INFO)
-tid_to_table = utils.load_mapping(_TOPIC_ID_TO_TABLE_NUM)
-
-new_topic_records = []
-
-for i in range(10):
-    print(i, end=' ')
-    sql = 'SELECT * FROM topics_{}'.format(i)
-    with db.query(sql) as cursor:
-        for rec in cursor:
-            if rec['TOPICID'] not in tid_to_table:
-                new_topic_records.append(rec)
-
-print(len(new_topic_records))
-
-d1 = utils.update_tid_to_table_num_mapping(new_topic_records, _TOPIC_ID_TO_TABLE_NUM)
-d2 = utils.update_tid_to_reply_table_num_mapping(db, new_topic_records, _TOPIC_ID_TO_REPLY_TABLE_NUM)
-d3 = utils.update_tid_to_date_mapping(new_topic_records, _TOPIC_ID_TO_DATE)
-
 '''
+tid_to_table = utils.load_mapping(const._TOPIC_ID_TO_TABLE_NUM)
+db = utils.get_database(const._DB_INFO)
+active_topics = utils.get_new_topics(db, tid_to_table)
+
+tid_to_table = utils.update_tid_to_table_num_mapping(const._TOPIC_ID_TO_TABLE_NUM, db, active_topics)
+tid_to_reply_table = utils.update_tid_to_reply_table_num_mapping(const._TOPIC_ID_TO_REPLY_TABLE_NUM, db, active_topics)
+tid_to_date = utils.update_tid_to_date_mapping(const._TOPIC_ID_TO_DATE, db, active_topics, tid_to_table)
+
+
+
+
 
 

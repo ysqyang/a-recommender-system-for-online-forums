@@ -1,6 +1,6 @@
 import utils
 import topic_profiling as tp
-import similarity
+import similarity as sim
 import argparse
 from gensim import models
 
@@ -10,20 +10,16 @@ def main(args):
     print('stopwords loaded')
     
     db = utils.get_database(const._DB_INFO)
-    print('connection to database established')
     
     tid_to_table = utils.update_topic_id_to_table_num(const._TOPIC_ID_TO_TABLE_NUM,
                                                       db, args.active_topics)
-    print('topic-id-to-table-number mapping updated')
     
     tid_to_reply_table = utils.update_topic_id_to_reply_table(const._TOPIC_ID_TO_REPLY_TABLE_NUM,
                                                               db, active_topics_path)
-    print('topic-id-to-reply-table-number mapping updated')
-    
+     
     tid_to_date = utils.update_topic_id_to_date(const._TOPIC_ID_TO_DATE, db, active_topics
                                                 tid_to_table)
-    print('topic-id-to-post-date mapping updated')
-
+    
     word_weights = tp.compute_profiles(db=db, 
                                        topic_ids=args.active_topics, 
                                        tid_to_table=tid_to_table,
@@ -44,7 +40,7 @@ def main(args):
                                          update=True, 
                                          path=const._PROFILE_WORDS)
 
-    similarity_all = similarity.get_similarity_all(db, utils.preprocess, 
+    similarity_all = sim.get_similarity_all(db, utils.preprocess, 
                      stopwords, profile_words, args.beta)
     # save computed similarity data to file
     with open(const._SAVE_PATH_SIMILARITY, 'wb') as f:

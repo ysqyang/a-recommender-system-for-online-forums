@@ -1,10 +1,7 @@
 from gensim import corpora, models
 import collections
-from sklearn import preprocessing
 import stream
-import numpy as np
 import sys
-import warnings
 import pickle
 
 def compute_profiles(db, topic_ids, tid_to_table, tid_to_reply_table, 
@@ -23,8 +20,7 @@ def compute_profiles(db, topic_ids, tid_to_table, tid_to_reply_table,
     preprocess_fn:      function to preprocess original text 
     stopwords:          set of stopwords
     update:             flag indicating whether this is an update operation
-    path:               file path from which the stored dictionary is loaded,
-                        used only when update=True
+    path:               file path for loading and saving
     alpha:              contribution coefficient for the topic content   
     smartirs:           tf-idf weighting variants
 
@@ -34,10 +30,10 @@ def compute_profiles(db, topic_ids, tid_to_table, tid_to_reply_table,
     if update:
         print('Updating word weights for active topics...')
         with open(path, 'rb') as f:
-            word_weights = pickle.load(f)
+            profiles = pickle.load(f)
     else:
         print('Computing word weights for all topics...')
-        word_weights = {}
+        profiles = {}
    
     for topic_id in topic_ids:
         if topic_id in tid_to_reply_table:
@@ -50,21 +46,22 @@ def compute_profiles(db, topic_ids, tid_to_table, tid_to_reply_table,
                                            reply_table_num, 
                                            preprocess_fn, stopwords)
         
-        corpus.get_scores(db, topic_id, features, weights, 
-                            corpus.reply_id_to_corpus_index, 
-                            reply_table_num) 
+        corpus.get_dictionary()
+        corpus.get_scores(features, weights, reply_table_num)
+        print('scores for topic {}:'.format(corpus.topic_id), corpus.scores) 
 
         corpus.get_word_weight(alpha, smartirs)
-
+        profiles[topic_id] = corpus.word_weight
         '''
         if i+1 == int(n_topic_ids*percentage):
             print('{}% finished'.format(percentage))
             percentage += .01
         '''
+        #print('word_weights for topic id {}: '.format(topic_id), profiles[topic_id])
     with open(path, 'wb') as f:
-        pickle.dump(word_weights, f)
+        pickle.dump(profiles, f)
 
-    return word_weights
+    return profiles
 
 '''
 def update_scores(db, active_topics, path, features, weights, rid_to_index, 
@@ -83,15 +80,14 @@ def update_scores(db, active_topics, path, features, weights, rid_to_index,
     return scores
 '''
 
-def get_profile_words(topic_ids, word_weights, k, update, path):
+def get_profile_words(topic_ids, profiles, k, update, path):
     '''
     Get the top k most important words for a topic
     Args:
-    word_weights: word weights for each topic
-    k:            number of words to represent the topic
-    update:       flag indicating whether this is an update operation
-    path:         file path from which the stored dictionary is loaded,
-                  used only when update=True
+    profiles: word weights for each topic
+    k:        number of words to represent the topic
+    update:   flag indicating whether this is an update operation
+    path:     file path for loading and saving
     Returns:
     Top k most important words for topics specified by topic_ids
     '''
@@ -101,14 +97,15 @@ def get_profile_words(topic_ids, word_weights, k, update, path):
     else:
         top_k = {}
 
-    if k > len(word_weight):
-        k = len(word_weight)
+    if k > len(profiles):
+        k = len(profiles)
 
     for topic_id in topic_ids:
-        weight = [(w, word_weight[w]) for w in word_weights[topic_id]]
-        weight.sort(key=lambda x:x[1], reverse=True)
-        top_k[topic_id] = weight[:k]
-
+        profile = [(w, weight) for w, weight in profiles[topic_id].items()]
+        profile.sort(key=lambda x:x[1], reverse=True)
+        top_k[topic_id] = [tup[0] for tup in profile[:k]]
+        print('top k words for topic id {}: '.format(topic_id), top_k[topic_id])
+    
     with open(path, 'wb') as f:
         pickle.dump(top_k, f)
 

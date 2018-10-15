@@ -1,21 +1,36 @@
 import utils
 import topic_profiling as tp
-import similarity
+import similarity as sim
 import argparse
 from gensim import models
 import constants as const
+import os
 
 def main(args):
     '''
     db = utils.get_database(_DB_INFO)
-    print('connection to database established')
-    tid_to_table = ut.create_topic_id_to_table_num(db, _TOPIC_ID_TO_TABLE_NUM)
-    print('topic-id-to-table-number mapping created', len(tid_to_table))
-    tid_to_reply_table = ut.create_topic_id_to_reply_table(
-                         db, tid_to_table.keys(), _TOPIC_ID_TO_REPLY_TABLE_NUM)
-    print('topic-id-to-reply-table-number mapping created')
-    tid_to_date = ut.create_topic_id_to_date(db, _TOPIC_ID_TO_DATE)
-    print('topic-id-to-post-date mapping created')
+    if os.path.exists(const._TOPIC_ID_TO_TABLE_NUM):
+        with open(const._TOPIC_ID_TO_TABLE_NUM, 'rb') as f:
+            existing = pickle.load(f).keys() 
+        new_topics = get_new_topics(db, existing)
+        tid_to_table = utils.update_tid_to_table_num_mapping(
+                             const._TOPIC_ID_TO_TABLE_NUM, db, new_topics)
+    else:
+        tid_to_table = utils.create_topic_id_to_table_num(
+                             db, const._TOPIC_ID_TO_TABLE_NUM)
+    
+    if os.path.exists(const._TOPIC_ID_TO_REPLY_TABLE_NUM):
+        tid_to_reply_table = utils.update_tid_to_reply_table_num_mapping(
+                                   const._TOPIC_ID_TO_REPLY_TABLE_NUM, db, new_topics)
+    else:
+        tid_to_reply_table = utils.create_topic_id_to_reply_table(
+                                   db, tid_to_table.keys(), const._TOPIC_ID_TO_REPLY_TABLE_NUM)
+
+    if os.path.exists(const._TOPIC_ID_TO_DATE):
+        tid_to_date = utils.update_tid_to_date_mapping(
+                            const._TOPIC_ID_TO_DATE, db, new_topics, tid_to_table)
+    else:
+        tid_to_date = utils.create_topic_id_to_date(db, const._TOPIC_ID_TO_DATE)
     '''
     stopwords = utils.load_stopwords(const._STOPWORDS)
     db = utils.get_database(const._DB_INFO)
@@ -23,7 +38,7 @@ def main(args):
     tid_to_reply_table = utils.load_mapping(const._TOPIC_ID_TO_REPLY_TABLE_NUM)
     tid_to_date = utils.load_mapping(const._TOPIC_ID_TO_DATE)
 
-    topic_ids = list(tid_to_table.keys())
+    topic_ids = list(tid_to_table.keys())[:5]
     
     word_weights = tp.compute_profiles(db=db, 
                                        topic_ids=topic_ids, 
@@ -34,33 +49,30 @@ def main(args):
                                        preprocess_fn=utils.preprocess, 
                                        stopwords=stopwords, 
                                        update=False, 
-                                       path=const._WORD_WEIGHTS, 
+                                       path=const._PROFILES, 
                                        alpha=args.alpha, 
                                        smartirs=args.smartirs)
 
     # get k most representative words for each topic
     profile_words = tp.get_profile_words(topic_ids=topic_ids, 
-                                         word_weights=word_weights,
+                                         profiles=word_weights,
                                          k=args.k, 
                                          update=False, 
                                          path=const._PROFILE_WORDS)
+  
+    similarities = sim.compute_similarities(db=db,
+                                            topic_ids=topic_ids, 
+                                            preprocess_fn=utils.preprocess, 
+                                            stopwords=stopwords, 
+                                            profile_words=profile_words, 
+                                            coeff=args.beta, 
+                                            update=False, 
+                                            path=const._SIMILARITIES)
 
-    
-    
-    similarity_all = similarity.get_similarity_all(db, utils.preprocess, 
-                     stopwords, profile_words, args.beta)
-    # save computed similarity data to file
-    with open(const._SIMILARITY, 'wb') as f:
-        pickle.dump(similarity_all, f)
-
-    print('similarity matrices computed and saved to disk')
-
-    adjust_for_time(tid_to_date, similarity_all, args.T) 
-
-    with open(const._SIMILARITY_ADJUSTED, 'wb') as f:
-        pickle.dump(similarity_all, f)
-
-    print('adjusted similarity matrices computed and saved to disk')
+    sim.adjust_for_time(tid_to_date=tid_to_date, 
+                        similarities=similarities, 
+                        T=args.T, 
+                        path=const._SIMILARITIES_ADJUSTED) 
 
 if __name__ == '__main__': 
     parser = argparse.ArgumentParser()

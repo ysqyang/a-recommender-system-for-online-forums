@@ -2,6 +2,10 @@
 import pymysql
 from pymysql.cursors import Cursor, DictCursor
 from gensim import corpora, models
+from sklearn import preprocessing
+import warnings
+import numpy as np
+import collections
 
 class Database(object):
     def __init__(self, hostname, username, password, dbname, 
@@ -73,7 +77,7 @@ class Corpus_under_topic(object):
                     idx += 1
                     yield self.preprocess_fn(text, self.stopwords)
 
-    def create_dictonary(self):
+    def get_dictionary(self):
         self.dictionary = corpora.Dictionary(self)
 
     def get_scores(self, features, weights, reply_table_num):
@@ -93,9 +97,9 @@ class Corpus_under_topic(object):
          
         attrs = ', '.join(['REPLYID']+features)
         sql = '''SELECT {} FROM replies_{}
-                 WHERE TOPICID = {}'''.format(attrs, reply_table_num, topic_id)
+                 WHERE TOPICID = {}'''.format(attrs, reply_table_num, self.topic_id)
 
-        with db.query(sql) as cursor:
+        with self.database.query(sql) as cursor:
             results = cursor.fetchall()
             # normalize features using min-max scaler
             with warnings.catch_warnings():
@@ -129,6 +133,7 @@ class Corpus_under_topic(object):
 
         # get the max score under each topic for normalization purposes
         max_score = max(self.scores.values())
+        print('max_score for topic {}:'.format(self.topic_id))
 
         for i, doc in enumerate(corpus_bow):
             if len(doc) == 0:
@@ -153,6 +158,7 @@ class Corpus_all_topics(object):
         self.stopwords = stopwords 
         self.preprocess_fn = preprocess_fn
         self.topic_id_to_corpus_index = {}
+        self.corpus_index_to_topic_id = {}
         
     def __iter__(self):
         # iterates through all topics
@@ -164,11 +170,12 @@ class Corpus_all_topics(object):
                     if content is None:
                         continue
                     self.topic_id_to_corpus_index[topic_id] = idx 
+                    self.corpus_index_to_topic_id[idx] = topic_id
                     text = ' '.join(content.split())
                     idx += 1
                     yield self.preprocess_fn(text, self.stopwords)
 
-    def create_dictonary(self):
+    def get_dictionary(self):
         self.dictionary = corpora.Dictionary(self)
 
     def get_word_frequency(self):
@@ -187,10 +194,10 @@ class Corpus_all_topics(object):
         for vec in bow_corpus:
             # total number of tokens (with repetitions) in current doc 
             num_tokens = sum(x[1] for x in vec)
-            doc_freq.append({x[0]:x[1]/num_tokens for x in vec})
+            self.doc_freq.append({x[0]:x[1]/num_tokens for x in vec})
             for (word_id, count) in vec:
                 # update word frequency in corpus 
-                corpus_freq[word_id] += count/num_tokens_corpus
+                self.corpus_freq[word_id] += count/num_tokens_corpus
 
     def get_word_doc_prob(self, coeff):
         '''
@@ -257,7 +264,8 @@ class Corpus_all_topics(object):
         in the corpus
         '''
         similarities = {}
-        for i, vec in enumerate(word_prob_doc):
-            similarities[index_to_tid[i]] = stats.entropy(pk=prob_topic_profile, qk=vec)
+        for i, vec in enumerate(self.doc_prob):
+            topic_id = self.corpus_index_to_topic_id[i]
+            similarities[topic_id] = stats.entropy(pk=prob_topic_profile, qk=vec)
 
         return similarities
