@@ -2,6 +2,7 @@ import pickle
 import jieba
 import pymysql
 import stream
+import re
 
 def load_stopwords(stopwords_path):
     stopwords = set()
@@ -161,4 +162,9 @@ def preprocess(text, stopwords):
     text:      text to be tokenized
     stopwords: set of stopwords
     '''  
-    return [word for word in jieba.lcut(text) if word not in stopwords]   
+    regex = r'\d'
+    word_list = []
+    words = jieba.cut(text, cut_all=False)
+    for word in words:
+        if word not in stopwords and 
+    return word_list   

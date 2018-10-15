@@ -132,7 +132,7 @@ class Corpus_under_topic(object):
             return
 
         # get the max score under each topic for normalization purposes
-        max_score = max(self.scores.values())
+        max_score = max(self.scores.values()) + 1e-8  # add 1e-8 to prevent division by zero
         print('max_score for topic {}:'.format(self.topic_id))
 
         for i, doc in enumerate(corpus_bow):
