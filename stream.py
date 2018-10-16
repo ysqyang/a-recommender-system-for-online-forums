@@ -6,6 +6,8 @@ from sklearn import preprocessing
 import warnings
 import numpy as np
 import collections
+import math
+from scipy import stats
 
 class Database(object):
     def __init__(self, hostname, username, password, dbname, 
@@ -61,9 +63,10 @@ class Corpus_under_topic(object):
         with self.database.query(sql) as cursor:
             (topic_content, ) = cursor.fetchone()
             topic_content = ' '.join(topic_content.split())
+            #print(self.preprocess_fn(topic_content, self.stopwords))
             yield self.preprocess_fn(topic_content, self.stopwords)
 
-        if self.reply_table_num:
+        if self.reply_table_num is not None:
             # iterates through replies under this topic id       
             sql = '''SELECT REPLYID, BODY FROM replies_info_{}
                      WHERE TOPICID = {}'''.format(self.reply_table_num, self.topic_id)
@@ -89,7 +92,7 @@ class Corpus_under_topic(object):
         reply_table_num: mapping from topic id to replies table number
         ''' 
         self.scores = {}
-        if not reply_table_num:
+        if reply_table_num is None:
             return
             
         s, scaler = sum(weights), preprocessing.MinMaxScaler() 
@@ -101,6 +104,7 @@ class Corpus_under_topic(object):
 
         with self.database.query(sql) as cursor:
             results = cursor.fetchall()
+            print('results:', results)
             # normalize features using min-max scaler
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
@@ -133,7 +137,7 @@ class Corpus_under_topic(object):
 
         # get the max score under each topic for normalization purposes
         max_score = max(self.scores.values()) + 1e-8  # add 1e-8 to prevent division by zero
-        print('max_score for topic {}:'.format(self.topic_id))
+        print('max_score for topic {}:'.format(self.topic_id), max_score)
 
         for i, doc in enumerate(corpus_bow):
             if len(doc) == 0:
@@ -159,10 +163,11 @@ class Corpus_all_topics(object):
         self.preprocess_fn = preprocess_fn
         self.topic_id_to_corpus_index = {}
         self.corpus_index_to_topic_id = {}
+        #self.topic_ids = topic_ids
         
     def __iter__(self):
         # iterates through all topics
-        for i in range(10):
+        for i in range(1):
             sql = 'SELECT TOPICID, BODY FROM topics_info_{}'.format(i)
             with self.database.query(sql) as cursor:
                 idx = 0
@@ -173,6 +178,8 @@ class Corpus_all_topics(object):
                     self.corpus_index_to_topic_id[idx] = topic_id
                     text = ' '.join(content.split())
                     idx += 1
+                    if idx == 10:
+                        return
                     yield self.preprocess_fn(text, self.stopwords)
 
     def get_dictionary(self):
@@ -228,7 +235,12 @@ class Corpus_all_topics(object):
         Returns:
         Conditional probability of observing a word given the apprearance of profile_words
         '''
-        profile_word_ids = [self.dictionary.token2id[word] for word in profile_words]
+        profile_word_ids = []
+        for word in profile_words:
+            if word in self.dictionary.token2id:
+                profile_word_ids.append(self.dictionary.token2id[word])
+
+        print(profile_word_ids)
         prob = [0]*len(self.dictionary.token2id)
         # compute the join probability of observing each dictionary
         # word together with profile words 
@@ -252,13 +264,12 @@ class Corpus_all_topics(object):
         
         return prob
 
-    def get_similarity(self, prob_topic_profile, index_to_tid):
+    def get_similarity(self, prob_topic_profile):
         '''
         Computes the similarity scores between a topic profile and 
         the documents in the corpus
         Args:
         prob_topic_profile: word probabilities given a topic profile
-        index_to_tid:       mapping from corpus index to topic_id
         Returns:
         Similarity scores between a topic profile and the documents 
         in the corpus

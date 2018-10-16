@@ -162,9 +162,11 @@ def preprocess(text, stopwords):
     text:      text to be tokenized
     stopwords: set of stopwords
     '''  
-    regex = r'\d'
+    num = r'\d+\.*\d+'
     word_list = []
     words = jieba.cut(text, cut_all=False)
     for word in words:
-        if word not in stopwords and 
+        if word in stopwords or re.match(num, word):
+            continue
+        word_list.append(word) 
     return word_list   

@@ -2,13 +2,11 @@ from gensim import corpora
 import utils
 import copy
 import numpy as np
-from scipy import stats
-import collections
-import math
 from pprint import pprint
 from datetime import datetime
 import stream
-
+import pickle
+import math
 '''
 class Corpus_all_topics(object):
     def __init__(self, path, preprocess_fn, stopwords):
@@ -45,15 +43,18 @@ def compute_similarities(db, topic_ids, profile_words, preprocess_fn, stopwords,
     Similarity matrix         
     '''
     if update:
+        print('Updating similarity matrix...')
         with open(path, 'rb') as f:
             similarities = pickle.load(f)
     else:
+        print('Computing similarity matrix...')
         similarities = {}
 
     corpus = stream.Corpus_all_topics(db, preprocess_fn, stopwords)
     corpus.get_dictionary()
+    print(corpus.dictionary.token2id)
     corpus.get_word_frequency()
-    corpus.get_word_doc_prob()
+    corpus.get_word_doc_prob(coeff)
 
     for topic_id in topic_ids:
         keywords = profile_words[topic_id]
@@ -63,7 +64,9 @@ def compute_similarities(db, topic_ids, profile_words, preprocess_fn, stopwords,
     with open(path, 'wb') as f:
         pickle.dump(similarities, f)
 
-def adjust_for_time(tid_to_date, similarities, T, update, path):
+    return similarities
+
+def adjust_for_time(tid_to_date, similarities, T, path):
     '''
     Adjust the similarity matrix for time difference
     Args:

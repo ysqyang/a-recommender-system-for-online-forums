@@ -38,7 +38,7 @@ def main(args):
     tid_to_reply_table = utils.load_mapping(const._TOPIC_ID_TO_REPLY_TABLE_NUM)
     tid_to_date = utils.load_mapping(const._TOPIC_ID_TO_DATE)
 
-    topic_ids = list(tid_to_table.keys())[:5]
+    topic_ids = list(tid_to_table.keys())[:10]
     
     word_weights = tp.compute_profiles(db=db, 
                                        topic_ids=topic_ids, 
@@ -60,6 +60,7 @@ def main(args):
                                          update=False, 
                                          path=const._PROFILE_WORDS)
   
+    
     similarities = sim.compute_similarities(db=db,
                                             topic_ids=topic_ids, 
                                             preprocess_fn=utils.preprocess, 
@@ -69,11 +70,14 @@ def main(args):
                                             update=False, 
                                             path=const._SIMILARITIES)
 
+    print(similarities)
+
     sim.adjust_for_time(tid_to_date=tid_to_date, 
                         similarities=similarities, 
                         T=args.T, 
                         path=const._SIMILARITIES_ADJUSTED) 
-
+    
+    
 if __name__ == '__main__': 
     parser = argparse.ArgumentParser()
     parser.add_argument('--alpha', type=float, default=0.7, 

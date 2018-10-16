@@ -97,12 +97,11 @@ def get_profile_words(topic_ids, profiles, k, update, path):
     else:
         top_k = {}
 
-    if k > len(profiles):
-        k = len(profiles)
-
     for topic_id in topic_ids:
         profile = [(w, weight) for w, weight in profiles[topic_id].items()]
         profile.sort(key=lambda x:x[1], reverse=True)
+        if k > len(profile):
+            k = len(profile)
         top_k[topic_id] = [tup[0] for tup in profile[:k]]
         print('top k words for topic id {}: '.format(topic_id), top_k[topic_id])
     
