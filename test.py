@@ -4,14 +4,13 @@ import utils
 import random
 from gensim import corpora, models
 import collections
-import pandas as pd
 from pprint import pprint
 import time
 from datetime import date, datetime
-import pymysql
+
 import pickle
 import constants as const
-
+import json
 '''
 class Stream(object):
     def __init__(self, topic_id, preprocess_fn, stopwords):
@@ -131,7 +130,7 @@ print('topic-id-to-post-date mapping loaded')
 
 print(len(tid_to_table),len(tid_to_date))
 #print(tid_to_table.keys())
-'''
+
 tid_to_table = utils.load_mapping(const._TOPIC_ID_TO_TABLE_NUM)
 db = utils.get_database(const._DB_INFO)
 active_topics = utils.get_new_topics(db, tid_to_table)
@@ -139,9 +138,19 @@ active_topics = utils.get_new_topics(db, tid_to_table)
 tid_to_table = utils.update_tid_to_table_num_mapping(const._TOPIC_ID_TO_TABLE_NUM, db, active_topics)
 tid_to_reply_table = utils.update_tid_to_reply_table_num_mapping(const._TOPIC_ID_TO_REPLY_TABLE_NUM, db, active_topics)
 tid_to_date = utils.update_tid_to_date_mapping(const._TOPIC_ID_TO_DATE, db, active_topics, tid_to_table)
+'''
 
+recs = [{'id': 34, 'a': 1, 'b': 5, 'c': 9}, {'id': 18, 'a': 2, 'b': 4, 'c': 6}]
 
+d = {}
+for rec in recs:
+    d[rec['id']] = {k:v for k, v in rec.items() if k != 'id'}
 
+with open('saved.js', 'w') as f:
+    json.dump(d, f)
 
+with open('saved.js', 'r')  as f:
+    d = json.load(f)
 
+pprint(d)
 

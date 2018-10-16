@@ -157,30 +157,32 @@ class Corpus_all_topics(object):
     Corpus object for streaming and preprocessing 
     texts from topics_info tables
     '''
-    def __init__(self, database, preprocess_fn, stopwords):
+    def __init__(self, database, topic_ids, tid_to_table, 
+                 preprocess_fn, stopwords):
         self.database = database
-        self.stopwords = stopwords 
+        self.topic_ids = topic_ids
+        self.topic_id_to_table_num = tid_to_table
         self.preprocess_fn = preprocess_fn
+        self.stopwords = stopwords
         self.topic_id_to_corpus_index = {}
         self.corpus_index_to_topic_id = {}
-        #self.topic_ids = topic_ids
+        
         
     def __iter__(self):
         # iterates through all topics
-        for i in range(1):
-            sql = 'SELECT TOPICID, BODY FROM topics_info_{}'.format(i)
+        corpus_idx = 0
+        for topic_id in self.topic_ids:
+            self.topic_id_to_corpus_index[topic_id] = corpus_idx 
+            self.corpus_index_to_topic_id[corpus_idx] = topic_id
+            corpus_idx += 1
+            table_num = self.topic_id_to_table_num[topic_id]
+            sql = '''SELECT BODY 
+                     FROM topics_info_{}
+                     WHERE TOPICID = {}'''.format(table_num, topic_id)
             with self.database.query(sql) as cursor:
-                idx = 0
-                for (topic_id, content) in cursor:
-                    if content is None:
-                        continue
-                    self.topic_id_to_corpus_index[topic_id] = idx 
-                    self.corpus_index_to_topic_id[idx] = topic_id
-                    text = ' '.join(content.split())
-                    idx += 1
-                    if idx == 10:
-                        return
-                    yield self.preprocess_fn(text, self.stopwords)
+                (content,) = cursor.fetchone()
+                text = ' '.join(content.split())
+                yield self.preprocess_fn(text, self.stopwords)
 
     def get_dictionary(self):
         self.dictionary = corpora.Dictionary(self)
