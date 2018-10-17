@@ -31,19 +31,26 @@ def main(args):
                             const._TOPIC_ID_TO_DATE, db, new_topics, tid_to_table)
     else:
         tid_to_date = utils.create_topic_id_to_date(db, const._TOPIC_ID_TO_DATE)
-    '''
+    
     stopwords = utils.load_stopwords(const._STOPWORDS)
     db = utils.get_database(const._DB_INFO)
     tid_to_table = utils.load_mapping(const._TOPIC_ID_TO_TABLE_NUM)
-    tid_to_reply_table = utils.load_mapping(const._TOPIC_ID_TO_REPLY_TABLE_NUM)
-    tid_to_date = utils.load_mapping(const._TOPIC_ID_TO_DATE)
-
-    topic_ids = list(tid_to_table.keys())[:10]
     
-    word_weights = tp.compute_profiles(db=db, 
-                                       topic_ids=topic_ids, 
-                                       tid_to_table=tid_to_table,
-                                       tid_to_reply_table=tid_to_reply_table, 
+    tid_to_date = utils.load_mapping(const._TOPIC_ID_TO_DATE)
+    '''
+    db = database.Database(*const._DB_INFO)
+    tid_to_reply_table = utils.load_mapping(const._TOPIC_ID_TO_REPLY_TABLE_NUM)
+    topic_ids = utils.load_topics(db, const._TOPIC_ATTRIBUTES, const._DAYS, 
+                                  const._TOPIC_FILE)
+
+    utils.load_replies(db, topic_ids, tid_to_reply_table, const._REPLY_ATTRIBUTES, 
+                       const._REPLY_FILE)
+    
+    topic_ids = utils.filter_topics(topic_ids, const._TOPIC_FILE, const._REPLY_FILE, 
+                                    const._MIN_LEN, const._MIN_REPLIES, 
+                                    const._MIN_REPLIES_1)
+
+    word_weights = tp.compute_profiles(topic_ids=topic_ids,  
                                        features=const._FEATURES, 
                                        weights=const._WEIGHTS, 
                                        preprocess_fn=utils.preprocess, 
@@ -60,9 +67,8 @@ def main(args):
                                          update=False, 
                                          path=const._PROFILE_WORDS)
   
-    
-    similarities = sim.compute_similarities(db=db,
-                                            topic_ids=topic_ids, 
+    similarities = sim.compute_similarities(corpus_topic_ids=topic_ids, 
+                                            active_topic_ids=topic_ids,
                                             preprocess_fn=utils.preprocess, 
                                             stopwords=stopwords, 
                                             profile_words=profile_words, 
@@ -71,12 +77,6 @@ def main(args):
                                             path=const._SIMILARITIES)
 
     print(similarities)
-
-    sim.adjust_for_time(tid_to_date=tid_to_date, 
-                        similarities=similarities, 
-                        T=args.T, 
-                        path=const._SIMILARITIES_ADJUSTED) 
-    
     
 if __name__ == '__main__': 
     parser = argparse.ArgumentParser()
@@ -88,7 +88,6 @@ if __name__ == '__main__':
     parser.add_argument('--beta', type=float, default=0.5,
                         help='''contribution coefficient for in-document frequency
                                 in computing word probabilities''')
-    parser.add_argument('--T', type=float, default=365, help='time attenuation factor')
     parser.add_argument('--smartirs', type=str, default='atn', help='type of tf-idf variants')
 
     args = parser.parse_args()

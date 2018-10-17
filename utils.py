@@ -1,10 +1,7 @@
-import pickle
 import jieba
-import pymysql
-import stream
 import re
 import json
-from datetime import datetime
+import database
 
 def load_stopwords(stopwords_path):
     stopwords = set()
@@ -18,9 +15,6 @@ def load_stopwords(stopwords_path):
             n += 1
 
     return stopwords|{'\n', ' '}
-
-def get_database(db_info):
-    return stream.Database(*db_info)
 
 def create_topic_id_to_table_num(db, path):
     mapping = {}
@@ -87,44 +81,62 @@ def get_new_topics(db, existing):
     print('Found {} new topics'.format(len(new_topic_records)))
     return new_topic_records
 
-def load_tables(db, table_names, file_names):
-    for table, file in zip(table_names, file_names):
-        sql = 'SELECT * FROM {}'.format(table)
+def load_topics(db, attrs, days, path):
+    topics = {}
+    attrs = ', '.join(attrs)
+    for i in range(10):
+        sql = '''SELECT t.TOPICID, ti.body, {}
+                 FROM topics_{} as t, topics_info_{} as ti
+                 WHERE t.TOPICID = ti.topicID AND 
+                 t.POSTDATE BETWEEN 
+                 NOW()-INTERVAL {} DAY AND NOW()'''.format(attrs, i, i, days)
         with db.query(sql) as cursor:
-            records = cursor.fetchall()
-        with open(file, 'w'):
-            json.dump(table, file)
+            for rec in cursor:
+                if rec['body'] is not None:
+                    topics[rec['TOPICID']] = {
+                        k:v for k,v in rec.items() if k != 'TOPICID'
+                    } 
 
+    with open(path, 'w') as f:
+        json.dump(topics, f)
 
-def get_topics_past_n_days(file_path, n):
-    with open(file_path, 'r') as f:
-        table = json.load(f)
+    return list(topics.keys())
 
-    now = datetime.now()
-    topic_ids = []
-    for topic_id, attributes in table.items():
-        if (now-attributes['POSTDATE']).days <= n:
-            topic_ids.append(topic_id)
+def load_replies(db, topic_ids, tid_to_reply_table, attrs, path):
+    replies = {topic_id:{} for topic_id in topic_ids}
+    attrs = ', '.join(attrs)
+    for topic_id in topic_ids:
+        reply_tb = tid_to_reply_table[topic_id]
+        sql = '''SELECT r.TOPICID, r.REPLYID, ri.body, {}
+                 FROM replies_{} as r, replies_info_{} as ri
+                 WHERE r.REPLYID = ri.replyID AND 
+                 r.TOPICID = {}'''.format(attrs, reply_tb, reply_tb, topic_id)
+        with db.query(sql) as cursor:
+            for rec in cursor:
+                if rec['body'] is not None:
+                    replies[rec['TOPICID']][rec['REPLYID']] = {
+                        k:v for k,v in rec.items() if k not in {'TOPICID', 'REPLYID'} 
+                    }
 
-    return topic_ids
+    with open(path, 'w') as f:
+        json.dump(replies, f)  
 
-def filter_topics(topic_ids, topics_info_file, replies_file, 
-                  topic_len, n_replies, n_replies_1):
+def filter_topics(topic_ids, topic_file, reply_file, 
+                  min_len, n_replies, n_replies_1):
     '''
     Filter topic ids by eliminating topics whose content length
     < topic_len and reply count < n_replies and topics whose 
     reply count < n_replies_1
     '''
-    with open(topics_info_file, 'r') as f1, open(replies_file, 'r') as f2:
-        topics_info, replies = json.load(f1), json.load(f2)
+    with open(topic_file, 'r') as f1, open(reply_file, 'r') as f2:
+        topics, replies = json.load(f1), json.load(f2)
     
     filtered = []
     for topic_id in topic_ids:
-        reply_cnt = len([reply_id for reply_id in replies 
-                         if replies[reply_id]['TOPICID'] == topic_id])
-        if reply_cnt < 5:
+        reply_cnt = len(replies[topic_id]) 
+        if reply_cnt < n_replies:
             continue
-        if len(topics_info[topic_id]['body']) < 50 and reply_cnt < 20:
+        if len(topics[topic_id]['body']) < min_len and reply_cnt < n_replies_1:
             continue
         filtered.append(topic_id)
 

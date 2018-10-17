@@ -1,5 +1,8 @@
 _STOPWORDS = 'stopwords.txt'
 _DB_INFO = ('192.168.1.102','tgbweb','tgb123321','taoguba', 3307, 'utf8mb4')
+_DAYS = 30
+_TOPIC_FILE = 'topics'
+_REPLY_FILE = 'replies'
 _TOPIC_ID_TO_TABLE_NUM = './topic_id_to_table_num'
 _TOPIC_ID_TO_REPLY_TABLE_NUM = './topic_id_to_reply_table_num'
 _TOPIC_ID_TO_DATE = './topic_id_to_date'

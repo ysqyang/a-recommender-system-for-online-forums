@@ -20,10 +20,7 @@ def main(args):
     tid_to_date = utils.update_topic_id_to_date(const._TOPIC_ID_TO_DATE, db, active_topics
                                                 tid_to_table)
     
-    word_weights = tp.compute_profiles(db=db, 
-                                       topic_ids=args.active_topics, 
-                                       tid_to_table=tid_to_table,
-                                       tid_to_reply_table=tid_to_reply_table, 
+    word_weights = tp.compute_profiles(topic_ids=args.active_topics,  
                                        features=const._FEATURES, 
                                        weights=const._WEIGHTS, 
                                        preprocess_fn=utils.preprocess, 

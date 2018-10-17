@@ -4,8 +4,8 @@ import copy
 import numpy as np
 from pprint import pprint
 from datetime import datetime
-import stream
-import pickle
+import topics
+import json
 import math
 '''
 class Corpus_all_topics(object):
@@ -23,70 +23,49 @@ class Corpus_all_topics(object):
                     break
                 yield self.preprocess_fn(doc, self.stopwords)
 '''
-def compute_similarities(db, topic_ids, profile_words, preprocess_fn, stopwords,  
-                         coeff, update, path):
+def compute_similarities(corpus_topic_ids, active_topic_ids, profile_words, 
+                         preprocess_fn, stopwords, coeff, T, update, path):
     '''
     Computes the similarity scores between a topic profile and 
     each documents in the corpus
     Args:
-    db:            database connection
-    topic_ids:     topic_ids to compute similarities for
-    profile_words: words representing a topic
-    preprocess_fn: function to preprocess original text 
-    stopwords:     set of stopwords
-    coeff:         contribution coefficient for in-document word frequency  
-                   in computing word frequency in document
-    update:        flag indicating whether this is an update operation
-    path:          file path from which the stored dictionary is loaded,
-                   used only when update=True
+    corpus_topic_ids: topic_ids to construct corpus from
+    active_topic_ids: topic_ids to compute similarities for
+    profile_words:    words representing a topic
+    preprocess_fn:    function to preprocess original text 
+    stopwords:        set of stopwords
+    coeff:            contribution coefficient for in-document word frequency  
+                      in computing word frequency in document
+    T:                time attenuation factor
+    update:           flag indicating whether this is an update operation
+    path:             file path from which the stored dictionary is loaded,
+                      used only when update=True
     Returns:
     Similarity matrix         
     '''
     if update:
         print('Updating similarity matrix...')
-        with open(path, 'rb') as f:
-            similarities = pickle.load(f)
+        with open(path, 'r') as f:
+            similarities = json.load(f)
     else:
         print('Computing similarity matrix...')
         similarities = {}
 
-    corpus = stream.Corpus_all_topics(db, preprocess_fn, stopwords)
-    corpus.get_dictionary()
-    print(corpus.dictionary.token2id)
-    corpus.get_word_frequency()
-    corpus.get_word_doc_prob(coeff)
+    collection = topics.Topic_collection(corpus_topic_ids)
+    collection.make_corpus(preprocess_fn, stopwords)
+    collection.get_dictionary()
+    #print(corpus.dictionary.token2id)
+    collection.get_distributions(coeff)
 
-    for topic_id in topic_ids:
+    for topic_id in active_topic_ids:
         keywords = profile_words[topic_id]
-        prob = corpus.get_prob_topic_profile(keywords)
-        similarities[topic_id] = corpus.get_similarity(prob)
+        distribution = collection.get_distribution_given_topic_profile(keywords)
+        similarities[topic_id] = collection.get_similarity(distribution, T)
 
-    with open(path, 'wb') as f:
-        pickle.dump(similarities, f)
+    with open(path, 'w') as f:
+        json.dump(similarities, f)
 
     return similarities
-
-def adjust_for_time(tid_to_date, similarities, T, path):
-    '''
-    Adjust the similarity matrix for time difference
-    Args:
-    tid_to_date:    mapping from topic id to posting date
-    similarity_all: Similarity matrix between between topics
-    T:              time attenuation factor
-    path:           file path from which the stored dictionary is loaded
-    '''
-    now = datetime.now()
-    # construct an array of day differences between today and posting dates 
-    # corresponding to topic corpus
-    for topic_id, similarity in similarities.items():
-        for topic_id_1 in similarity:
-            if topic_id_1 not in tid_to_date:
-                continue
-            post_time = tid_to_date[topic_id_1]  
-            similarity[topic_id_1] *= math.exp((now-post_time).days/T)
-
-    with open(path, 'wb') as f:
-        pickle.dump(similarities, f)
 
 '''
 _CORPUS = './sample_corpus.txt'

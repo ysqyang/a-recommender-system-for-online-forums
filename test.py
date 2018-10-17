@@ -138,19 +138,19 @@ active_topics = utils.get_new_topics(db, tid_to_table)
 tid_to_table = utils.update_tid_to_table_num_mapping(const._TOPIC_ID_TO_TABLE_NUM, db, active_topics)
 tid_to_reply_table = utils.update_tid_to_reply_table_num_mapping(const._TOPIC_ID_TO_REPLY_TABLE_NUM, db, active_topics)
 tid_to_date = utils.update_tid_to_date_mapping(const._TOPIC_ID_TO_DATE, db, active_topics, tid_to_table)
-'''
 
+'''
 recs = [{'id': 34, 'a': 1, 'b': 5, 'c': 9}, {'id': 18, 'a': 2, 'b': 4, 'c': 6}]
 
-d = {}
 for rec in recs:
-    d[rec['id']] = {k:v for k, v in rec.items() if k != 'id'}
+    for k in rec:
+        rec[k] += 2
 
+'''
 with open('saved.js', 'w') as f:
     json.dump(d, f)
 
 with open('saved.js', 'r')  as f:
     d = json.load(f)
-
-pprint(d)
-
+'''
+pprint(recs)
