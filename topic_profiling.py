@@ -34,10 +34,9 @@ def compute_profiles(topic_ids, features, weights, preprocess_fn, stopwords,
     for topic_id in topic_ids:
         # create a Topic object for each topic
         topic = topics.Topic(topic_id)
-        topic.make_corpus_with_scores(preprocess_fn, stopwords, features, weights)        
+        topic.make_corpus_with_scores(preprocess_fn, stopwords, features, weights)    
         topic.get_dictionary()
         #print('scores for topic {}:'.format(topic.topic_id), topic.scores) 
-
         topic.get_word_weight(alpha, smartirs)
         profiles[topic_id] = topic.word_weight
         '''

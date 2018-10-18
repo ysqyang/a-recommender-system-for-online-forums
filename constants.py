@@ -1,16 +1,18 @@
 _STOPWORDS = 'stopwords.txt'
 _DB_INFO = ('192.168.1.102','tgbweb','tgb123321','taoguba', 3307, 'utf8mb4')
-_DAYS = 30
+_DAYS = 180
 _T = 365
-_TOPIC_ATTRIBUTES = ['', '']
+_TOPIC_FEATURES = ['TOTALVIEWNUM', 'TOTALREPLYNUM', 'POSTDATE', 
+                   'USEFULNUM', 'GOLDUSEFULNUM', 'TOTALPCPOINT',
+                   'TOPICPCPOINT']
 _TOPIC_FILE = 'topics'
 _REPLY_FILE = 'replies'
-_TOPIC_ID_TO_TABLE_NUM = './topic_id_to_table_num'
+_MIN_LEN = 50
+_MIN_REPLIES = 5
+_MIN_REPLIES_1 = 20
 _TOPIC_ID_TO_REPLY_TABLE_NUM = './topic_id_to_reply_table_num'
-_TOPIC_ID_TO_DATE = './topic_id_to_date'
-_FEATURES = ['USEFULNUM', 'GOLDUSEFULNUM', 'TOTALPCPOINT'] 
+_REPLY_FEATURES = ['USEFULNUM', 'GOLDUSEFULNUM', 'TOTALPCPOINT'] 
 _WEIGHTS = [1, 1, 1]
 _PROFILES = './profiles'
 _PROFILE_WORDS = './profile_words'
 _SIMILARITIES = './similarity'
-_SIMILARITIES_ADJUSTED = './similarity_adjusted'

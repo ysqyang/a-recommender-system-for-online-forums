@@ -7,10 +7,11 @@ import collections
 from pprint import pprint
 import time
 from datetime import date, datetime
-
+import database
 import pickle
 import constants as const
 import json
+import database
 '''
 class Stream(object):
     def __init__(self, topic_id, preprocess_fn, stopwords):
@@ -110,7 +111,7 @@ for _id in topics:
 
 
 _STOPWORDS = 'stopwords.txt'
-_DB_INFO = ('192.168.1.102','tgbweb','tgb123321','taoguba', 3307, 'utf8mb4')
+
 _TOPIC_ID_TO_TABLE_NUM = './topic_id_to_table_num'
 _TOPIC_ID_TO_DATE = './topic_id_to_date'
 _IMPORTANCE_FEATURES = ['USEFULNUM', 'GOLDUSEFULNUM', 'TOTALPCPOINT'] 
@@ -132,25 +133,31 @@ print(len(tid_to_table),len(tid_to_date))
 #print(tid_to_table.keys())
 
 tid_to_table = utils.load_mapping(const._TOPIC_ID_TO_TABLE_NUM)
-db = utils.get_database(const._DB_INFO)
+db = database.Database(*const._DB_INFO)
 active_topics = utils.get_new_topics(db, tid_to_table)
-
 tid_to_table = utils.update_tid_to_table_num_mapping(const._TOPIC_ID_TO_TABLE_NUM, db, active_topics)
 tid_to_reply_table = utils.update_tid_to_reply_table_num_mapping(const._TOPIC_ID_TO_REPLY_TABLE_NUM, db, active_topics)
-tid_to_date = utils.update_tid_to_date_mapping(const._TOPIC_ID_TO_DATE, db, active_topics, tid_to_table)
-
+_DB_INFO = ('192.168.1.102','tgbweb','tgb123321','taoguba', 3307, 'utf8mb4')
 '''
-recs = [{'id': 34, 'a': 1, 'b': 5, 'c': 9}, {'id': 18, 'a': 2, 'b': 4, 'c': 6}]
-
-for rec in recs:
-    for k in rec:
-        rec[k] += 2
-
+db = database.Database(*const._DB_INFO)
+topic_ids = utils.load_topics(db, const._TOPIC_FEATURES, const._DAYS, const._TOPIC_FILE)
+utils.load_replies(db, topic_ids, const._FEATURES, const._REPLY_FILE)
 '''
-with open('saved.js', 'w') as f:
-    json.dump(d, f)
+with open(const._REPLY_FILE, 'r') as f:
+    replies = json.load(f)
 
-with open('saved.js', 'r')  as f:
-    d = json.load(f)
+with open(const._TOPIC_FILE, 'r') as f:
+    topics = json.load(f)
+
+n_replies = 0
+for topic_id, r in replies.items():
+    n_replies += len(r)
+
+print(n_replies)
+
+n_replies = 0
+for topic_id, r in topics.items():
+    n_replies += r['TOTALREPLYNUM']
+
+print(n_replies)
 '''
-pprint(recs)

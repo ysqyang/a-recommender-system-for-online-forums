@@ -54,12 +54,14 @@ def compute_similarities(corpus_topic_ids, active_topic_ids, profile_words,
     collection = topics.Topic_collection(corpus_topic_ids)
     collection.make_corpus(preprocess_fn, stopwords)
     collection.get_dictionary()
-    #print(corpus.dictionary.token2id)
+    for word_id in collection.dictionary.token2id.values():
+        print(word_id)
+    #print(collection.dictionary.token2id)
     collection.get_distributions(coeff)
 
     for topic_id in active_topic_ids:
         keywords = profile_words[topic_id]
-        distribution = collection.get_distribution_given_topic_profile(keywords)
+        distribution = collection.get_distribution_given_profile(keywords)
         similarities[topic_id] = collection.get_similarity(distribution, T)
 
     with open(path, 'w') as f:

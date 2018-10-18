@@ -2,6 +2,8 @@ import jieba
 import re
 import json
 import database
+import pickle
+import datetime
 
 def load_stopwords(stopwords_path):
     stopwords = set()
@@ -15,20 +17,6 @@ def load_stopwords(stopwords_path):
             n += 1
 
     return stopwords|{'\n', ' '}
-
-def create_topic_id_to_table_num(db, path):
-    mapping = {}
-    for i in range(10):
-        sql = 'SELECT TOPICID FROM topics_info_{}'.format(i)
-        with db.query(sql) as cursor: 
-            for (topic_id, ) in cursor:
-                mapping[topic_id] = i
-
-    with open(path, 'wb') as f:
-        pickle.dump(mapping, f)
-
-    print('Created topic-id-to-table-number mapping with {} entries'.format(len(mapping)))
-    return mapping
 
 def create_topic_id_to_reply_table(db, topic_ids, path):
     print('Creating mapping from topic id to reply table number...')
@@ -47,20 +35,6 @@ def create_topic_id_to_reply_table(db, topic_ids, path):
         pickle.dump(mapping, f)
 
     print('Created topic-id-to-reply-table-number mapping with {} entries'.format(len(mapping)))
-    return mapping
-
-def create_topic_id_to_date(db, path):
-    mapping = {}
-    for i in range(10):
-        sql = 'SELECT TOPICID, POSTDATE FROM topics_{}'.format(i)
-        with db.query(sql) as cursor:    
-            for (topic_id, date) in cursor:
-                mapping[topic_id] = date
-
-    with open(path, 'wb') as f:
-        pickle.dump(mapping, f)
-
-    print('Created topic-id-to-date mapping with {} entries'.format(len(mapping)))
     return mapping
 
 def load_mapping(path):
@@ -95,31 +69,45 @@ def load_topics(db, attrs, days, path):
                 if rec['body'] is not None:
                     topics[rec['TOPICID']] = {
                         k:v for k,v in rec.items() if k != 'TOPICID'
-                    } 
+                    }
+
+    def convert_datetime(o):
+        if isinstance(o, datetime.datetime):
+            return o.__str__()
 
     with open(path, 'w') as f:
-        json.dump(topics, f)
+        json.dump(topics, f, default=convert_datetime)
 
+    print('过去{}天共计{}条主贴'.format(days, len(topics)))
     return list(topics.keys())
 
-def load_replies(db, topic_ids, tid_to_reply_table, attrs, path):
+def load_replies(db, topic_ids, attrs, path):
     replies = {topic_id:{} for topic_id in topic_ids}
     attrs = ', '.join(attrs)
     for topic_id in topic_ids:
-        reply_tb = tid_to_reply_table[topic_id]
-        sql = '''SELECT r.TOPICID, r.REPLYID, ri.body, {}
-                 FROM replies_{} as r, replies_info_{} as ri
-                 WHERE r.REPLYID = ri.replyID AND 
-                 r.TOPICID = {}'''.format(attrs, reply_tb, reply_tb, topic_id)
-        with db.query(sql) as cursor:
-            for rec in cursor:
+        i = 0
+        while i < 10:
+            sql = '''SELECT r.TOPICID, r.REPLYID, ri.body, {}
+                     FROM replies_{} as r, replies_info_{} as ri
+                     WHERE r.REPLYID = ri.replyID AND 
+                     r.TOPICID = {}'''.format(attrs, i, i, topic_id)
+            with db.query(sql) as cursor:
+                results = cursor.fetchall()
+            if len(results) == 0:
+                i += 1
+                continue
+            for rec in results:
                 if rec['body'] is not None:
                     replies[rec['TOPICID']][rec['REPLYID']] = {
                         k:v for k,v in rec.items() if k not in {'TOPICID', 'REPLYID'} 
                     }
+            break
 
     with open(path, 'w') as f:
         json.dump(replies, f)  
+
+    print('以上主贴共计有{}条跟帖'.format(
+           sum([len(replies[topic_id]) for topic_id in replies])))
 
 def filter_topics(topic_ids, topic_file, reply_file, 
                   min_len, n_replies, n_replies_1):
@@ -128,46 +116,23 @@ def filter_topics(topic_ids, topic_file, reply_file,
     < topic_len and reply count < n_replies and topics whose 
     reply count < n_replies_1
     '''
-    with open(topic_file, 'r') as f1, open(reply_file, 'r') as f2:
-        topics, replies = json.load(f1), json.load(f2)
+    with open(topic_file, 'r') as f:
+        topics = json.load(f)
     
+    print(topics.keys())
     filtered = []
     for topic_id in topic_ids:
-        reply_cnt = len(replies[topic_id]) 
+        rec = topics[str(topic_id)]
+        print(topic_id)
+        reply_cnt = rec['TOTALREPLYNUM'] 
         if reply_cnt < n_replies:
             continue
-        if len(topics[topic_id]['body']) < min_len and reply_cnt < n_replies_1:
+        if len(rec['body']) < min_len and reply_cnt < n_replies_1:
             continue
         filtered.append(topic_id)
 
+    print('过滤后剩余{}条主贴'.format(len(filtered)))
     return filtered
-
-def update_tid_to_table_num_mapping(path, db, new_topics):
-    with open(path, 'rb') as f:
-        mapping = pickle.load(f)
-
-    print('entries before update: ', len(mapping))
-    def get_new_topic_table(topic_id):
-        i = 0
-        while i < 10:
-            sql = '''SELECT * FROM topics_{} WHERE 
-                     TOPICID = {}'''.format(i, topic_id)
-            with db.query(sql) as cursor:
-                if cursor.fetchone():
-                    return i
-            i += 1
-
-        return -1
-
-    for topic_id in new_topics:
-        if topic_id not in mapping:
-            mapping[topic_id] = get_new_topic_table(topic_id)
-
-    print('entries after update: ', len(mapping))
-    with open(path, 'wb') as f:
-        pickle.dump(mapping, f)
-
-    return mapping
 
 def update_tid_to_reply_table_num_mapping(path, db, new_topics):
     with open(path, 'rb') as f:
@@ -185,26 +150,6 @@ def update_tid_to_reply_table_num_mapping(path, db, new_topics):
                         mapping[topic_id] = j
                         break
                 j += 1
-
-    print('entries after update: ', len(mapping))
-    with open(path, 'wb') as f:
-        pickle.dump(mapping, f)
-
-    return mapping
-
-def update_tid_to_date_mapping(path, db, new_topics, tid_to_table):
-    with open(path, 'rb') as f:
-        mapping = pickle.load(f)
-
-    print('entries before update: ', len(mapping))
-
-    for topic_id in new_topics:
-        if topic_id not in mapping:
-            table_num = tid_to_table[topic_id]
-            sql = '''SELECT POSTDATE FROM topics_{} WHERE 
-                     TOPICID = {}'''.format(table_num, topic_id)
-            with db.query(sql) as cursor:
-                mapping[topic_id] = cursor.fetchone()[0]
 
     print('entries after update: ', len(mapping))
     with open(path, 'wb') as f:

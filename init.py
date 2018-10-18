@@ -2,9 +2,9 @@ import utils
 import topic_profiling as tp
 import similarity as sim
 import argparse
-from gensim import models
 import constants as const
-import os
+import topics
+import database
 
 def main(args):
     '''
@@ -32,26 +32,25 @@ def main(args):
     else:
         tid_to_date = utils.create_topic_id_to_date(db, const._TOPIC_ID_TO_DATE)
     
-    stopwords = utils.load_stopwords(const._STOPWORDS)
+    
     db = utils.get_database(const._DB_INFO)
     tid_to_table = utils.load_mapping(const._TOPIC_ID_TO_TABLE_NUM)
     
     tid_to_date = utils.load_mapping(const._TOPIC_ID_TO_DATE)
     '''
+    stopwords = utils.load_stopwords(const._STOPWORDS)
     db = database.Database(*const._DB_INFO)
-    tid_to_reply_table = utils.load_mapping(const._TOPIC_ID_TO_REPLY_TABLE_NUM)
-    topic_ids = utils.load_topics(db, const._TOPIC_ATTRIBUTES, const._DAYS, 
+    topic_ids = utils.load_topics(db, const._TOPIC_FEATURES, const._DAYS, 
                                   const._TOPIC_FILE)
 
-    utils.load_replies(db, topic_ids, tid_to_reply_table, const._REPLY_ATTRIBUTES, 
-                       const._REPLY_FILE)
-    
     topic_ids = utils.filter_topics(topic_ids, const._TOPIC_FILE, const._REPLY_FILE, 
                                     const._MIN_LEN, const._MIN_REPLIES, 
                                     const._MIN_REPLIES_1)
 
+    
+    utils.load_replies(db, topic_ids, const._REPLY_FEATURES, const._REPLY_FILE)
     word_weights = tp.compute_profiles(topic_ids=topic_ids,  
-                                       features=const._FEATURES, 
+                                       features=const._REPLY_FEATURES, 
                                        weights=const._WEIGHTS, 
                                        preprocess_fn=utils.preprocess, 
                                        stopwords=stopwords, 
@@ -72,18 +71,18 @@ def main(args):
                                             preprocess_fn=utils.preprocess, 
                                             stopwords=stopwords, 
                                             profile_words=profile_words, 
-                                            coeff=args.beta, 
+                                            coeff=args.beta,
+                                            T=const._T,
                                             update=False, 
                                             path=const._SIMILARITIES)
 
-    print(similarities)
     
 if __name__ == '__main__': 
     parser = argparse.ArgumentParser()
     parser.add_argument('--alpha', type=float, default=0.7, 
                         help='''contribution coefficient for topic content 
                                 in computing word weights''')
-    parser.add_argument('--k', type=int, default=60, 
+    parser.add_argument('--k', type=int, default=10, 
                         help='number of words to represent a discussion thread')
     parser.add_argument('--beta', type=float, default=0.5,
                         help='''contribution coefficient for in-document frequency
