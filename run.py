@@ -9,13 +9,13 @@ import pika
 def main(args):
     connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
     channel = connection.channel()
-    channel.queue_declare(queue='hello')
+    channel.queue_declare(queue='active_topics')
 
     def callback(ch, method, properties, body):
         print(" [x] Received {}".format(body))
 
     channel.basic_consume(callback,
-                          queue='hello',
+                          queue='active_topics',
                           no_ack=True)
 
     print(' [*] Waiting for messages. To exit press CTRL+C')
@@ -27,6 +27,9 @@ def main(args):
     
     with open(const._TOPIC_FILE, 'r') as f1, open(const._REPLY_FILE, 'r') as f2:
         topics, replies = json.load(f1), json.load(f2)
+
+    for  
+
 
     word_weights = tp.compute_profiles(topic_ids=args.active_topics,  
                                        features=const._FEATURES, 
