@@ -54,16 +54,19 @@ def compute_similarities(corpus_topic_ids, active_topic_ids, profile_words,
     collection = topics.Topic_collection(corpus_topic_ids)
     collection.make_corpus(preprocess_fn, stopwords)
     collection.get_dictionary()
-    for word_id in collection.dictionary.token2id.values():
-        print(word_id)
     #print(collection.dictionary.token2id)
     collection.get_distributions(coeff)
+    for i, dst in enumerate(collection.distributions):
+        if abs(sum(dst)-1) > 0.001:
+            print(collection.topic_ids[i], sum(dst))
 
-    for topic_id in active_topic_ids:
+    for i, topic_id in enumerate(active_topic_ids):
+        print(i)
         keywords = profile_words[topic_id]
         distribution = collection.get_distribution_given_profile(keywords)
         similarities[topic_id] = collection.get_similarity(distribution, T)
 
+    print('dumping to JSON...')
     with open(path, 'w') as f:
         json.dump(similarities, f)
 

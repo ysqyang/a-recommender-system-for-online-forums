@@ -45,7 +45,9 @@ class Topic(object):
             # iterates through replies under this topic id       
             data = json.load(f)
         
-        for reply_id, rec in data[str(self.topic_id)].items():
+        replies = data[str(self.topic_id)]
+
+        for reply_id, rec in replies.items():
             content = ' '.join(rec['body'].split())
             word_list = preprocess_fn(content, stopwords)
             if len(word_list) > 0:
@@ -53,10 +55,11 @@ class Topic(object):
                 feature_matrix.append(feature_vec)
                 self.corpus.append(word_list)
             
+        if len(feature_matrix) == 0:
+            return
         s, scaler = sum(weights), preprocessing.MinMaxScaler() 
         if s == 0:
-            print('weights cannot be all zeros')
-            raise 
+            raise ValueError('weights cannot be all zeros')
         norm_weights = [wt/s for wt in weights]  # normalize weights
          
         # normalize features using min-max scaler
@@ -65,6 +68,11 @@ class Topic(object):
             self.feature_matrix = scaler.fit_transform(feature_matrix)
             for feature_vec in self.feature_matrix:
                 self.scores.append(np.dot(feature_vec, norm_weights))
+
+        #normalize scores
+        max_score = max(self.scores) + 1e-8 # add 1e-8 to prevent division by zero
+        for i in range(len(self.scores)):
+            self.scores[i] /= max_score
 
     def get_dictionary(self):
         self.dictionary = corpora.Dictionary(self.corpus)
@@ -78,32 +86,34 @@ class Topic(object):
         smartirs: tf-idf weighting variants 
         '''
         self.word_weight = collections.defaultdict(float) 
+        if len(self.corpus) == 0:
+            return
+
         corpus_bow = [self.dictionary.doc2bow(doc) for doc in self.corpus]
-        language_model = models.TfidfModel(corpus_bow, smartirs=smartirs)
-        '''
         # if there is no replies under this topic, use augmented term frequency
         # as word weight
         if len(corpus_bow) == 1:
-            if len(corpus_bow[0]):
+            if len(corpus_bow[0]) > 0:
                 max_freq = max(x[1] for x in corpus_bow[0])
                 self.word_weight = {self.dictionary[x[0]]:(1+x[1]/max_freq)/2 
                                     for x in corpus_bow[0]}
             return
-        '''
-        # get the max score under each topic for normalization purposes
-        max_score = max(self.scores) + 1e-8  # add 1e-8 to prevent division by zero
-        #print('max_score for topic {}:'.format(self.topic_id), max_score)
 
-        for i, doc in enumerate(corpus_bow):
-            converted = language_model[doc]
-            if len(converted) == 0:
+        model = models.TfidfModel(corpus_bow, smartirs=smartirs)
+        
+        tfidf = corpus_bow[0]
+        max_weight = max([x[1] for x in tfidf])
+        for word_id, weight in tfidf:
+            self.word_weight[self.dictionary[word_id]] += alpha*weight/max_weight
+
+        for doc, score in zip(corpus_bow[1:], self.scores):
+            tfidf = model[doc]
+            if len(tfidf) == 0:
                 continue
-            max_weight = max([x[1] for x in converted])
-            coeff = 1-alpha if i > 0 else alpha
-            score_norm = self.scores[i-1]/max_score if i > 0 else 1 
-            for word_id, weight in converted:
-                weight_norm = weight/max_weight
-                self.word_weight[self.dictionary[word_id]] += coeff*score_norm*weight_norm
+            max_weight = max([x[1] for x in tfidf])
+            for wid, weight in tfidf:
+                weight /= max_weight
+                self.word_weight[self.dictionary[wid]] += (1-alpha)*score*weight
 
 class Topic_collection(object):
     '''
@@ -120,7 +130,6 @@ class Topic_collection(object):
         self.corpus, self.dates = [], []
         with open(self.topic_file, 'r') as f:
             data = json.load(f)
-            idx = 0
             for topic_id in self.topic_ids:
                 content = ' '.join(data[str(topic_id)]['body'].split())
                 self.corpus.append(preprocess_fn(content, stopwords))
@@ -143,22 +152,25 @@ class Topic_collection(object):
         corpus_bow = [self.dictionary.doc2bow(doc) for doc in self.corpus]
         num_tokens_corpus = sum(sum(x[1] for x in vec) for vec in corpus_bow)
         # iterate through documents in corpus
-        for vec in corpus_bow:
+        for i, vec in enumerate(corpus_bow):
             # total number of tokens (with repetitions) in current doc 
-            num_tokens = sum(x[1] for x in vec)
-            dst = [0]*n_words
-            for x in vec:
-                dst[x[0]] = coeff*x[1]/num_tokens
-
-            self.distributions.append(dst)
-            for (word_id, count) in vec:
-                # update word frequency in corpus 
-                corpus_freq[word_id] += count/num_tokens_corpus
+            if len(vec) == 0:
+                self.distributions.append([])
+            else:
+                num_tokens = sum(x[1] for x in vec)
+                dst = [0]*n_words
+                for x in vec:
+                    dst[x[0]] = coeff*x[1]/num_tokens
+                self.distributions.append(dst)
+                for (word_id, count) in vec:
+                    # update word frequency in corpus 
+                    corpus_freq[word_id] += count/num_tokens_corpus
 
         for dst in self.distributions:
             for word_id in range(n_words):
                 # add contribution from in-corpus frequency
-                dst[word_id] += (1-coeff)*corpus_freq[word_id]
+                if len(dst) > 0:
+                    dst[word_id] += (1-coeff)*corpus_freq[word_id]
 
     def get_distribution_given_profile(self, profile_words):
         '''
@@ -169,27 +181,27 @@ class Topic_collection(object):
         Returns:
         Word distribution given the apprearance of profile_words
         '''
-        profile_word_ids = []
+        profile_wids = []
         for word in profile_words:
             if word in self.dictionary.token2id:
-                profile_word_ids.append(self.dictionary.token2id[word])
+                profile_wids.append(self.dictionary.token2id[word])
 
         #print(profile_word_ids)
         distribution = [0]*len(self.dictionary.token2id)
         # compute the joint probability of observing each dictionary
         # word together with profile words 
-        for word_id in self.dictionary.token2id.values():        
-            # iterate through each document in corpus
-            for vec in self.distributions:
-                # compute the joint probability for each doc
-                # convert to natural log to avoid numerical issues
-                log_prob = 0 if word_id in profile_word_ids else math.log(vec[word_id])
-                for profile_word_id in profile_word_ids:
-                    log_prob += math.log(vec[profile_word_id])
-                # assuming uniform prior distribution over all docs in corpus,
-                # the joint probability is the sum of joint probabilities over
-                # all docs
-                distribution[word_id] += math.exp(log_prob)
+
+        # convert to natural log to avoid numerical issues
+        log_probs = [sum(math.log(v[i]) for i in profile_wids) for v in self.distributions]
+        for wid in self.dictionary.token2id.values():        
+            if wid not in profile_words:
+                word_probs = [v[wid] if len(v) > 0 else 0 for v in self.distributions]  
+                distribution[wid] = np.dot(word_probs, [math.exp(x) for x in log_probs])
+            else:
+                distribution[wid] = sum(math.exp(p) for p in log_probs)
+            # assuming uniform prior distribution over all docs in corpus,
+            # the joint probability is the sum of joint probabilities over
+            # all docs
 
         # normalize the probabilities
         s = sum(distribution)
@@ -213,9 +225,10 @@ class Topic_collection(object):
         now = datetime.now()
         idx = 0
         for date, vec in zip(self.dates, self.distributions):
-            date = datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
-            day_diff = (now - date).days
-            sim[self.topic_ids[idx]] = stats.entropy(pk=distribution, qk=vec)*math.exp(day_diff/T)
-            idx += 1
+            if len(vec) > 0:     
+                date = datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
+                day_diff = (now - date).days
+                sim[self.topic_ids[idx]] = stats.entropy(pk=distribution, qk=vec)*math.exp(day_diff/T)
+                idx += 1
             
         return sim

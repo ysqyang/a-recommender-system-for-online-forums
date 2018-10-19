@@ -55,7 +55,7 @@ def get_new_topics(db, existing):
     print('Found {} new topics'.format(len(new_topic_records)))
     return new_topic_records
 
-def load_topics(db, attrs, days, path):
+def load_topics(db, attrs, days, min_len, min_replies, min_replies_1, path):
     topics = {}
     attrs = ', '.join(attrs)
     for i in range(10):
@@ -66,6 +66,11 @@ def load_topics(db, attrs, days, path):
                  NOW()-INTERVAL {} DAY AND NOW()'''.format(attrs, i, i, days)
         with db.query(sql) as cursor:
             for rec in cursor:
+                reply_cnt = int(rec['TOTALREPLYNUM'])
+                if reply_cnt < min_replies: 
+                    continue 
+                if len(rec['body']) < min_len and reply_cnt < min_replies_1:
+                    continue 
                 if rec['body'] is not None:
                     topics[rec['TOPICID']] = {
                         k:v for k,v in rec.items() if k != 'TOPICID'
@@ -78,7 +83,7 @@ def load_topics(db, attrs, days, path):
     with open(path, 'w') as f:
         json.dump(topics, f, default=convert_datetime)
 
-    print('过去{}天共计{}条主贴'.format(days, len(topics)))
+    print('过去{}天共计{}条有效主贴'.format(days, len(topics)))
     return list(topics.keys())
 
 def load_replies(db, topic_ids, attrs, path):
@@ -108,31 +113,6 @@ def load_replies(db, topic_ids, attrs, path):
 
     print('以上主贴共计有{}条跟帖'.format(
            sum([len(replies[topic_id]) for topic_id in replies])))
-
-def filter_topics(topic_ids, topic_file, reply_file, 
-                  min_len, n_replies, n_replies_1):
-    '''
-    Filter topic ids by eliminating topics whose content length
-    < topic_len and reply count < n_replies and topics whose 
-    reply count < n_replies_1
-    '''
-    with open(topic_file, 'r') as f:
-        topics = json.load(f)
-    
-    print(topics.keys())
-    filtered = []
-    for topic_id in topic_ids:
-        rec = topics[str(topic_id)]
-        print(topic_id)
-        reply_cnt = rec['TOTALREPLYNUM'] 
-        if reply_cnt < n_replies:
-            continue
-        if len(rec['body']) < min_len and reply_cnt < n_replies_1:
-            continue
-        filtered.append(topic_id)
-
-    print('过滤后剩余{}条主贴'.format(len(filtered)))
-    return filtered
 
 def update_tid_to_reply_table_num_mapping(path, db, new_topics):
     with open(path, 'rb') as f:

@@ -3,23 +3,31 @@ import topic_profiling as tp
 import similarity as sim
 import argparse
 from gensim import models
-
+import json
+import pika
 
 def main(args):
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
+    channel = connection.channel()
+    channel.queue_declare(queue='hello')
+
+    def callback(ch, method, properties, body):
+        print(" [x] Received {}".format(body))
+
+    channel.basic_consume(callback,
+                          queue='hello',
+                          no_ack=True)
+
+    print(' [*] Waiting for messages. To exit press CTRL+C')
+    channel.start_consuming()
+
+
+
     stopwords = utils.load_stopwords(const._STOPWORDS)
-    print('stopwords loaded')
     
-    db = utils.get_database(const._DB_INFO)
-    
-    tid_to_table = utils.update_topic_id_to_table_num(const._TOPIC_ID_TO_TABLE_NUM,
-                                                      db, args.active_topics)
-    
-    tid_to_reply_table = utils.update_topic_id_to_reply_table(const._TOPIC_ID_TO_REPLY_TABLE_NUM,
-                                                              db, active_topics_path)
-     
-    tid_to_date = utils.update_topic_id_to_date(const._TOPIC_ID_TO_DATE, db, active_topics
-                                                tid_to_table)
-    
+    with open(const._TOPIC_FILE, 'r') as f1, open(const._REPLY_FILE, 'r') as f2:
+        topics, replies = json.load(f1), json.load(f2)
+
     word_weights = tp.compute_profiles(topic_ids=args.active_topics,  
                                        features=const._FEATURES, 
                                        weights=const._WEIGHTS, 

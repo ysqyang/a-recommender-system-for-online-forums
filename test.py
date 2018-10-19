@@ -138,11 +138,11 @@ active_topics = utils.get_new_topics(db, tid_to_table)
 tid_to_table = utils.update_tid_to_table_num_mapping(const._TOPIC_ID_TO_TABLE_NUM, db, active_topics)
 tid_to_reply_table = utils.update_tid_to_reply_table_num_mapping(const._TOPIC_ID_TO_REPLY_TABLE_NUM, db, active_topics)
 _DB_INFO = ('192.168.1.102','tgbweb','tgb123321','taoguba', 3307, 'utf8mb4')
-'''
+
 db = database.Database(*const._DB_INFO)
 topic_ids = utils.load_topics(db, const._TOPIC_FEATURES, const._DAYS, const._TOPIC_FILE)
 utils.load_replies(db, topic_ids, const._FEATURES, const._REPLY_FILE)
-'''
+
 with open(const._REPLY_FILE, 'r') as f:
     replies = json.load(f)
 
@@ -161,3 +161,8 @@ for topic_id, r in topics.items():
 
 print(n_replies)
 '''
+
+l = [2,3,4]
+
+with open('test', 'w') as f:
+    json.dump(l, f)
