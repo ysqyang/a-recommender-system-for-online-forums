@@ -4,8 +4,8 @@ import topics
 import sys
 import json
 
-def compute_profiles(topic_ids, features, weights, preprocess_fn, stopwords, 
-                     update, path, alpha=0.7, smartirs='atn'):
+def compute_profiles(topic_ids, filter_fn, features, weights, preprocess_fn, 
+                     stopwords, update, path, alpha=0.7, smartirs='atn'):
 
     '''
     Computes topic profiles
@@ -30,15 +30,17 @@ def compute_profiles(topic_ids, features, weights, preprocess_fn, stopwords,
     else:
         print('Computing word weights for all topics...')
         profiles = {}
-   
+
     for topic_id in topic_ids:
         # create a Topic object for each topic
         topic = topics.Topic(topic_id)
-        topic.make_corpus_with_scores(preprocess_fn, stopwords, features, weights)    
-        topic.get_dictionary()
-        #print('scores for topic {}:'.format(topic.topic_id), topic.scores) 
-        topic.get_word_weight(alpha, smartirs)
-        profiles[topic_id] = topic.word_weight
+        topic.make_corpus_with_scores(filter_fn, preprocess_fn, stopwords, 
+                                      features, weights)   
+        if topic.valid:
+            topic.get_dictionary()
+            #print('scores for topic {}:'.format(topic.topic_id), topic.scores) 
+            topic.get_word_weight(alpha, smartirs)
+            profiles[topic_id] = topic.word_weight
         '''
         if i+1 == int(n_topic_ids*percentage):
             print('{}% finished'.format(percentage))
@@ -67,7 +69,7 @@ def update_scores(db, active_topics, path, features, weights, rid_to_index,
     return scores
 '''
 
-def get_profile_words(topic_ids, profiles, k, update, path):
+def get_profile_words(profiles, k, update, path):
     '''
     Get the top k most important words for a topic
     Args:
@@ -84,11 +86,11 @@ def get_profile_words(topic_ids, profiles, k, update, path):
     else:
         top_k = {}
 
-    for topic_id in topic_ids:
+    for topic_id in profiles:
         profile = [(w, weight) for w, weight in profiles[topic_id].items()]
         profile.sort(key=lambda x:x[1], reverse=True)
-        top_k[topic_id] = [tup[0] for tup in profile[:min(k, len(profile))]]
-        print('top k words for topic id {}: '.format(topic_id), top_k[topic_id])
+        top_num = min(k, len(profile))
+        top_k[topic_id] = [tup[0] for tup in profile[:top_num]]
     
     with open(path, 'w') as f:
         json.dump(top_k, f)

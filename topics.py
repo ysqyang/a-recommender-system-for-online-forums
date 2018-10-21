@@ -20,7 +20,7 @@ class Topic(object):
         self.reply_file = const._REPLY_FILE
         self.topic_id = topic_id
 
-    def make_corpus_with_scores(self, preprocess_fn, stopwords,
+    def make_corpus_with_scores(self, filter_fn, preprocess_fn, stopwords,
                                 features, weights):
         '''
         Creates a corpus for this topic and computes importance scores
@@ -35,7 +35,12 @@ class Topic(object):
         # iteration starts with the topic content first
         with open(self.topic_file, 'r') as f:
             data = json.load(f)
-        content = ' '.join(data[str(self.topic_id)]['body'].split())
+        content = data[str(self.topic_id)]['body']
+        if not filter_fn(content):
+            self.valid = False
+            return
+        self.valid = True
+        content = ' '.join(content.split())
         word_list = preprocess_fn(content, stopwords)
         #print(self.preprocess_fn(topic_content, self.stopwords))
         if len(word_list) > 0:
@@ -113,7 +118,8 @@ class Topic(object):
             max_weight = max([x[1] for x in tfidf])
             for wid, weight in tfidf:
                 weight /= max_weight
-                self.word_weight[self.dictionary[wid]] += (1-alpha)*score*weight
+                if score > 1e-8:
+                    self.word_weight[self.dictionary[wid]] += (1-alpha)*score*weight
 
 class Topic_collection(object):
     '''
@@ -123,17 +129,24 @@ class Topic_collection(object):
     def __init__(self, topic_ids):
         self.topic_file = const._TOPIC_FILE
         self.topic_ids = topic_ids
-        self.corpus_index_to_topic_id = {}
+        self.valid_topics = []
         
-    def make_corpus(self, preprocess_fn, stopwords):
+    def make_corpus(self, filter_fn, preprocess_fn, stopwords):
         # iterates through all topics
         self.corpus, self.dates = [], []
         with open(self.topic_file, 'r') as f:
             data = json.load(f)
             for topic_id in self.topic_ids:
-                content = ' '.join(data[str(topic_id)]['body'].split())
-                self.corpus.append(preprocess_fn(content, stopwords))
-                self.dates.append(data[str(topic_id)]['POSTDATE'])
+                topic = data[str(topic_id)]
+                if not filter_fn(topic['body']):
+                    continue
+                content = ' '.join(topic['body'].split())
+                word_list = preprocess_fn(content, stopwords)
+                word_set = set(word_list)
+                if len(word_set) > 0 and len(word_list)/len(word_set) > const._VALID_RATIO:
+                    self.corpus.append(word_list)
+                    self.dates.append(topic['POSTDATE'])
+                    self.valid_topics.append(topic_id)
 
     def get_dictionary(self):
         self.dictionary = corpora.Dictionary(self.corpus)
@@ -151,26 +164,36 @@ class Topic_collection(object):
         corpus_freq = [0]*n_words
         corpus_bow = [self.dictionary.doc2bow(doc) for doc in self.corpus]
         num_tokens_corpus = sum(sum(x[1] for x in vec) for vec in corpus_bow)
-        # iterate through documents in corpus
+
         for i, vec in enumerate(corpus_bow):
-            # total number of tokens (with repetitions) in current doc 
+            # ignore documents that have less than _MIN_WORDS words 
             if len(vec) == 0:
                 self.distributions.append([])
             else:
+                # total number of tokens (with repetitions) in current doc
                 num_tokens = sum(x[1] for x in vec)
                 dst = [0]*n_words
-                for x in vec:
-                    dst[x[0]] = coeff*x[1]/num_tokens
-                self.distributions.append(dst)
                 for (word_id, count) in vec:
-                    # update word frequency in corpus 
+                    dst[word_id] = coeff*count/num_tokens
+                    # update word frequency in corpus
                     corpus_freq[word_id] += count/num_tokens_corpus
-
-        for dst in self.distributions:
-            for word_id in range(n_words):
-                # add contribution from in-corpus frequency
-                if len(dst) > 0:
+                self.distributions.append(dst)
+                '''
+                dst = [(self.dictionary[i], val) for i, val in enumerate(dst)]
+                dst.sort(key=lambda x:x[1], reverse=True)
+                print([(word, val) for word, val in dst if val > 0])
+                '''
+        for i, dst in enumerate(self.distributions):
+            #print(self.topic_ids[i], self.corpus[i])
+            if len(dst) > 0:
+                for word_id in range(n_words):
+                    # add contribution from in-corpus frequency
                     dst[word_id] += (1-coeff)*corpus_freq[word_id]
+                '''
+                dst1 = [(self.dictionary[i], val) for i, val in enumerate(dst)]
+                dst1.sort(key=lambda x:x[1], reverse=True)
+                print([word for word, val in dst1[:20]])
+                '''
 
     def get_distribution_given_profile(self, profile_words):
         '''
@@ -192,16 +215,16 @@ class Topic_collection(object):
         # word together with profile words 
 
         # convert to natural log to avoid numerical issues
-        log_probs = [sum(math.log(v[i]) for i in profile_wids) for v in self.distributions]
+        log_probs = [sum(math.log(v[wid]) for wid in profile_wids)
+                     if len(v) > 0 else -float('inf') for v in self.distributions]
+        # assuming uniform prior distribution over all docs in corpus,
+        # the joint probability is the sum of joint probabilities over
+        # all docs
         for wid in self.dictionary.token2id.values():        
-            if wid not in profile_words:
-                word_probs = [v[wid] if len(v) > 0 else 0 for v in self.distributions]  
-                distribution[wid] = np.dot(word_probs, [math.exp(x) for x in log_probs])
-            else:
-                distribution[wid] = sum(math.exp(p) for p in log_probs)
-            # assuming uniform prior distribution over all docs in corpus,
-            # the joint probability is the sum of joint probabilities over
-            # all docs
+            for v, log_prob in zip(self.distributions, log_probs):
+                if len(v) > 0:
+                    log_prob += math.log(v[wid])
+                distribution[wid] += math.exp(log_prob)
 
         # normalize the probabilities
         s = sum(distribution)
@@ -221,14 +244,18 @@ class Topic_collection(object):
         Similarity scores between a topic profile and the documents 
         in the corpus
         '''
-        sim = {}
-        now = datetime.now()
-        idx = 0
-        for date, vec in zip(self.dates, self.distributions):
+        sim, now = {}, datetime.now() 
+        for date, vec, tid in zip(self.dates, self.distributions, self.valid_topics):
             if len(vec) > 0:     
                 date = datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
                 day_diff = (now - date).days
-                sim[self.topic_ids[idx]] = stats.entropy(pk=distribution, qk=vec)*math.exp(day_diff/T)
-                idx += 1
-            
+                sim[tid] = stats.entropy(pk=distribution, qk=vec)*math.exp(day_diff/T)
+                '''
+                if sim[self.topic_ids[idx]] < 0.1:
+                    print(self.topic_ids[idx], self.corpus[idx])
+                    dst = [(self.dictionary[i], val) for i, val in enumerate(vec)]
+                    dst.sort(key=lambda x:x[1], reverse=True)
+                    print([(word, val) for word, val in dst[:20]])
+                    print(self.topic_ids[idx], sim[self.topic_ids[idx]])
+                '''
         return sim

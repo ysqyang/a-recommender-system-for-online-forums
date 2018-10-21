@@ -162,7 +162,21 @@ for topic_id, r in topics.items():
 print(n_replies)
 '''
 
-l = [2,3,4]
+with open('similarity', 'r') as f1, open('topics', 'r') as f2:
+    sim, topics = json.load(f1), json.load(f2)
 
-with open('test', 'w') as f:
-    json.dump(l, f)
+for topic_id, scores in sim.items():
+    
+    print(topic_id)        
+    print('target topic '+'*'*30)
+    print(topics[topic_id]['body'])
+    scores = [(tid, score) for tid, score in scores.items()]
+    scores.sort(key=lambda x:x[1])   
+    i = 1
+    for (tid, score) in scores[:2]:
+        if tid != topic_id:
+            print('recommended articles {} (similarity score {}): '.format(i, score))
+            print(topics[tid]['body'])
+            i += 1
+    
+    print('*'*50)

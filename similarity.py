@@ -24,7 +24,7 @@ class Corpus_all_topics(object):
                 yield self.preprocess_fn(doc, self.stopwords)
 '''
 def compute_similarities(corpus_topic_ids, active_topic_ids, profile_words, 
-                         preprocess_fn, stopwords, coeff, T, update, path):
+                         preprocess_fn, stopwords, filter_fn, coeff, T, update, path):
     '''
     Computes the similarity scores between a topic profile and 
     each documents in the corpus
@@ -52,18 +52,37 @@ def compute_similarities(corpus_topic_ids, active_topic_ids, profile_words,
         similarities = {}
 
     collection = topics.Topic_collection(corpus_topic_ids)
-    collection.make_corpus(preprocess_fn, stopwords)
+    collection.make_corpus(filter_fn, preprocess_fn, stopwords)
     collection.get_dictionary()
     #print(collection.dictionary.token2id)
     collection.get_distributions(coeff)
-    for i, dst in enumerate(collection.distributions):
-        if abs(sum(dst)-1) > 0.001:
-            print(collection.topic_ids[i], sum(dst))
 
-    for i, topic_id in enumerate(active_topic_ids):
-        print(i)
+    '''
+    for doc, dst in zip(collection.corpus[:10], collection.distributions[:10]):
+        print(doc)
+        print(dst)
+    '''
+    #print(active_topic_ids)
+    for topic_id in active_topic_ids:
         keywords = profile_words[topic_id]
+        '''
+        print(keywords)
+        i = collection.valid_topics.index(topic_id)
+        print(collection.valid_topics[i], collection.corpus[i])
+        print('*'*40)
+        dst = collection.distributions[i]
+        dst = [(collection.dictionary[i], val) for i, val in enumerate(dst)]
+        dst.sort(key=lambda x:x[1], reverse=True)
+        print([(word, val) for word, val in dst[:20]])
+        print('*'*40)
+        '''
         distribution = collection.get_distribution_given_profile(keywords)
+        '''
+        dst = [(collection.dictionary[i], val) for i, val in enumerate(distribution)]
+        dst.sort(key=lambda x:x[1], reverse=True)
+        print([(word, val) for word, val in dst[:20]])
+        print('*'*40)
+        '''
         similarities[topic_id] = collection.get_similarity(distribution, T)
 
     print('dumping to JSON...')

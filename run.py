@@ -7,14 +7,22 @@ import json
 import pika
 
 def main(args):
+    with open(const._TOPIC_FILE, 'r') as f1, open(const._REPLY_FILE, 'r') as f2:
+        topics, replies = json.load(f1), json.load(f2)
+
     connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
     channel = connection.channel()
     channel.queue_declare(queue='active_topics')
 
-    def callback(ch, method, properties, body):
-        print(" [x] Received {}".format(body))
+    def handle_active_topics(ch, method, properties, body):
+        with open(body, 'r') as f:
+            active = json.load(f)
 
-    channel.basic_consume(callback,
+
+
+
+
+    channel.basic_consume(handle_active_topics,
                           queue='active_topics',
                           no_ack=True)
 
@@ -25,43 +33,38 @@ def main(args):
 
     stopwords = utils.load_stopwords(const._STOPWORDS)
     
-    with open(const._TOPIC_FILE, 'r') as f1, open(const._REPLY_FILE, 'r') as f2:
-        topics, replies = json.load(f1), json.load(f2)
+    
 
-    for  
-
-
-    word_weights = tp.compute_profiles(topic_ids=args.active_topics,  
-                                       features=const._FEATURES, 
+    topic_ids = 
+    word_weights = tp.compute_profiles(topic_ids=topic_ids,  
+                                       filter_fn=utils.is_valid_text,
+                                       features=const._REPLY_FEATURES, 
                                        weights=const._WEIGHTS, 
                                        preprocess_fn=utils.preprocess, 
                                        stopwords=stopwords, 
                                        update=True, 
-                                       path=const._WORD_WEIGHTS, 
+                                       path=const._PROFILES, 
                                        alpha=args.alpha, 
                                        smartirs=args.smartirs)
 
     # get k most representative words for each topic
     profile_words = tp.get_profile_words(topic_ids=topic_ids, 
-                                         word_weights=word_weights,
+                                         profiles=word_weights,
                                          k=args.k, 
                                          update=True, 
                                          path=const._PROFILE_WORDS)
-
-    similarity_all = sim.get_similarity_all(db, utils.preprocess, 
-                     stopwords, profile_words, args.beta)
-    # save computed similarity data to file
-    with open(const._SAVE_PATH_SIMILARITY, 'wb') as f:
-        pickle.dump(similarity_all, f)
+   
+    similarities = sim.compute_similarities(corpus_topic_ids=topic_ids, 
+                                            active_topic_ids=topic_ids,
+                                            preprocess_fn=utils.preprocess, 
+                                            stopwords=stopwords, 
+                                            profile_words=profile_words, 
+                                            coeff=args.beta,
+                                            T=const._T,
+                                            update=True, 
+                                            path=const._SIMILARITIES)
 
     print('similarity matrices computed and saved to disk')
-
-    adjust_for_time(tid_to_date, similarity_all, args.T) 
-
-    with open(const._SAVE_PATH_SIMILARITY_ADJUSTED, 'wb') as f:
-        pickle.dump(similarity_all, f)
-
-    print('adjusted similarity matrices computed and saved to disk')
 
 if __name__ == '__main__': 
     parser = argparse.ArgumentParser()

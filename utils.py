@@ -4,6 +4,7 @@ import json
 import database
 import pickle
 import datetime
+import constants as const
 
 def load_stopwords(stopwords_path):
     stopwords = set()
@@ -16,8 +17,9 @@ def load_stopwords(stopwords_path):
             stopwords.add(stopword.strip('\n'))
             n += 1
 
-    return stopwords|{'\n', ' '}
+    return stopwords
 
+'''
 def create_topic_id_to_reply_table(db, topic_ids, path):
     print('Creating mapping from topic id to reply table number...')
     mapping = {}
@@ -36,6 +38,7 @@ def create_topic_id_to_reply_table(db, topic_ids, path):
 
     print('Created topic-id-to-reply-table-number mapping with {} entries'.format(len(mapping)))
     return mapping
+'''
 
 def load_mapping(path):
     with open(path, 'rb') as f:
@@ -114,6 +117,7 @@ def load_replies(db, topic_ids, attrs, path):
     print('以上主贴共计有{}条跟帖'.format(
            sum([len(replies[topic_id]) for topic_id in replies])))
 
+'''
 def update_tid_to_reply_table_num_mapping(path, db, new_topics):
     with open(path, 'rb') as f:
         mapping = pickle.load(f)
@@ -123,8 +127,7 @@ def update_tid_to_reply_table_num_mapping(path, db, new_topics):
         if topic_id not in mapping:
             j = 0
             while j < 10:
-                sql = '''SELECT * FROM replies_{} WHERE 
-                         TOPICID = {}'''.format(j, topic_id)
+                sql = 'SELECT * FROM replies_{} WHERE TOPICID = {}'.format(j, topic_id)
                 with db.query(sql) as cursor:
                     if cursor.fetchone():
                         mapping[topic_id] = j
@@ -136,6 +139,18 @@ def update_tid_to_reply_table_num_mapping(path, db, new_topics):
         pickle.dump(mapping, f)
 
     return mapping
+'''
+
+def is_valid_text(text):
+    puncs = {'。', '，', '、', '：', ':', ';', '；', '“', '”'}
+    cnt = 0
+    for c in text:
+        if c in puncs:
+            cnt += 1
+    
+    ratio = cnt / len(text)
+
+    return const._VALID_PUNC_RATIO_LOW < ratio < const._VALID_PUNC_RATIO_HIGH
 
 def preprocess(text, stopwords):
     '''
@@ -144,11 +159,25 @@ def preprocess(text, stopwords):
     text:      text to be tokenized
     stopwords: set of stopwords
     '''  
-    num = r'\d+\.*\d+'
+    singles = {'一', '二', '三', '四', '五',
+              '六', '七', '八', '九', '十', 
+              '两', '这', '那', '不', '很',
+              '是', '只', '就', '你', '我', 
+              '他', '她', '它'}
+
+    
+
+    alphanum, whitespace = r'\\*\w+', r'\s' 
     word_list = []
     words = jieba.cut(text, cut_all=False)
     for word in words:
-        if word in stopwords or re.match(num, word):
+        if re.match(alphanum, word, flags=re.ASCII):
+            continue
+        if re.match(whitespace, word, flags=re.ASCII):
+            continue
+        if word in stopwords or any(c in singles for c in word) :
+            continue
+        if len(word)/len(set(word)) >= 2: 
             continue
         word_list.append(word) 
     return word_list   
