@@ -1,5 +1,6 @@
 # Class definitions for streaming data from file
 from gensim import corpora, models
+from gensim.similarities import Similarity
 from sklearn import preprocessing
 import warnings
 import numpy as np
@@ -20,7 +21,7 @@ class Topic(object):
         self.reply_file = const._REPLY_FILE
         self.topic_id = topic_id
 
-    def make_corpus_with_scores(self, filter_fn, preprocess_fn, stopwords,
+    def make_corpus_with_scores(self, preprocess_fn, stopwords,
                                 features, weights):
         '''
         Creates a corpus for this topic and computes importance scores
@@ -35,17 +36,14 @@ class Topic(object):
         # iteration starts with the topic content first
         with open(self.topic_file, 'r') as f:
             data = json.load(f)
-        content = data[str(self.topic_id)]['body']
-        if not filter_fn(content):
+        content = ' '.join(data[str(self.topic_id)]['body'].split())
+        word_list = preprocess_fn(content, stopwords)
+        if word_list is None:
             self.valid = False
             return
-        self.valid = True
-        content = ' '.join(content.split())
-        word_list = preprocess_fn(content, stopwords)
-        #print(self.preprocess_fn(topic_content, self.stopwords))
-        if len(word_list) > 0:
-            self.corpus.append(word_list)
 
+        self.valid = True
+        self.corpus.append(word_list)
         with open(self.reply_file, 'r') as f:
             # iterates through replies under this topic id       
             data = json.load(f)
@@ -55,7 +53,7 @@ class Topic(object):
         for reply_id, rec in replies.items():
             content = ' '.join(rec['body'].split())
             word_list = preprocess_fn(content, stopwords)
-            if len(word_list) > 0:
+            if word_list is not None:
                 feature_vec = [rec[feature] for feature in features]
                 feature_matrix.append(feature_vec)
                 self.corpus.append(word_list)
@@ -105,8 +103,8 @@ class Topic(object):
             return
 
         model = models.TfidfModel(corpus_bow, smartirs=smartirs)
-        
-        tfidf = corpus_bow[0]
+
+        tfidf = model[corpus_bow[0]]
         max_weight = max([x[1] for x in tfidf])
         for word_id, weight in tfidf:
             self.word_weight[self.dictionary[word_id]] += alpha*weight/max_weight
@@ -131,25 +129,23 @@ class Topic_collection(object):
         self.topic_ids = topic_ids
         self.valid_topics = []
         
-    def make_corpus(self, filter_fn, preprocess_fn, stopwords):
+    def make_corpus(self, preprocess_fn, stopwords):
         # iterates through all topics
         self.corpus, self.dates = [], []
         with open(self.topic_file, 'r') as f:
             data = json.load(f)
             for topic_id in self.topic_ids:
                 topic = data[str(topic_id)]
-                if not filter_fn(topic['body']):
-                    continue
                 content = ' '.join(topic['body'].split())
                 word_list = preprocess_fn(content, stopwords)
-                word_set = set(word_list)
-                if len(word_set) > 0 and len(word_list)/len(word_set) > const._VALID_RATIO:
+                if word_list is not None:
                     self.corpus.append(word_list)
                     self.dates.append(topic['POSTDATE'])
                     self.valid_topics.append(topic_id)
 
-    def get_dictionary(self):
+    def get_bow(self):
         self.dictionary = corpora.Dictionary(self.corpus)
+        self.corpus_bow = [self.dictionary.doc2bow(doc) for doc in self.corpus]
 
     def get_distributions(self, coeff):
         '''
@@ -162,10 +158,9 @@ class Topic_collection(object):
         n_words = len(self.dictionary.token2id)
         self.distributions = []
         corpus_freq = [0]*n_words
-        corpus_bow = [self.dictionary.doc2bow(doc) for doc in self.corpus]
-        num_tokens_corpus = sum(sum(x[1] for x in vec) for vec in corpus_bow)
+        num_tokens_corpus = sum(sum(x[1] for x in vec) for vec in self.corpus_bow)
 
-        for i, vec in enumerate(corpus_bow):
+        for i, vec in enumerate(self.corpus_bow):
             # ignore documents that have less than _MIN_WORDS words 
             if len(vec) == 0:
                 self.distributions.append([])
@@ -219,12 +214,12 @@ class Topic_collection(object):
                      if len(v) > 0 else -float('inf') for v in self.distributions]
         # assuming uniform prior distribution over all docs in corpus,
         # the joint probability is the sum of joint probabilities over
-        # all docs
-        for wid in self.dictionary.token2id.values():        
-            for v, log_prob in zip(self.distributions, log_probs):
-                if len(v) > 0:
-                    log_prob += math.log(v[wid])
-                distribution[wid] += math.exp(log_prob)
+        # all docs       
+        for v, log_prob in zip(self.distributions, log_probs):
+            #print(log_prob)
+            for wid in range(len(v)): 
+                if wid not in profile_wids:
+                    distribution[wid] += math.exp(log_prob+math.log(v[wid]))
 
         # normalize the probabilities
         s = sum(distribution)
@@ -233,7 +228,7 @@ class Topic_collection(object):
         
         return distribution
 
-    def get_similarity(self, distribution, T):
+    def get_similarity_vector(self, distribution, T):
         '''
         Computes the similarity scores between a topic profile and 
         the documents in the corpus with time adjustments
@@ -259,3 +254,15 @@ class Topic_collection(object):
                     print(self.topic_ids[idx], sim[self.topic_ids[idx]])
                 '''
         return sim
+
+    def get_similarity_matrix(self, output_prefix, T):
+        self.sim_matrix = Similarity(output_prefix, self.corpus_bow, 
+                                     num_features=len(self.dictionary)) # build the index
+        
+    def show_similarities(self):
+        for sims, topic_id in zip(self.sim_matrix, self.valid_topics):
+            print(topic_id)
+            for i in range(len(sims)):
+                print(self.valid_topics[i], sims[i])
+
+

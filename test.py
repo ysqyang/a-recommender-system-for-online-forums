@@ -160,8 +160,8 @@ for topic_id, r in topics.items():
     n_replies += r['TOTALREPLYNUM']
 
 print(n_replies)
-'''
 
+'''
 with open('similarity', 'r') as f1, open('topics', 'r') as f2:
     sim, topics = json.load(f1), json.load(f2)
 

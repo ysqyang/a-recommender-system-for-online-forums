@@ -4,8 +4,8 @@ import topics
 import sys
 import json
 
-def compute_profiles(topic_ids, filter_fn, features, weights, preprocess_fn, 
-                     stopwords, update, path, alpha=0.7, smartirs='atn'):
+def compute_profiles(topic_ids, features, weights, preprocess_fn, stopwords,
+                     update, path, alpha=0.7, smartirs='atn'):
 
     '''
     Computes topic profiles
@@ -33,9 +33,9 @@ def compute_profiles(topic_ids, filter_fn, features, weights, preprocess_fn,
 
     for topic_id in topic_ids:
         # create a Topic object for each topic
+        topic_id = str(topic_id)
         topic = topics.Topic(topic_id)
-        topic.make_corpus_with_scores(filter_fn, preprocess_fn, stopwords, 
-                                      features, weights)   
+        topic.make_corpus_with_scores(preprocess_fn, stopwords, features, weights)   
         if topic.valid:
             topic.get_dictionary()
             #print('scores for topic {}:'.format(topic.topic_id), topic.scores) 
@@ -50,6 +50,7 @@ def compute_profiles(topic_ids, filter_fn, features, weights, preprocess_fn,
     with open(path, 'w') as f:
         json.dump(profiles, f)
 
+    print('二次过滤后剩余{}条有效主贴'.format(len(profiles)))
     return profiles
 
 '''

@@ -9,7 +9,6 @@ import json
 
 def main(args):
     stopwords = utils.load_stopwords(const._STOPWORDS)
-    '''
     db = database.Database(*const._DB_INFO)
     topic_ids = utils.load_topics(db, const._TOPIC_FEATURES, const._DAYS, 
                                   const._MIN_LEN, const._MIN_REPLIES, 
@@ -19,10 +18,8 @@ def main(args):
     '''
     with open(const._TOPIC_FILE, 'r') as f1, open(const._REPLY_FILE, 'r') as f2:
         topics, replies = json.load(f1), json.load(f2)
-
-    topic_ids = list(topics.keys())
+    
     word_weights = tp.compute_profiles(topic_ids=topic_ids,  
-                                       filter_fn=utils.is_valid_text,
                                        features=const._REPLY_FEATURES, 
                                        weights=const._WEIGHTS, 
                                        preprocess_fn=utils.preprocess, 
@@ -43,21 +40,27 @@ def main(args):
                                             active_topic_ids=topic_ids,
                                             profile_words=profile_words,
                                             preprocess_fn=utils.preprocess, 
-                                            stopwords=stopwords,
-                                            filter_fn = utils.is_valid_text, 
+                                            stopwords=stopwords, 
                                             coeff=args.beta,
                                             T=const._T,
                                             update=False, 
                                             path=const._SIMILARITIES)
+    '''
+    collection = topics.Topic_collection(topic_ids)
+    collection.make_corpus(utils.preprocess, stopwords)
+    print('共{}条候选可推荐主贴'.format(len(collection.valid_topics)))
+    collection.get_bow()
+    collection.get_similarity_matrix(const._SIMILARITIES, const._T)
+    collection.show_similarities()
 
 if __name__ == '__main__': 
     parser = argparse.ArgumentParser()
     parser.add_argument('--alpha', type=float, default=0.7, 
                         help='''contribution coefficient for topic content 
                                 in computing word weights''')
-    parser.add_argument('--k', type=int, default=50, 
+    parser.add_argument('--k', type=int, default=10, 
                         help='number of words to represent a discussion thread')
-    parser.add_argument('--beta', type=float, default=0.7,
+    parser.add_argument('--beta', type=float, default=0.8,
                         help='''contribution coefficient for in-document frequency
                                 in computing word probabilities''')
     parser.add_argument('--smartirs', type=str, default='atn', help='type of tf-idf variants')

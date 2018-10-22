@@ -1,6 +1,6 @@
 _STOPWORDS = 'stopwords.txt'
 _DB_INFO = ('192.168.1.102','tgbweb','tgb123321','taoguba', 3307, 'utf8mb4')
-_DAYS = 90
+_DAYS = 180
 _T = 365
 _TOPIC_FEATURES = ['TOTALVIEWNUM', 'TOTALREPLYNUM', 'POSTDATE', 
                    'USEFULNUM', 'GOLDUSEFULNUM', 'TOTALPCPOINT',
@@ -11,7 +11,7 @@ _MIN_LEN = 90
 _MIN_REPLIES = 0
 _MIN_REPLIES_1 = 20
 _MIN_WORDS = 5
-_VALID_RATIO = 1.5
+_VALID_RATIO = 1.3
 _VALID_PUNC_RATIO_LOW = 1/20
 _VALID_PUNC_RATIO_HIGH = 1/2 
 _TOPIC_ID_TO_REPLY_TABLE_NUM = './topic_id_to_reply_table_num'

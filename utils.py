@@ -140,9 +140,15 @@ def update_tid_to_reply_table_num_mapping(path, db, new_topics):
 
     return mapping
 '''
-
-def is_valid_text(text):
-    puncs = {'。', '，', '、', '：', ':', ';', '；', '“', '”'}
+def preprocess(text, stopwords):
+    '''
+    Tokenize a Chinese document to a list of words and filters out
+    invalid documents 
+    Args:
+    text:      text to be tokenized
+    stopwords: set of stopwords
+    '''  
+    puncs = {'。', '，', '、', '：', ':', ';', '；', '“', '”', ' '}
     cnt = 0
     for c in text:
         if c in puncs:
@@ -150,22 +156,14 @@ def is_valid_text(text):
     
     ratio = cnt / len(text)
 
-    return const._VALID_PUNC_RATIO_LOW < ratio < const._VALID_PUNC_RATIO_HIGH
+    if ratio < const._VALID_PUNC_RATIO_LOW or ratio > const._VALID_PUNC_RATIO_HIGH:
+        return None
 
-def preprocess(text, stopwords):
-    '''
-    Tokenize a Chinese document to a list of words 
-    Args:
-    text:      text to be tokenized
-    stopwords: set of stopwords
-    '''  
     singles = {'一', '二', '三', '四', '五',
               '六', '七', '八', '九', '十', 
               '两', '这', '那', '不', '很',
               '是', '只', '就', '你', '我', 
               '他', '她', '它'}
-
-    
 
     alphanum, whitespace = r'\\*\w+', r'\s' 
     word_list = []
@@ -177,7 +175,11 @@ def preprocess(text, stopwords):
             continue
         if word in stopwords or any(c in singles for c in word) :
             continue
-        if len(word)/len(set(word)) >= 2: 
+        if len(word)/len(set(word)) > 2: 
             continue
         word_list.append(word) 
+    
+    if word_list == [] or len(word_list)/len(set(word_list)) > const._VALID_RATIO:
+        return None
+
     return word_list   
