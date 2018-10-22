@@ -140,13 +140,17 @@ def update_tid_to_reply_table_num_mapping(path, db, new_topics):
 
     return mapping
 '''
-def preprocess(text, stopwords):
+def preprocess(text, stopwords, punc_frac_low, punc_frac_high, valid_ratio):
     '''
     Tokenize a Chinese document to a list of words and filters out
     invalid documents 
     Args:
-    text:      text to be tokenized
-    stopwords: set of stopwords
+    text:            text to be tokenized
+    stopwords:       set of stopwords
+    punc_ratio_low:  the lower limit of the fraction of punctuation marks
+    punc_ratio_high: the upper limit of the fraction of punctuation marks
+    valid_ratio:     the lower limit for the ratio of token count to 
+                     distinct token count   
     '''  
     puncs = {'。', '，', '、', '：', ':', ';', '；', '“', '”', ' '}
     cnt = 0
@@ -156,18 +160,19 @@ def preprocess(text, stopwords):
     
     ratio = cnt / len(text)
 
-    if ratio < const._VALID_PUNC_RATIO_LOW or ratio > const._VALID_PUNC_RATIO_HIGH:
+    if ratio < punc_frac_low or ratio > punc_frac_high:
         return None
 
     singles = {'一', '二', '三', '四', '五',
               '六', '七', '八', '九', '十', 
               '两', '这', '那', '不', '很',
               '是', '只', '就', '你', '我', 
-              '他', '她', '它'}
+              '他', '她', '它', '啊', '呵'}
 
     alphanum, whitespace = r'\\*\w+', r'\s' 
     word_list = []
     words = jieba.cut(text, cut_all=False)
+    
     for word in words:
         if re.match(alphanum, word, flags=re.ASCII):
             continue
@@ -178,8 +183,8 @@ def preprocess(text, stopwords):
         if len(word)/len(set(word)) > 2: 
             continue
         word_list.append(word) 
-    
-    if word_list == [] or len(word_list)/len(set(word_list)) > const._VALID_RATIO:
+
+    if len(word_list) < 5 or len(word_list)/len(set(word_list)) > valid_ratio:
         return None
 
     return word_list   

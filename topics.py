@@ -22,6 +22,7 @@ class Topic(object):
         self.topic_id = topic_id
 
     def make_corpus_with_scores(self, preprocess_fn, stopwords,
+                                punc_frac_low, punc_frac_high, valid_ratio, 
                                 features, weights):
         '''
         Creates a corpus for this topic and computes importance scores
@@ -52,7 +53,8 @@ class Topic(object):
 
         for reply_id, rec in replies.items():
             content = ' '.join(rec['body'].split())
-            word_list = preprocess_fn(content, stopwords)
+            word_list = preprocess_fn(content, stopwords, punc_frac_low, 
+                                      punc_frac_high, valid_ratio)
             if word_list is not None:
                 feature_vec = [rec[feature] for feature in features]
                 feature_matrix.append(feature_vec)
@@ -129,7 +131,8 @@ class Topic_collection(object):
         self.topic_ids = topic_ids
         self.valid_topics = []
         
-    def make_corpus(self, preprocess_fn, stopwords):
+    def make_corpus(self, preprocess_fn, stopwords,
+                    punc_frac_low, punc_frac_high, valid_ratio):
         # iterates through all topics
         self.corpus, self.dates = [], []
         with open(self.topic_file, 'r') as f:
@@ -137,7 +140,9 @@ class Topic_collection(object):
             for topic_id in self.topic_ids:
                 topic = data[str(topic_id)]
                 content = ' '.join(topic['body'].split())
-                word_list = preprocess_fn(content, stopwords)
+                word_list = preprocess_fn(content, stopwords, punc_frac_low,  
+                                          punc_frac_high, valid_ratio)
+
                 if word_list is not None:
                     self.corpus.append(word_list)
                     self.dates.append(topic['POSTDATE'])
@@ -228,7 +233,7 @@ class Topic_collection(object):
         
         return distribution
 
-    def get_similarity_vector(self, distribution, T):
+    def get_similarity_given_distribution(self, distribution, T):
         '''
         Computes the similarity scores between a topic profile and 
         the documents in the corpus with time adjustments
@@ -256,13 +261,31 @@ class Topic_collection(object):
         return sim
 
     def get_similarity_matrix(self, output_prefix, T):
-        self.sim_matrix = Similarity(output_prefix, self.corpus_bow, 
-                                     num_features=len(self.dictionary)) # build the index
-        
-    def show_similarities(self):
-        for sims, topic_id in zip(self.sim_matrix, self.valid_topics):
-            print(topic_id)
-            for i in range(len(sims)):
-                print(self.valid_topics[i], sims[i])
+        '''
+        Computes the pairwise cosine similarities for the corpus 
+        '''
+        sim = Similarity(output_prefix, self.corpus_bow, num_features=len(self.dictionary))
+        self.sim_matrix = collections.defaultdict(dict)
+        for sim_vec, tid in zip(sim, self.valid_topics):
+            for i, sim_val in enumerate(sim_vec):
+                tid_1 = self.valid_topics[i]
+                date = datetime.strptime(self.dates[i], "%Y-%m-%d %H:%M:%S")
+                day_diff = (datetime.now()-date).days
+                self.sim_matrix[tid][tid_1] = sim_val*math.exp(-day_diff/T)
+
+    def generate_recommendations(self, topic_id, sim_thresh_low, sim_thresh_high):
+        recoms, sim_vec = [], self.sim_matrix[topic_id]
+        sim_vec = [(tid, sim_val) for tid, sim_val in sim_vec.items()]
+        sim_vec.sort(key=lambda x:x[1], reverse=True)
+        count = 0
+        for tid, sim_val in sim_vec:
+            if sim_thresh_low < sim_val < sim_thresh_high:
+                recoms.append((tid, sim_val))
+                count += 1
+                if count == 3:
+                    break
+
+        return recoms
+
 
 
