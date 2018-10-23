@@ -18,10 +18,6 @@ def main(args):
         with open(body, 'r') as f:
             active = json.load(f)
 
-
-
-
-
     channel.basic_consume(handle_active_topics,
                           queue='active_topics',
                           no_ack=True)
@@ -29,13 +25,9 @@ def main(args):
     print(' [*] Waiting for messages. To exit press CTRL+C')
     channel.start_consuming()
 
-
-
     stopwords = utils.load_stopwords(const._STOPWORDS)
     
-    
-
-    topic_ids = 
+    '''
     word_weights = tp.compute_profiles(topic_ids=topic_ids,  
                                        filter_fn=utils.is_valid_text,
                                        features=const._REPLY_FEATURES, 
@@ -64,7 +56,7 @@ def main(args):
                                             update=True, 
                                             path=const._SIMILARITIES)
 
-    print('similarity matrices computed and saved to disk')
+    '''
 
 if __name__ == '__main__': 
     parser = argparse.ArgumentParser()

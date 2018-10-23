@@ -126,27 +126,28 @@ class Topic_collection(object):
     Corpus object for streaming and preprocessing 
     texts from topics_info tables
     '''
-    def __init__(self, topic_ids):
-        self.topic_file = const._TOPIC_FILE
-        self.topic_ids = topic_ids
-        self.valid_topics = []
-        
-    def make_corpus(self, preprocess_fn, stopwords,
-                    punc_frac_low, punc_frac_high, valid_ratio):
+    def __init__(self, path):
+        self.topic_file = path
+
+    def make_corpus(self, preprocess_fn, stopwords, punc_frac_low, 
+                    punc_frac_high, valid_ratio):
         # iterates through all topics
-        self.corpus, self.dates = [], []
+        self.corpus, self.dates, self.valid_topics = [], [], []
         with open(self.topic_file, 'r') as f:
             data = json.load(f)
-            for topic_id in self.topic_ids:
-                topic = data[str(topic_id)]
-                content = ' '.join(topic['body'].split())
-                word_list = preprocess_fn(content, stopwords, punc_frac_low,  
-                                          punc_frac_high, valid_ratio)
+        for topic_id, topic in data.items():
+            content = ' '.join(topic['body'].split())
+            word_list = preprocess_fn(content, stopwords, punc_frac_low,  
+                                      punc_frac_high, valid_ratio)
 
-                if word_list is not None:
-                    self.corpus.append(word_list)
-                    self.dates.append(topic['POSTDATE'])
-                    self.valid_topics.append(topic_id)
+            if word_list is not None: # add only valid topics
+                self.corpus.append(word_list)
+                self.dates.append(topic['POSTDATE'])
+                self.valid_topics.append(topic_id)
+
+    def update_corpus(self, preprocess_fn, stopwords, punc_frac_low, 
+                      punc_frac_high, valid_ratio):
+        pass
 
     def get_bow(self):
         self.dictionary = corpora.Dictionary(self.corpus)
@@ -184,7 +185,6 @@ class Topic_collection(object):
                 print([(word, val) for word, val in dst if val > 0])
                 '''
         for i, dst in enumerate(self.distributions):
-            #print(self.topic_ids[i], self.corpus[i])
             if len(dst) > 0:
                 for word_id in range(n_words):
                     # add contribution from in-corpus frequency
@@ -250,14 +250,6 @@ class Topic_collection(object):
                 date = datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
                 day_diff = (now - date).days
                 sim[tid] = stats.entropy(pk=distribution, qk=vec)*math.exp(day_diff/T)
-                '''
-                if sim[self.topic_ids[idx]] < 0.1:
-                    print(self.topic_ids[idx], self.corpus[idx])
-                    dst = [(self.dictionary[i], val) for i, val in enumerate(vec)]
-                    dst.sort(key=lambda x:x[1], reverse=True)
-                    print([(word, val) for word, val in dst[:20]])
-                    print(self.topic_ids[idx], sim[self.topic_ids[idx]])
-                '''
         return sim
 
     def get_similarity_matrix(self, output_prefix, T):
@@ -273,17 +265,26 @@ class Topic_collection(object):
                 day_diff = (datetime.now()-date).days
                 self.sim_matrix[tid][tid_1] = sim_val*math.exp(-day_diff/T)
 
-    def generate_recommendations(self, topic_id, sim_thresh_low, sim_thresh_high):
+    def is_duplicate(self, tid_1, tid_2, thresh):
+        return self.sim_matrix[tid_1][tid_2] > thresh
+
+    def is_irrelevant(self, tid_1, tid_2, thresh):
+        return self.sim_matrix[tid_1][tid_2] < thresh
+
+    def generate_recommendations(self, topic_id, duplicate_thresh, irrelevant_thresh):
         recoms, sim_vec = [], self.sim_matrix[topic_id]
         sim_vec = [(tid, sim_val) for tid, sim_val in sim_vec.items()]
         sim_vec.sort(key=lambda x:x[1], reverse=True)
-        count = 0
         for tid, sim_val in sim_vec:
-            if sim_thresh_low < sim_val < sim_thresh_high:
-                recoms.append((tid, sim_val))
-                count += 1
-                if count == 3:
-                    break
+            if len(recoms) == 3 or sim_val < irrelevant_thresh:
+                break
+            if sim_val < duplicate_thresh:
+                if len(recoms) == 0:
+                    recoms.append((tid, sim_val))
+                else:
+                    prev_tid = recoms[-1][0]
+                    if not self.is_duplicate(tid, prev_tid, duplicate_thresh):
+                        recoms.append((tid, sim_val))
 
         return recoms
 
