@@ -145,10 +145,6 @@ class Topic_collection(object):
                 self.dates.append(topic['POSTDATE'])
                 self.valid_topics.append(topic_id)
 
-    def update_corpus(self, preprocess_fn, stopwords, punc_frac_low, 
-                      punc_frac_high, valid_ratio):
-        pass
-
     def get_bow(self):
         self.dictionary = corpora.Dictionary(self.corpus)
         self.corpus_bow = [self.dictionary.doc2bow(doc) for doc in self.corpus]
@@ -255,15 +251,41 @@ class Topic_collection(object):
     def get_similarity_matrix(self, output_prefix, T):
         '''
         Computes the pairwise cosine similarities for the corpus 
+        with time adjustments
         '''
-        sim = Similarity(output_prefix, self.corpus_bow, num_features=len(self.dictionary))
+        self.similarity = Similarity(output_prefix, self.corpus_bow, 
+                                     num_features=len(self.dictionary))
         self.sim_matrix = collections.defaultdict(dict)
-        for sim_vec, tid in zip(sim, self.valid_topics):
+        for sim_vec, tid in zip(self.similarity, self.valid_topics):
             for i, sim_val in enumerate(sim_vec):
                 tid_1 = self.valid_topics[i]
                 date = datetime.strptime(self.dates[i], "%Y-%m-%d %H:%M:%S")
                 day_diff = (datetime.now()-date).days
                 self.sim_matrix[tid][tid_1] = sim_val*math.exp(-day_diff/T)
+
+    def update_collection(self, topic, preprocess_fn, stopwords, 
+                          punc_frac_low, punc_frac_high, valid_ratio):
+        content = ' '.join(topic['body'].split())
+        word_list = preprocess_fn(content, stopwords, punc_frac_low,  
+                                  punc_frac_high, valid_ratio)
+
+        if word_list is None: # ignore invalid topics
+            return
+
+        self.corpus.append(word_list)
+        self.dates.append(topic['postdate'])
+        self.valid_topics.append(topic['topicid'])
+        self.dictionary.add_documents([word_list])
+        self.corpus_bow.append(self.dictionary.doc2bow(word_list))
+            
+        new_tid = self.valid_topics[-1]
+        self.similarity.add_documents([self.corpus_bow[-1]])
+        for sim_val, tid, date in zip(self.similarity[-1], self.valid_topics,
+                                      self.dates):
+            date = datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
+            day_diff = (datetime.now()-date).days
+            self.sim_matrix[tid][new_tid] = sim_val
+            self.sim_matrix[new_tid][tid] = sim_val*math.exp(-day_diff/T)
 
     def is_duplicate(self, tid_1, tid_2, thresh):
         return self.sim_matrix[tid_1][tid_2] > thresh
@@ -287,6 +309,7 @@ class Topic_collection(object):
                         recoms.append((tid, sim_val))
 
         return recoms
+
 
 
 

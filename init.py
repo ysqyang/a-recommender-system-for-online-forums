@@ -8,7 +8,7 @@ import database
 import json
 
 def main(args):
-    stopwords = utils.load_stopwords(const._STOPWORDS)
+    stopwords = utils.load_stopwords(const._STOPWORD_FILE)
     db = database.Database(*const._DB_INFO)
     topic_ids = utils.load_topics(db, const._TOPIC_FEATURES, const._DAYS, 
                                   const._MIN_LEN, const._MIN_REPLIES, 
