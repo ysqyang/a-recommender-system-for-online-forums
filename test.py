@@ -12,6 +12,7 @@ import pickle
 import constants as const
 import json
 import database
+import pika
 '''
 class Stream(object):
     def __init__(self, topic_id, preprocess_fn, stopwords):
@@ -162,9 +163,31 @@ for topic_id, r in topics.items():
 print(n_replies)
 
 '''
-with open('topics', 'r') as f:
-    topics = json.load(f)
+connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
+channel = connection.channel()
+channel.queue_declare(queue='new_topics')
+channel.queue_declare(queue='active_topics')
 
-for tid, feature in topics.items():
-    if '手机' in feature['body']:
-        print(tid, feature['body'])
+d1 = {'topicid': '1600002', 'TOTALVIEWNUM': 3, 'TOTALREPLYNUM': 0, 
+     'POSTDATE': '2018-10-25', 'USEFULNUM': 0, 'GOLDUSEFULNUM': 0, 
+     'TOTALPCPOINT': 0, 'TOPICPCPOINT': 0, 'body': 'dsfghfd'}
+
+d2 = {'topicid': '1506325', 'TOTALVIEWNUM': 5, 'USEFULNUM': 2}
+
+msg1, msg2 = json.dumps(d1), json.dumps(d2)
+
+print(msg1, msg2)
+
+channel.basic_publish(exchange='',
+                      routing_key='new_topics',
+                      body=msg1)
+print(" [x] Sent message to Queue 1")
+
+
+channel.basic_publish(exchange='',
+                      routing_key='active_topics',
+                      body=msg2)
+
+print(" [x] Sent message to Queue 2")
+
+connection.close()

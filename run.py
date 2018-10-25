@@ -6,10 +6,12 @@ from gensim import models
 import json
 import pika
 import constants as const
+import configparser
+import sys
 
-def main(args):
+def main():   
     with open(const._TOPIC_FILE, 'r') as f:
-        topics = json.load(f)
+        topics_all = json.load(f)
 
     collection = topics.Topic_collection(const._TOPIC_FILE)
     collection.make_corpus(preprocess_fn=utils.preprocess, 
@@ -23,7 +25,22 @@ def main(args):
 
     stopwords = utils.load_stopwords(const._STOPWORD_FILE)
 
-    connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
+    config = utils.get_config(const._CONFIG_FILE)
+    sections = config.sections()
+
+    if len(sections) == 0:
+        print('Configuration file is empty.')
+        sys.exit()
+
+    sec = sections[0]
+
+    credentials = pika.PlainCredentials(username=config[sec]['username'],
+                                        password=config[sec]['password'])
+    
+    params = pika.connectionParameters(host=config.sec['host'], 
+                                       credentials=credentials)
+
+    connection = pika.BlockingConnection(params)
     channel = connection.channel()
     channel.queue_declare(queue='new_topics')
     channel.queue_declare(queue='active_topics')
@@ -32,7 +49,9 @@ def main(args):
     def on_new_topics(ch, method, properties, body):
         new_topic = json.loads(body)
         topic_id = new_topic['topicid']
-        topics[topic_id] = {k:v for k, v in new_topic.items() if k != 'topicid'}
+        topics_all[topic_id] = {k:v for k, v in new_topic.items() if k != 'topicid'}
+        with open(const._TOPIC_FILE, 'w') as f:
+            json.dump(topics_all, f)
         collection.update(topic=new_topic,
         	              preprocess_fn=utils.preprocess, 
         	              stopwords=stopwords,
@@ -43,8 +62,18 @@ def main(args):
     def on_active_topics(ch, method, properties, body):
     	active_topic = json.loads(body)
 		topic_id = active_topic['topicid']
-    	topics[]
+        for attr in active_topic:
+            if attr != 'topicid':
+                topics_all[topic_id][attr] = active_topic[attr]
+        with open(const._TOPIC_FILE, 'w') as f:
+            json.dump(topics_all, f)
 
+    def on_delete(ch, method, properties, body):
+        del topics_all[body]
+        with open(const._TOPIC_FILE, 'w') as f:
+            json.dump(topics_all, f)
+
+    parameters = pika.URLParameters('amqp://guest:guest@localhost:5672/%2F')
 
     channel.basic_consume(on_new_topics,
                           queue='new_topics',
@@ -54,12 +83,13 @@ def main(args):
     					  queue='active_topics',
     					  no_ack=True)
 
+    channel.basic_consume(on_delete, 
+                          queue='topics_to_delete',
+                          no_ack=True)
     
     print(' [*] Waiting for messages. To exit press CTRL+C')
     channel.start_consuming()
 
-    
-    
     '''
     word_weights = tp.compute_profiles(topic_ids=topic_ids,  
                                        filter_fn=utils.is_valid_text,
@@ -92,7 +122,7 @@ def main(args):
     '''
 
 if __name__ == '__main__': 
-    parser = argparse.ArgumentParser()
+    #parser = argparse.ArgumentParser()
     
     #parser.add_argument('--alpha', type=float, default=0.7, 
     #                     help='''contribution coefficient for topic content 
@@ -102,8 +132,8 @@ if __name__ == '__main__':
     #parser.add_argument('--beta', type=float, default=0.5,
     #                    help='''contribution coefficient for in-document frequency
     #                            in computing word probabilities''')
-    parser.add_argument('--T', type=float, default=365, help='time attenuation factor')
+    #parser.add_argument('--T', type=float, default=365, help='time attenuation factor')
     #parser.add_argument('--smartirs', type=str, default='atn', help='type of tf-idf variants')
 
-    args = parser.parse_args()
-    main(args)
+    #args = parser.parse_args()
+    main()

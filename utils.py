@@ -5,6 +5,7 @@ import database
 import pickle
 import datetime
 import constants as const
+import configparser
 
 def load_stopwords(stopwords_path):
     stopwords = set()
@@ -117,29 +118,11 @@ def load_replies(db, topic_ids, attrs, path):
     print('以上主贴共计有{}条跟帖'.format(
            sum([len(replies[topic_id]) for topic_id in replies])))
 
-'''
-def update_tid_to_reply_table_num_mapping(path, db, new_topics):
-    with open(path, 'rb') as f:
-        mapping = pickle.load(f)
+def get_config(config_file_path):
+    config = configparser.ConfigParser()
+    config.read(config_file_path)
+    return config
 
-    print('entries before update: ', len(mapping))
-    for topic_id in new_topics:
-        if topic_id not in mapping:
-            j = 0
-            while j < 10:
-                sql = 'SELECT * FROM replies_{} WHERE TOPICID = {}'.format(j, topic_id)
-                with db.query(sql) as cursor:
-                    if cursor.fetchone():
-                        mapping[topic_id] = j
-                        break
-                j += 1
-
-    print('entries after update: ', len(mapping))
-    with open(path, 'wb') as f:
-        pickle.dump(mapping, f)
-
-    return mapping
-'''
 def preprocess(text, stopwords, punc_frac_low, punc_frac_high, valid_ratio):
     '''
     Tokenize a Chinese document to a list of words and filters out
