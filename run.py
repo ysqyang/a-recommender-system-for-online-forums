@@ -11,14 +11,15 @@ import sys
 
 def main():   
     with open(const._TOPIC_FILE, 'r') as f:
-        topics_all = json.load(f)
+        topic_dict = json.load(f)
 
-    collection = topics.Topic_collection(const._TOPIC_FILE)
+    collection = topics.Topic_collection(topic_dict)
     collection.make_corpus(preprocess_fn=utils.preprocess, 
                            stopwords=stopwords, 
                            punc_frac_low=const._PUNC_FRAC_LOW, 
                            punc_frac_high=const._PUNC_FRAC_HIGH, 
                            valid_ratio=const._VALID_RATIO)
+
     print('共{}条候选主贴可供推荐'.format(len(collection.valid_topics)))
     collection.get_bow()
     collection.get_similarity_matrix(const._SIMILARITIES, const._T)
@@ -37,54 +38,55 @@ def main():
     credentials = pika.PlainCredentials(username=config[sec]['username'],
                                         password=config[sec]['password'])
     
-    params = pika.connectionParameters(host=config.sec['host'], 
+    params = pika.connectionParameters(host=config[sec]['host'], 
                                        credentials=credentials)
 
     connection = pika.BlockingConnection(params)
     channel = connection.channel()
     channel.queue_declare(queue='new_topics')
-    channel.queue_declare(queue='active_topics')
-    channel.queue_declare(queue='topics_to_delete')
+    channel.queue_declare(queue='update_topics')
+    channel.queue_declare(queue='delete_topics')
+    channel.queue_bind(exchange='', queue='new_topics', routing_key='new')
+    channel.queue_bind(exchange='', queue='update_topics', routing_key='update')
+    channel.queue_bind(exchange='', queue='delete_topics', routing_key='delete')
 
-    def on_new_topics(ch, method, properties, body):
+    def on_new_topic(ch, method, properties, body):
         new_topic = json.loads(body)
         topic_id = new_topic['topicid']
-        topics_all[topic_id] = {k:v for k, v in new_topic.items() if k != 'topicid'}
+        topic_dict[topic_id] = {k:v for k, v in new_topic.items() if k != 'topicid'}
         with open(const._TOPIC_FILE, 'w') as f:
-            json.dump(topics_all, f)
-        collection.update(topic=new_topic,
-        	              preprocess_fn=utils.preprocess, 
-        	              stopwords=stopwords,
-        	              punc_frac_low=const._PUNC_FRAC_LOW, 
-        	              punc_frac_high=const._PUNC_FRAC_HIGH, 
-        	              valid_ratio=const._VALID_RATIO)
+            json.dump(topic_dict, f)
+        collection.update_collection(topic=new_topic,
+        	                         preprocess_fn=utils.preprocess, 
+        	                         stopwords=stopwords,
+        	                         punc_frac_low=const._PUNC_FRAC_LOW, 
+        	                         punc_frac_high=const._PUNC_FRAC_HIGH, 
+                                     valid_ratio=const._VALID_RATIO)
 
-    def on_active_topics(ch, method, properties, body):
-    	active_topic = json.loads(body)
-		topic_id = active_topic['topicid']
-        for attr in active_topic:
+    def on_update_topic(ch, method, properties, body):
+    	update_topic = json.loads(body)
+		topic_id = update_topic['topicid']
+        for attr in update_topic:
             if attr != 'topicid':
-                topics_all[topic_id][attr] = active_topic[attr]
+                topic_dict[topic_id][attr] = update_topic[attr]
         with open(const._TOPIC_FILE, 'w') as f:
-            json.dump(topics_all, f)
+            json.dump(topic_dict, f)
 
     def on_delete(ch, method, properties, body):
-        del topics_all[body]
+        del topic_dict[body]
         with open(const._TOPIC_FILE, 'w') as f:
-            json.dump(topics_all, f)
+            json.dump(topic_dict, f)
 
-    parameters = pika.URLParameters('amqp://guest:guest@localhost:5672/%2F')
-
-    channel.basic_consume(on_new_topics,
+    channel.basic_consume(on_new_topic,
                           queue='new_topics',
                           no_ack=True)
 
-    channel.basic_consume(on_active_topic, 
-    					  queue='active_topics',
+    channel.basic_consume(on_update_topic, 
+    					  queue='update_topics',
     					  no_ack=True)
 
     channel.basic_consume(on_delete, 
-                          queue='topics_to_delete',
+                          queue='delete_topics',
                           no_ack=True)
     
     print(' [*] Waiting for messages. To exit press CTRL+C')
@@ -110,7 +112,7 @@ def main():
                                          path=const._PROFILE_WORDS)
    
     similarities = sim.compute_similarities(corpus_topic_ids=topic_ids, 
-                                            active_topic_ids=topic_ids,
+                                            update_topic_ids=topic_ids,
                                             preprocess_fn=utils.preprocess, 
                                             stopwords=stopwords, 
                                             profile_words=profile_words, 

@@ -1,7 +1,7 @@
 _CONFIG_FILE = 'config'
 _STOPWORD_FILE = 'stopwords.txt'
 _DB_INFO = ('192.168.1.102','tgbweb','tgb123321','taoguba', 3307, 'utf8mb4')
-_DAYS = 180
+_DAYS = 90
 _T = 365
 _TOPIC_FEATURES = ['TOTALVIEWNUM', 'TOTALREPLYNUM', 'POSTDATE', 
                    'USEFULNUM', 'GOLDUSEFULNUM', 'TOTALPCPOINT',

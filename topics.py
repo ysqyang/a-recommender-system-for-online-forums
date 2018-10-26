@@ -126,24 +126,33 @@ class Topic_collection(object):
     Corpus object for streaming and preprocessing 
     texts from topics_info tables
     '''
-    def __init__(self, path):
-        self.topic_file = path
+    def __init__(self, topic_dict, datetime_format):
+        self.topic_dict = topic_dict
+        self.datetime_format = datetime_format
 
     def make_corpus(self, preprocess_fn, stopwords, punc_frac_low, 
                     punc_frac_high, valid_ratio):
         # iterates through all topics
-        self.corpus, self.dates, self.valid_topics = [], [], []
-        with open(self.topic_file, 'r') as f:
-            data = json.load(f)
-        for topic_id, topic in data.items():
-            content = ' '.join(topic['body'].split())
+        self.corpus, self.dates, self.valid_topics, self.date_cuts = [], [], [], []
+        # sorting topipc id's means sorting by post date
+        sorted_topic_ids = sorted(list(self.topic_dict.keys()))
+
+        last_date = '2018-09-01 00:00:00'
+        for topic_id in sorted_topic_ids:
+            topic = self.topic_dict[topic_id]
+            post_date, content = topic['POSTDATE'], topic['body'] 
+            content = ' '.join(content.split())
             word_list = preprocess_fn(content, stopwords, punc_frac_low,  
                                       punc_frac_high, valid_ratio)
 
             if word_list is not None: # add only valid topics
                 self.corpus.append(word_list)
-                self.dates.append(topic['POSTDATE'])
                 self.valid_topics.append(topic_id)
+                cur_date = datetime.strptime(post_date, self.datetime_format)
+                if cur_date.date() > last_date.date():
+                    self.cuts.append(len(self.dates))
+                self.dates.append(post_date)
+                last_date = cur_date
 
     def get_bow(self):
         self.dictionary = corpora.Dictionary(self.corpus)
@@ -243,7 +252,7 @@ class Topic_collection(object):
         sim, now = {}, datetime.now() 
         for date, vec, tid in zip(self.dates, self.distributions, self.valid_topics):
             if len(vec) > 0:     
-                date = datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
+                date = datetime.strptime(date, self.datetime_format)
                 day_diff = (now - date).days
                 sim[tid] = stats.entropy(pk=distribution, qk=vec)*math.exp(day_diff/T)
         return sim
@@ -259,12 +268,40 @@ class Topic_collection(object):
         for sim_vec, tid in zip(self.similarity, self.valid_topics):
             for i, sim_val in enumerate(sim_vec):
                 tid_1 = self.valid_topics[i]
-                date = datetime.strptime(self.dates[i], "%Y-%m-%d %H:%M:%S")
+                date = datetime.strptime(self.dates[i], self.datetime_format)
                 day_diff = (datetime.now()-date).days
                 self.sim_matrix[tid][tid_1] = sim_val*math.exp(-day_diff/T)
 
-    def update_collection(self, topic, preprocess_fn, stopwords, 
-                          punc_frac_low, punc_frac_high, valid_ratio):
+    def remove_oldest(self):
+        '''
+        Removes all topics posted before cut_off_date 
+        '''
+        oldest = datetime.strptime(self.dates[0], self.datetime_format)
+        
+        l, r = 0, len(self.dates)-1
+        while l < r:
+            mid = (l+r)//2
+            mid_date = datetime.strptime(self.dates[mid], self.datetime_format)
+            if mid_date.date() > oldest.date():
+                r = mid
+            elif mid_date.date() <= oldest.date():
+                l = mid+1
+            '''
+            binary search for the first date
+            '''
+        idx = l
+        self.corpus = self.corpus[idx:]
+        self.valid_topics = self.valid_topics[idx:]
+        self.dates = self.dates[idx:]
+        self.corpus_bow = self.corpus_bow[idx:]
+
+    def add_one(self, topic, preprocess_fn, stopwords, punc_frac_low, 
+                punc_frac_high, valid_ratio, n_days):
+        latest = datetime.strptime(topic['POSTDATE'], self.datetime_format)
+        oldest = datetime.strptime(self.dates[0], self.datetime_format) 
+        if (latest-oldest).days > n_days:
+            self.remove_oldest()
+
         content = ' '.join(topic['body'].split())
         word_list = preprocess_fn(content, stopwords, punc_frac_low,  
                                   punc_frac_high, valid_ratio)
@@ -277,12 +314,12 @@ class Topic_collection(object):
         self.valid_topics.append(topic['topicid'])
         self.dictionary.add_documents([word_list])
         self.corpus_bow.append(self.dictionary.doc2bow(word_list))
-            
+        
         new_tid = self.valid_topics[-1]
         self.similarity.add_documents([self.corpus_bow[-1]])
         for sim_val, tid, date in zip(self.similarity[-1], self.valid_topics,
                                       self.dates):
-            date = datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
+            date = datetime.strptime(date, self.datetime_format)
             day_diff = (datetime.now()-date).days
             self.sim_matrix[tid][new_tid] = sim_val
             self.sim_matrix[new_tid][tid] = sim_val*math.exp(-day_diff/T)

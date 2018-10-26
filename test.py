@@ -162,32 +162,38 @@ for topic_id, r in topics.items():
 
 print(n_replies)
 
-'''
+
 connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
 channel = connection.channel()
+
+channel.exchange_declare(exchange='x',
+                         exchange_type='direct')
+
 channel.queue_declare(queue='new_topics')
+channel.queue_declare(queue='update_topics')
 channel.queue_declare(queue='active_topics')
 
-d1 = {'topicid': '1600002', 'TOTALVIEWNUM': 3, 'TOTALREPLYNUM': 0, 
-     'POSTDATE': '2018-10-25', 'USEFULNUM': 0, 'GOLDUSEFULNUM': 0, 
+d1 = {'topicid': '1600003', 'TOTALVIEWNUM': 9, 'TOTALREPLYNUM': 0, 
+     'POSTDATE': '2018-10-26', 'USEFULNUM': 0, 'GOLDUSEFULNUM': 0, 
      'TOTALPCPOINT': 0, 'TOPICPCPOINT': 0, 'body': 'dsfghfd'}
 
-d2 = {'topicid': '1506325', 'TOTALVIEWNUM': 5, 'USEFULNUM': 2}
+d2 = {'topicid': '1506315', 'TOTALVIEWNUM': 3, 'USEFULNUM': 1}
+
+d3 = {}
 
 msg1, msg2 = json.dumps(d1), json.dumps(d2)
 
-print(msg1, msg2)
-
-channel.basic_publish(exchange='',
-                      routing_key='new_topics',
+channel.basic_publish(exchange='x',
+                      routing_key='new',
                       body=msg1)
-print(" [x] Sent message to Queue 1")
 
-
-channel.basic_publish(exchange='',
-                      routing_key='active_topics',
+channel.basic_publish(exchange='x',
+                      routing_key='update',
                       body=msg2)
 
-print(" [x] Sent message to Queue 2")
-
 connection.close()
+'''
+
+dt1 = datetime.strptime('2018-10-25 00:00:00', "%Y-%m-%d %H:%M:%S")
+dt2 = datetime.strptime('2018-10-25 23:59:59', "%Y-%m-%d %H:%M:%S")
+print(dt1.date() > dt2.date())
