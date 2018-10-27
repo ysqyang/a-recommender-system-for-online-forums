@@ -123,7 +123,8 @@ def get_config(config_file_path):
     config.read(config_file_path)
     return config
 
-def preprocess(text, stopwords, punc_frac_low, punc_frac_high, valid_ratio):
+def preprocess(text, stopwords, punc_frac_low, punc_frac_high, 
+               valid_count, valid_ratio):
     '''
     Tokenize a Chinese document to a list of words and filters out
     invalid documents 
@@ -132,8 +133,9 @@ def preprocess(text, stopwords, punc_frac_low, punc_frac_high, valid_ratio):
     stopwords:       set of stopwords
     punc_ratio_low:  the lower limit of the fraction of punctuation marks
     punc_ratio_high: the upper limit of the fraction of punctuation marks
-    valid_ratio:     the lower limit for the ratio of token count to 
-                     distinct token count   
+    valid_count:     lower limit of the number of tokens
+    valid_ratio:     the lower limit of the ratio of token count to 
+                     distinct token count  
     '''  
     puncs = {'。', '，', '、', '：', ':', ';', '；', '“', '”', ' '}
     cnt = 0
@@ -167,7 +169,10 @@ def preprocess(text, stopwords, punc_frac_low, punc_frac_high, valid_ratio):
             continue
         word_list.append(word) 
 
-    if len(word_list) < 5 or len(word_list)/len(set(word_list)) > valid_ratio:
+    if len(word_list) < valid_count:
+        return None
+
+    if len(word_list)/len(set(word_list)) > valid_ratio:
         return None
 
     return word_list   

@@ -2,30 +2,37 @@ import utils
 import topic_profiling as tp
 import similarity as sim
 import argparse
-from gensim import models
+#from gensim import models
 import json
 import pika
 import constants as const
 import configparser
 import sys
+import topics
+from datetime import datetime, timedelta
 
 def main():   
     with open(const._TOPIC_FILE, 'r') as f:
         topic_dict = json.load(f)
 
-    collection = topics.Topic_collection(topic_dict)
+    stopwords = utils.load_stopwords(const._STOPWORD_FILE)
+    collection = topics.Topic_collection(topic_dict, const._DATETIME_FORMAT)
     collection.make_corpus(preprocess_fn=utils.preprocess, 
                            stopwords=stopwords, 
                            punc_frac_low=const._PUNC_FRAC_LOW, 
-                           punc_frac_high=const._PUNC_FRAC_HIGH, 
+                           punc_frac_high=const._PUNC_FRAC_HIGH,
+                           valid_count=const._VALID_COUNT, 
                            valid_ratio=const._VALID_RATIO)
 
     print('共{}条候选主贴可供推荐'.format(len(collection.valid_topics)))
     collection.get_bow()
     collection.get_similarity_matrix(const._SIMILARITIES, const._T)
 
-    stopwords = utils.load_stopwords(const._STOPWORD_FILE)
+    print('oldest: ', collection.dates[0])
+    print('corpus size: ', len(collection.corpus), len(collection.corpus_bow), 
+         len(collection.dates), len(collection.valid_topics), len(collection.sim_matrix))
 
+    '''
     config = utils.get_config(const._CONFIG_FILE)
     sections = config.sections()
 
@@ -34,38 +41,52 @@ def main():
         sys.exit()
 
     sec = sections[0]
-
+    
     credentials = pika.PlainCredentials(username=config[sec]['username'],
                                         password=config[sec]['password'])
     
     params = pika.connectionParameters(host=config[sec]['host'], 
                                        credentials=credentials)
-
+    '''
+    params = pika.ConnectionParameters(host='localhost')
     connection = pika.BlockingConnection(params)
     channel = connection.channel()
+    channel.exchange_declare(exchange='x', exchange_type='direct')
+
     channel.queue_declare(queue='new_topics')
     channel.queue_declare(queue='update_topics')
     channel.queue_declare(queue='delete_topics')
-    channel.queue_bind(exchange='', queue='new_topics', routing_key='new')
-    channel.queue_bind(exchange='', queue='update_topics', routing_key='update')
-    channel.queue_bind(exchange='', queue='delete_topics', routing_key='delete')
+    channel.queue_bind(exchange='x', queue='new_topics', routing_key='new')
+    channel.queue_bind(exchange='x', queue='update_topics', routing_key='update')
+    channel.queue_bind(exchange='x', queue='delete_topics', routing_key='delete')
 
     def on_new_topic(ch, method, properties, body):
         new_topic = json.loads(body)
         topic_id = new_topic['topicid']
         topic_dict[topic_id] = {k:v for k, v in new_topic.items() if k != 'topicid'}
-        with open(const._TOPIC_FILE, 'w') as f:
+        with open('tmp', 'w') as f:
             json.dump(topic_dict, f)
-        collection.update_collection(topic=new_topic,
-        	                         preprocess_fn=utils.preprocess, 
-        	                         stopwords=stopwords,
-        	                         punc_frac_low=const._PUNC_FRAC_LOW, 
-        	                         punc_frac_high=const._PUNC_FRAC_HIGH, 
-                                     valid_ratio=const._VALID_RATIO)
+
+        cut_off = datetime.now() - timedelta(days=const._KEEP_DAYS)
+        print(cut_off)
+        collection.add_one(topic=new_topic,
+                           preprocess_fn=utils.preprocess, 
+                           stopwords=stopwords,
+                           punc_frac_low=const._PUNC_FRAC_LOW, 
+                           punc_frac_high=const._PUNC_FRAC_HIGH, 
+                           valid_count=const._VALID_COUNT,
+                           valid_ratio=const._VALID_RATIO, 
+                           n_days=const._TRIGGER_DAYS,
+                           cut_off=cut_off, 
+                           T=const._T)
+
+        print('oldest: ', collection.dates[0])
+        print('corpus size: ', len(collection.corpus), len(collection.corpus_bow), 
+         len(collection.dates), len(collection.valid_topics), len(collection.sim_matrix))
 
     def on_update_topic(ch, method, properties, body):
-    	update_topic = json.loads(body)
-		topic_id = update_topic['topicid']
+        update_topic = json.loads(body)
+        topic_id = update_topic['topicid']
         for attr in update_topic:
             if attr != 'topicid':
                 topic_dict[topic_id][attr] = update_topic[attr]
@@ -82,8 +103,8 @@ def main():
                           no_ack=True)
 
     channel.basic_consume(on_update_topic, 
-    					  queue='update_topics',
-    					  no_ack=True)
+                                    queue='update_topics',
+                                    no_ack=True)
 
     channel.basic_consume(on_delete, 
                           queue='delete_topics',

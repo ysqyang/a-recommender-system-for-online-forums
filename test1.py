@@ -70,9 +70,11 @@ channel.basic_consume(on_update_topics,
                       queue='update_topics',
                       no_ack=True)
 
+'''
 channel.basic_consume(on_active_topics,
                       queue='active_topics',
                       no_ack=True)
+'''
 
 print(' [*] Waiting for messages. To exit press CTRL+C')
 channel.start_consuming()

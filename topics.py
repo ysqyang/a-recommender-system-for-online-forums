@@ -1,6 +1,6 @@
 # Class definitions for streaming data from file
-from gensim import corpora, models
-from gensim.similarities import Similarity
+from gensim import corpora, models, matutils
+#from gensim.similarities import Similarity
 from sklearn import preprocessing
 import warnings
 import numpy as np
@@ -22,8 +22,8 @@ class Topic(object):
         self.topic_id = topic_id
 
     def make_corpus_with_scores(self, preprocess_fn, stopwords,
-                                punc_frac_low, punc_frac_high, valid_ratio, 
-                                features, weights):
+                                punc_frac_low, punc_frac_high, valid_count,
+                                valid_ratio, features, weights):
         '''
         Creates a corpus for this topic and computes importance scores
         for replies
@@ -54,7 +54,7 @@ class Topic(object):
         for reply_id, rec in replies.items():
             content = ' '.join(rec['body'].split())
             word_list = preprocess_fn(content, stopwords, punc_frac_low, 
-                                      punc_frac_high, valid_ratio)
+                                      punc_frac_high, valid_count, valid_ratio)
             if word_list is not None:
                 feature_vec = [rec[feature] for feature in features]
                 feature_matrix.append(feature_vec)
@@ -131,28 +131,28 @@ class Topic_collection(object):
         self.datetime_format = datetime_format
 
     def make_corpus(self, preprocess_fn, stopwords, punc_frac_low, 
-                    punc_frac_high, valid_ratio):
+                    punc_frac_high, valid_count, valid_ratio):
         # iterates through all topics
         self.corpus, self.dates, self.valid_topics, self.date_cuts = [], [], [], []
         # sorting topipc id's means sorting by post date
         sorted_topic_ids = sorted(list(self.topic_dict.keys()))
 
-        last_date = '2018-09-01 00:00:00'
+        #last_date = datetime.strptime('2018-01-01 00:00:00', self.datetime_format)
         for topic_id in sorted_topic_ids:
             topic = self.topic_dict[topic_id]
             post_date, content = topic['POSTDATE'], topic['body'] 
             content = ' '.join(content.split())
             word_list = preprocess_fn(content, stopwords, punc_frac_low,  
-                                      punc_frac_high, valid_ratio)
+                                      punc_frac_high, valid_count, valid_ratio)
 
             if word_list is not None: # add only valid topics
                 self.corpus.append(word_list)
                 self.valid_topics.append(topic_id)
-                cur_date = datetime.strptime(post_date, self.datetime_format)
-                if cur_date.date() > last_date.date():
-                    self.cuts.append(len(self.dates))
+                #cur_date = datetime.strptime(post_date, self.datetime_format)
+                #if cur_date.date() > last_date.date():
+                #    self.cuts.append(len(self.dates))
                 self.dates.append(post_date)
-                last_date = cur_date
+                #last_date = cur_date
 
     def get_bow(self):
         self.dictionary = corpora.Dictionary(self.corpus)
@@ -262,49 +262,57 @@ class Topic_collection(object):
         Computes the pairwise cosine similarities for the corpus 
         with time adjustments
         '''
-        self.similarity = Similarity(output_prefix, self.corpus_bow, 
-                                     num_features=len(self.dictionary))
+        now = datetime.now()
         self.sim_matrix = collections.defaultdict(dict)
-        for sim_vec, tid in zip(self.similarity, self.valid_topics):
-            for i, sim_val in enumerate(sim_vec):
-                tid_1 = self.valid_topics[i]
-                date = datetime.strptime(self.dates[i], self.datetime_format)
-                day_diff = (datetime.now()-date).days
-                self.sim_matrix[tid][tid_1] = sim_val*math.exp(-day_diff/T)
+        for i, tid_i in enumerate(self.valid_topics):
+            vec1 = self.corpus_bow[i]
+            for j, tid_j in enumerate(self.valid_topics):
+                vec2 = self.corpus_bow[j]
+                date = datetime.strptime(self.dates[j], self.datetime_format)
+                day_diff = (now-date).days
+                self.sim_matrix[tid_i][tid_j] = matutils.cossim(vec1, vec2)*math.exp(-day_diff/T)
 
-    def remove_oldest(self):
+    def remove_oldest(self, cut_off):
         '''
-        Removes all topics posted before cut_off_date 
+        Removes all topics posted before date specified by cut_off 
         '''
         oldest = datetime.strptime(self.dates[0], self.datetime_format)
-        
+        latest = datetime.strptime(self.dates[-1], self.datetime_format)
+        if cut_off < oldest or cut_off > latest:
+            print('cut-off date must between the oldest and latest dates')
+            return 
+        #binary search for the first entry later than cut_off
         l, r = 0, len(self.dates)-1
         while l < r:
             mid = (l+r)//2
             mid_date = datetime.strptime(self.dates[mid], self.datetime_format)
-            if mid_date.date() > oldest.date():
+            if mid_date.date() > cut_off.date():
                 r = mid
-            elif mid_date.date() <= oldest.date():
+            elif mid_date.date() <= cut_off.date():
                 l = mid+1
-            '''
-            binary search for the first date
-            '''
-        idx = l
-        self.corpus = self.corpus[idx:]
-        self.valid_topics = self.valid_topics[idx:]
-        self.dates = self.dates[idx:]
-        self.corpus_bow = self.corpus_bow[idx:]
+            
+        self.corpus = self.corpus[l:]       
+        self.dates = self.dates[l:]
+        self.corpus_bow = self.corpus_bow[l:]
+        for delete_tid in self.valid_topics[:l]:
+            del self.sim_matrix[delete_tid]
+        
+        for tid in self.sim_matrix:
+            for delete_tid in self.valid_topics[:l]:
+                del self.sim_matrix[tid][delete_tid]
 
+        self.valid_topics = self.valid_topics[l:]
+    
     def add_one(self, topic, preprocess_fn, stopwords, punc_frac_low, 
-                punc_frac_high, valid_ratio, n_days):
+                punc_frac_high, valid_count, valid_ratio, n_days, cut_off, T):
         latest = datetime.strptime(topic['POSTDATE'], self.datetime_format)
         oldest = datetime.strptime(self.dates[0], self.datetime_format) 
         if (latest-oldest).days > n_days:
-            self.remove_oldest()
+            self.remove_oldest(cut_off)
 
         content = ' '.join(topic['body'].split())
         word_list = preprocess_fn(content, stopwords, punc_frac_low,  
-                                  punc_frac_high, valid_ratio)
+                                  punc_frac_high, valid_count, valid_ratio)
 
         if word_list is None: # ignore invalid topics
             return
@@ -313,14 +321,14 @@ class Topic_collection(object):
         self.dates.append(topic['postdate'])
         self.valid_topics.append(topic['topicid'])
         self.dictionary.add_documents([word_list])
-        self.corpus_bow.append(self.dictionary.doc2bow(word_list))
+        new_bow = self.dictionary.doc2bow(word_list)
+        self.corpus_bow.append(bow)
         
         new_tid = self.valid_topics[-1]
-        self.similarity.add_documents([self.corpus_bow[-1]])
-        for sim_val, tid, date in zip(self.similarity[-1], self.valid_topics,
-                                      self.dates):
+        for tid, bow, date in zip(self.valid_topics, self.corpus_bow, self.dates):
             date = datetime.strptime(date, self.datetime_format)
             day_diff = (datetime.now()-date).days
+            sim_val = matutils.cossim(new_bow, bow)
             self.sim_matrix[tid][new_tid] = sim_val
             self.sim_matrix[new_tid][tid] = sim_val*math.exp(-day_diff/T)
 

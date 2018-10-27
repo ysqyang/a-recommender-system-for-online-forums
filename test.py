@@ -2,11 +2,11 @@ import numpy as np
 from sklearn import preprocessing
 import utils
 import random
-from gensim import corpora, models
+from gensim import corpora, models, similarities
 import collections
 from pprint import pprint
 import time
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 import database
 import pickle
 import constants as const
@@ -161,7 +161,7 @@ for topic_id, r in topics.items():
     n_replies += r['TOTALREPLYNUM']
 
 print(n_replies)
-
+'''
 
 connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
 channel = connection.channel()
@@ -171,29 +171,67 @@ channel.exchange_declare(exchange='x',
 
 channel.queue_declare(queue='new_topics')
 channel.queue_declare(queue='update_topics')
-channel.queue_declare(queue='active_topics')
+#channel.queue_declare(queue='active_topics')
 
 d1 = {'topicid': '1600003', 'TOTALVIEWNUM': 9, 'TOTALREPLYNUM': 0, 
-     'POSTDATE': '2018-10-26', 'USEFULNUM': 0, 'GOLDUSEFULNUM': 0, 
-     'TOTALPCPOINT': 0, 'TOPICPCPOINT': 0, 'body': 'dsfghfd'}
+     'POSTDATE': '2018-11-18 14:35:21', 'USEFULNUM': 0, 'GOLDUSEFULNUM': 0, 
+     'TOTALPCPOINT': 0, 'TOPICPCPOINT': 0, 'body': '央视记者在英国大闹现场'}
 
-d2 = {'topicid': '1506315', 'TOTALVIEWNUM': 3, 'USEFULNUM': 1}
+#d2 = {'topicid': '1506315', 'TOTALVIEWNUM': 3, 'USEFULNUM': 1}
 
-d3 = {}
+msg1 = json.dumps(d1)
 
-msg1, msg2 = json.dumps(d1), json.dumps(d2)
+#msg2 = json.dumps(d2)
 
 channel.basic_publish(exchange='x',
                       routing_key='new',
                       body=msg1)
 
-channel.basic_publish(exchange='x',
-                      routing_key='update',
-                      body=msg2)
+#channel.basic_publish(exchange='x',
+ #                     routing_key='update',
+ #                     body=msg2)
 
 connection.close()
 '''
+stopwords = utils.load_stopwords('./stopwords.txt')
 
-dt1 = datetime.strptime('2018-10-25 00:00:00', "%Y-%m-%d %H:%M:%S")
-dt2 = datetime.strptime('2018-10-25 23:59:59', "%Y-%m-%d %H:%M:%S")
-print(dt1.date() > dt2.date())
+docs = ['央视记者在英国大闹现场',
+        '真爱国还是做秀？', 
+        '外交部已经表态了',
+        '打着爱国的旗号的心机婊',
+        '西方言论自由难道不懂么']
+
+another = '金州勇士力争三连冠'
+
+docs = [utils.preprocess(doc, stopwords, 0, const._PUNC_FRAC_HIGH, 0, 
+                         const._VALID_RATIO) for doc in docs]
+
+pprint(docs)
+
+dictionary = corpora.Dictionary(docs)
+
+bow = [dictionary.doc2bow(doc) for doc in docs]
+
+another = utils.preprocess(another, stopwords, 0, const._PUNC_FRAC_HIGH, 
+                           0, const._VALID_RATIO)
+
+print('dictionary: ', dictionary.token2id)
+print('bow: ', bow)
+
+print('*'*80)
+
+dictionary.add_documents([another])
+
+another_bow = dictionary.doc2bow(another) 
+
+bow.append(another_bow)
+
+print('dictionary: ', dictionary.token2id)
+print('bow: ', bow)
+
+cut_off = datetime.now() - timedelta(days=const._KEEP_DAYS) 
+
+print(cut_off)
+
+
+'''
