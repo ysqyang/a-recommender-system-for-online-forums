@@ -272,14 +272,14 @@ class Topic_collection(object):
                 day_diff = (now-date).days
                 self.sim_matrix[tid_i][tid_j] = matutils.cossim(vec1, vec2)*math.exp(-day_diff/T)
 
-    def remove_oldest(self, cut_off):
+    def remove_old(self, cut_off):
         '''
         Removes all topics posted before date specified by cut_off 
         '''
         oldest = datetime.strptime(self.dates[0], self.datetime_format)
         latest = datetime.strptime(self.dates[-1], self.datetime_format)
+
         if cut_off < oldest or cut_off > latest:
-            print('cut-off date must between the oldest and latest dates')
             return 
         #binary search for the first entry later than cut_off
         l, r = 0, len(self.dates)-1
@@ -307,30 +307,36 @@ class Topic_collection(object):
                 punc_frac_high, valid_count, valid_ratio, n_days, cut_off, T):
         latest = datetime.strptime(topic['POSTDATE'], self.datetime_format)
         oldest = datetime.strptime(self.dates[0], self.datetime_format) 
+        print('diff, n_days: ', (latest-oldest).days, n_days)
         if (latest-oldest).days > n_days:
-            self.remove_oldest(cut_off)
+            self.remove_old(cut_off)
 
         content = ' '.join(topic['body'].split())
         word_list = preprocess_fn(content, stopwords, punc_frac_low,  
                                   punc_frac_high, valid_count, valid_ratio)
 
+        print(word_list)
         if word_list is None: # ignore invalid topics
             return
 
         self.corpus.append(word_list)
-        self.dates.append(topic['postdate'])
+        self.dates.append(topic['POSTDATE'])
         self.valid_topics.append(topic['topicid'])
         self.dictionary.add_documents([word_list])
         new_bow = self.dictionary.doc2bow(word_list)
-        self.corpus_bow.append(bow)
+        self.corpus_bow.append(new_bow)
         
         new_tid = self.valid_topics[-1]
+        print('new tid: ', new_tid)
         for tid, bow, date in zip(self.valid_topics, self.corpus_bow, self.dates):
             date = datetime.strptime(date, self.datetime_format)
             day_diff = (datetime.now()-date).days
             sim_val = matutils.cossim(new_bow, bow)
             self.sim_matrix[tid][new_tid] = sim_val
             self.sim_matrix[new_tid][tid] = sim_val*math.exp(-day_diff/T)
+
+        print('oldest: ', self.dates[0])
+        print('latest: ', self.dates[-1])
 
     def is_duplicate(self, tid_1, tid_2, thresh):
         return self.sim_matrix[tid_1][tid_2] > thresh

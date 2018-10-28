@@ -173,8 +173,8 @@ channel.queue_declare(queue='new_topics')
 channel.queue_declare(queue='update_topics')
 #channel.queue_declare(queue='active_topics')
 
-d1 = {'topicid': '1600003', 'TOTALVIEWNUM': 9, 'TOTALREPLYNUM': 0, 
-     'POSTDATE': '2018-11-18 14:35:21', 'USEFULNUM': 0, 'GOLDUSEFULNUM': 0, 
+d1 = {'topicid': '1600002', 'TOTALVIEWNUM': 9, 'TOTALREPLYNUM': 0, 
+     'POSTDATE': '2018-11-20 23:35:21', 'USEFULNUM': 0, 'GOLDUSEFULNUM': 0, 
      'TOTALPCPOINT': 0, 'TOPICPCPOINT': 0, 'body': '央视记者在英国大闹现场'}
 
 #d2 = {'topicid': '1506315', 'TOTALVIEWNUM': 3, 'USEFULNUM': 1}

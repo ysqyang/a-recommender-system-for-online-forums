@@ -28,9 +28,7 @@ def main():
     collection.get_bow()
     collection.get_similarity_matrix(const._SIMILARITIES, const._T)
 
-    print('oldest: ', collection.dates[0])
-    print('corpus size: ', len(collection.corpus), len(collection.corpus_bow), 
-         len(collection.dates), len(collection.valid_topics), len(collection.sim_matrix))
+    print('dates: ', collection.dates)
 
     '''
     config = utils.get_config(const._CONFIG_FILE)
@@ -64,11 +62,37 @@ def main():
         new_topic = json.loads(body)
         topic_id = new_topic['topicid']
         topic_dict[topic_id] = {k:v for k, v in new_topic.items() if k != 'topicid'}
+
+        post_date = datetime.strptime(new_topic['POSTDATE'], collection.datetime_format)
+        cut_off = post_date - timedelta(days=const._KEEP_DAYS)
+     
+        def remove_old(cut_off):
+            if cut_off < oldest or cut_off > post_date:
+                return 
+            #binary search for the first entry later than cut_off
+            l, r = 0, len(collection.dates)-1
+            while l < r:
+                mid = (l+r)//2
+                mid_date = datetime.strptime(collection.dates[mid], const._DATETIME_FORMAT)
+                if mid_date.date() > cut_off.date():
+                    r = mid
+                elif mid_date.date() <= cut_off.date():
+                    l = mid+1
+
+            delete_tids = []
+            for tid in topic_dict:
+                post_date = datetime.strptime(topic_dict[tid]['POSTDATE'], const._DATETIME_FORMAT)
+                if post_date.date() < cut_off.date(): 
+                    delete_tids.append(tid)
+
+            for tid in delete_tids:
+                del topic_dict[tid]
+
+        remove_old(cut_off)
+
         with open('tmp', 'w') as f:
             json.dump(topic_dict, f)
 
-        cut_off = datetime.now() - timedelta(days=const._KEEP_DAYS)
-        print(cut_off)
         collection.add_one(topic=new_topic,
                            preprocess_fn=utils.preprocess, 
                            stopwords=stopwords,
@@ -80,7 +104,7 @@ def main():
                            cut_off=cut_off, 
                            T=const._T)
 
-        print('oldest: ', collection.dates[0])
+        print('dates:', collection.dates)
         print('corpus size: ', len(collection.corpus), len(collection.corpus_bow), 
          len(collection.dates), len(collection.valid_topics), len(collection.sim_matrix))
 
