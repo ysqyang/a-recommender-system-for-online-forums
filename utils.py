@@ -20,45 +20,6 @@ def load_stopwords(stopwords_path):
 
     return stopwords
 
-'''
-def create_topic_id_to_reply_table(db, topic_ids, path):
-    print('Creating mapping from topic id to reply table number...')
-    mapping = {}
-    for tid in topic_ids:
-        j = 0
-        while j < 10:
-            sql = 'SELECT * FROM replies_{} WHERE TOPICID = {}'.format(j, tid)
-            with db.query(sql) as cursor:
-                if cursor.fetchone():
-                    mapping[tid] = j
-                    break
-            j += 1
-
-    with open(path, 'wb') as f:
-        pickle.dump(mapping, f)
-
-    print('Created topic-id-to-reply-table-number mapping with {} entries'.format(len(mapping)))
-    return mapping
-'''
-
-def load_mapping(path):
-    with open(path, 'rb') as f:
-        mapping = pickle.load(f)
-    return mapping
-
-def get_new_topics(db, existing):
-    new_topic_records = []
-
-    for i in range(10):
-        sql = 'SELECT TOPICID FROM topics_{}'.format(i)
-        with db.query(sql) as cursor:
-            for (topic_id,) in cursor:
-                if topic_id not in existing:
-                    new_topic_records.append(topic_id)
-
-    print('Found {} new topics'.format(len(new_topic_records)))
-    return new_topic_records
-
 def load_topics(db, attrs, days, min_len, min_replies, min_replies_1, path):
     topics = {}
     attrs = ', '.join(attrs)
@@ -118,6 +79,10 @@ def load_replies(db, topic_ids, attrs, path):
     print('以上主贴共计有{}条跟帖'.format(
            sum([len(replies[topic_id]) for topic_id in replies])))
 
+def save_topics(topic_dict, path):
+    with open(path, 'w') as f:
+        json.dump(topic_dict, f)
+
 def get_config(config_file_path):
     config = configparser.ConfigParser()
     config.read(config_file_path)
@@ -131,10 +96,10 @@ def preprocess(text, stopwords, punc_frac_low, punc_frac_high,
     Args:
     text:            text to be tokenized
     stopwords:       set of stopwords
-    punc_ratio_low:  the lower limit of the fraction of punctuation marks
-    punc_ratio_high: the upper limit of the fraction of punctuation marks
+    punc_ratio_low:  lower threshold for the fraction of punctuation marks
+    punc_ratio_high: upper threshold for the fraction of punctuation marks
     valid_count:     lower limit of the number of tokens
-    valid_ratio:     the lower limit of the ratio of token count to 
+    valid_ratio:     lower threshold for the ratio of token count to 
                      distinct token count  
     '''  
     puncs = {'。', '，', '、', '：', ':', ';', '；', '“', '”', ' '}
@@ -152,7 +117,8 @@ def preprocess(text, stopwords, punc_frac_low, punc_frac_high,
               '六', '七', '八', '九', '十', 
               '两', '这', '那', '不', '很',
               '是', '只', '就', '你', '我', 
-              '他', '她', '它', '啊', '呵'}
+              '他', '她', '它', '啊', '呵',
+              '哈', '哦'}
 
     alphanum, whitespace = r'\\*\w+', r'\s' 
     word_list = []

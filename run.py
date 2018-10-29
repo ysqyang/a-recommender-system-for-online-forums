@@ -15,6 +15,7 @@ def main():
     with open(const._TOPIC_FILE, 'r') as f:
         topic_dict = json.load(f)
 
+    tids = sorted(list(topic_dict.keys()))
     stopwords = utils.load_stopwords(const._STOPWORD_FILE)
     collection = topics.Topic_collection(topic_dict, const._DATETIME_FORMAT)
     collection.make_corpus(preprocess_fn=utils.preprocess, 
@@ -26,7 +27,8 @@ def main():
 
     print('共{}条候选主贴可供推荐'.format(len(collection.valid_topics)))
     collection.get_bow()
-    collection.get_similarity_matrix(const._SIMILARITIES, const._T)
+    collection.get_similarity_data(const._T)
+    collection.save_similarity_data(const._SIMILARITY_MATRIX, const._SIMILARITY_SORTED)
 
     print('dates: ', collection.dates)
 
@@ -49,49 +51,41 @@ def main():
     params = pika.ConnectionParameters(host='localhost')
     connection = pika.BlockingConnection(params)
     channel = connection.channel()
-    channel.exchange_declare(exchange='x', exchange_type='direct')
+    channel.exchange_declare(exchange=const._EXCHANGE_NAME, exchange_type='direct')
 
     channel.queue_declare(queue='new_topics')
     channel.queue_declare(queue='update_topics')
     channel.queue_declare(queue='delete_topics')
-    channel.queue_bind(exchange='x', queue='new_topics', routing_key='new')
-    channel.queue_bind(exchange='x', queue='update_topics', routing_key='update')
-    channel.queue_bind(exchange='x', queue='delete_topics', routing_key='delete')
+    channel.queue_bind(exchange=const._EXCHANGE_NAME, queue='new_topics', routing_key='new')
+    channel.queue_bind(exchange=const._EXCHANGE_NAME, queue='update_topics', routing_key='update')
+    channel.queue_bind(exchange=const._EXCHANGE_NAME, queue='delete_topics', routing_key='delete')
 
     def on_new_topic(ch, method, properties, body):
+        print('receiving new topic...')
         new_topic = json.loads(body)
         topic_id = new_topic['topicid']
-        topic_dict[topic_id] = {k:v for k, v in new_topic.items() if k != 'topicid'}
 
-        post_date = datetime.strptime(new_topic['POSTDATE'], collection.datetime_format)
+        oldest = topic_dict[tids[0]]['POSTDATE']
+        oldest = datetime.strptime(oldest, const._DATETIME_FORMAT)
+        print('oldest: ', oldest)
+        post_date = datetime.strptime(new_topic['POSTDATE'], const._DATETIME_FORMAT)
         cut_off = post_date - timedelta(days=const._KEEP_DAYS)
-     
+        
         def remove_old(cut_off):
             if cut_off < oldest or cut_off > post_date:
                 return 
-            #binary search for the first entry later than cut_off
-            l, r = 0, len(collection.dates)-1
-            while l < r:
-                mid = (l+r)//2
-                mid_date = datetime.strptime(collection.dates[mid], const._DATETIME_FORMAT)
-                if mid_date.date() > cut_off.date():
-                    r = mid
-                elif mid_date.date() <= cut_off.date():
-                    l = mid+1
-
-            delete_tids = []
-            for tid in topic_dict:
-                post_date = datetime.strptime(topic_dict[tid]['POSTDATE'], const._DATETIME_FORMAT)
-                if post_date.date() < cut_off.date(): 
-                    delete_tids.append(tid)
-
-            for tid in delete_tids:
+            
+            for tid in tids:
+                dt = datetime.strptime(topic_dict[tid]['POSTDATE'], const._DATETIME_FORMAT)
+                if dt.date() >= cut_off.date():
+                    break  
                 del topic_dict[tid]
 
-        remove_old(cut_off)
+        if (post_date - oldest).days > const._TRIGGER_DAYS:
+            remove_old(cut_off)
 
-        with open('tmp', 'w') as f:
-            json.dump(topic_dict, f)
+        topic_dict[topic_id] = {k:v for k, v in new_topic.items() if k != 'topicid'}
+        utils.save_topics(topic_dict, const._TMP)
 
         collection.add_one(topic=new_topic,
                            preprocess_fn=utils.preprocess, 
@@ -100,11 +94,15 @@ def main():
                            punc_frac_high=const._PUNC_FRAC_HIGH, 
                            valid_count=const._VALID_COUNT,
                            valid_ratio=const._VALID_RATIO, 
-                           n_days=const._TRIGGER_DAYS,
+                           trigger_days=const._TRIGGER_DAYS,
                            cut_off=cut_off, 
                            T=const._T)
 
-        print('dates:', collection.dates)
+        collection.save_similarity_data(const._SIMILARITY_MATRIX, const._SIMILARITY_SORTED)
+        
+        for tid, date in zip(collection.valid_topics, collection.dates):
+            print(tid, date)
+
         print('corpus size: ', len(collection.corpus), len(collection.corpus_bow), 
          len(collection.dates), len(collection.valid_topics), len(collection.sim_matrix))
 
@@ -114,21 +112,35 @@ def main():
         for attr in update_topic:
             if attr != 'topicid':
                 topic_dict[topic_id][attr] = update_topic[attr]
-        with open(const._TOPIC_FILE, 'w') as f:
-            json.dump(topic_dict, f)
+        utils.save_topics(topic_dict, const._TMP)
 
     def on_delete(ch, method, properties, body):
-        del topic_dict[body]
-        with open(const._TOPIC_FILE, 'w') as f:
-            json.dump(topic_dict, f)
+        print('deleting topic...')
+        delete_id = json.loads(body)
+        if delete_id not in topic_dict:
+            return
+
+        print('HERE!!!!!')
+        del topic_dict[delete_id]
+        utils.save_topics(topic_dict, const._TMP)
+
+        collection.delete_one(delete_id)
+        collection.save_similarity_data(const._SIMILARITY_MATRIX, const._SIMILARITY_SORTED)
+
+        for tid, date in zip(collection.valid_topics, collection.dates):
+            print(tid, date)
+
+        print('corpus size: ', len(collection.corpus), len(collection.corpus_bow), 
+         len(collection.dates), len(collection.valid_topics), len(collection.sim_matrix))
+        
 
     channel.basic_consume(on_new_topic,
                           queue='new_topics',
                           no_ack=True)
 
     channel.basic_consume(on_update_topic, 
-                                    queue='update_topics',
-                                    no_ack=True)
+                          queue='update_topics',
+                          no_ack=True)
 
     channel.basic_consume(on_delete, 
                           queue='delete_topics',

@@ -13,6 +13,8 @@ import constants as const
 import json
 import database
 import pika
+import bisect
+import collections
 '''
 class Stream(object):
     def __init__(self, topic_id, preprocess_fn, stopwords):
@@ -161,35 +163,36 @@ for topic_id, r in topics.items():
     n_replies += r['TOTALREPLYNUM']
 
 print(n_replies)
-'''
 
+'''
 connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
 channel = connection.channel()
 
-channel.exchange_declare(exchange='x',
+channel.exchange_declare(exchange=const._EXCHANGE_NAME,
                          exchange_type='direct')
 
 channel.queue_declare(queue='new_topics')
-channel.queue_declare(queue='update_topics')
+channel.queue_declare(queue='delete_topics')
 #channel.queue_declare(queue='active_topics')
 
 d1 = {'topicid': '1600002', 'TOTALVIEWNUM': 9, 'TOTALREPLYNUM': 0, 
-     'POSTDATE': '2018-11-20 23:35:21', 'USEFULNUM': 0, 'GOLDUSEFULNUM': 0, 
-     'TOTALPCPOINT': 0, 'TOPICPCPOINT': 0, 'body': '央视记者在英国大闹现场'}
+     'POSTDATE': '2018-10-29 23:35:21', 'USEFULNUM': 0, 'GOLDUSEFULNUM': 0, 
+     'TOTALPCPOINT': 0, 'TOPICPCPOINT': 0, 'body': '央视记者在英国大闹现场, 金州勇士力争三连冠。'}
 
-#d2 = {'topicid': '1506315', 'TOTALVIEWNUM': 3, 'USEFULNUM': 1}
+d2 = '1506315'
 
 msg1 = json.dumps(d1)
 
-#msg2 = json.dumps(d2)
+msg2 = json.dumps(d2)
 
+print(msg2, type(msg2))
 channel.basic_publish(exchange='x',
                       routing_key='new',
                       body=msg1)
 
-#channel.basic_publish(exchange='x',
- #                     routing_key='update',
- #                     body=msg2)
+channel.basic_publish(exchange='x',
+                      routing_key='delete',
+                      body=msg2)
 
 connection.close()
 '''
@@ -232,6 +235,72 @@ print('bow: ', bow)
 cut_off = datetime.now() - timedelta(days=const._KEEP_DAYS) 
 
 print(cut_off)
+d, dl = collections.defaultdict(dict), collections.defaultdict(list)
+
+d[1][1]=1
+d[1][2]=0.5
+d[2][1]=0.3
+d[2][2]=1
+
+d[1].append(['sf', 8])
+d[1].append(['cj', 6])
+d[1].append(['er', 10])
+d[1].append(['ci', 5])
+
+delete = {'er', 'cj'}
+
+for i in range(1, 3):
+    dl[i] = [[tid_j, sim_val] for tid_j, sim_val 
+                              in d[i].items()]
+    dl[i].sort(key = lambda x:x[1], reverse=True) 
+
+print(dl)
+
+def insert(tid, target_tid, target_sim_val):
+    sim_list = dl[tid]
+    
+    if len(sim_list) == 0:
+        sim_list.append([target_tid, target_sim_val])
+        return 
+
+    l, r = 0, len(sim_list)
+    while l < r:
+        mid = (l+r)//2
+        if sim_list[mid][1] <= target_sim_val:
+            r = mid
+        else:
+            l = mid+1 
+
+    sim_list.insert(l, [target_tid, target_sim_val])
+
+new_id = 3
+d[new_id][new_id] = 1
+for i in range(1, 3):
+    sim_val = abs(new_id-i)/10
+    d[new_id][i] = sim_val
+    d[i][new_id] = sim_val
+    insert(i, new_id, sim_val)
+
+dl[new_id] = [[tid_j, sim_val] for tid_j, sim_val 
+                              in d[new_id].items()]
+dl[new_id].sort(key = lambda x:x[1], reverse=True) 
+
+print(d)
+print(dl)
 
 
+del d[2]
+del dl[2]
+
+for tid, sim_dict in d.items():
+    del sim_dict[2]
+
+for tid, sim_list in dl.items():
+    dl[tid] = [x for x in sim_list if x[0] != 2]
+
+print(d)
+print(dl)
 '''
+
+
+

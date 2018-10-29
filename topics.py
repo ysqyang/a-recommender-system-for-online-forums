@@ -257,20 +257,26 @@ class Topic_collection(object):
                 sim[tid] = stats.entropy(pk=distribution, qk=vec)*math.exp(day_diff/T)
         return sim
 
-    def get_similarity_matrix(self, output_prefix, T):
+    def get_similarity_data(self, T):
         '''
         Computes the pairwise cosine similarities for the corpus 
-        with time adjustments
+        with time adjustments and the corresponding similarity lists
+        sorted by similarity value
         '''
-        now = datetime.now()
         self.sim_matrix = collections.defaultdict(dict)
+        self.sim_sorted = collections.defaultdict(list)
         for i, tid_i in enumerate(self.valid_topics):
-            vec1 = self.corpus_bow[i]
+            vec_i = self.corpus_bow[i]
+            date_i = datetime.strptime(self.dates[i], self.datetime_format)
             for j, tid_j in enumerate(self.valid_topics):
-                vec2 = self.corpus_bow[j]
-                date = datetime.strptime(self.dates[j], self.datetime_format)
-                day_diff = (now-date).days
-                self.sim_matrix[tid_i][tid_j] = matutils.cossim(vec1, vec2)*math.exp(-day_diff/T)
+                vec_j = self.corpus_bow[j]
+                date_j = datetime.strptime(self.dates[j], self.datetime_format)
+                day_diff = abs((date_i-date_j).days)
+                self.sim_matrix[tid_i][tid_j] = matutils.cossim(vec_i, vec_j)*math.exp(-day_diff/T)
+
+            self.sim_sorted[tid_i] = [[tid_j, sim_val] for tid_j, sim_val 
+                                      in self.sim_matrix[tid_i].items()]
+            self.sim_sorted[tid_i].sort(key=lambda x:x[1], reverse=True)
 
     def remove_old(self, cut_off):
         '''
@@ -294,72 +300,123 @@ class Topic_collection(object):
         self.corpus = self.corpus[l:]       
         self.dates = self.dates[l:]
         self.corpus_bow = self.corpus_bow[l:]
-        for delete_tid in self.valid_topics[:l]:
-            del self.sim_matrix[delete_tid]
-        
-        for tid in self.sim_matrix:
-            for delete_tid in self.valid_topics[:l]:
-                del self.sim_matrix[tid][delete_tid]
-
+        delete_tids = set(self.valid_topics[:l])
         self.valid_topics = self.valid_topics[l:]
-    
+
+        for delete_tid in delete_tids:
+            del self.sim_matrix[delete_tid]
+            del self.sim_sorted[delete_tid]
+        
+        for tid, sim_dict in self.sim_matrix.items():
+            for delete_tid in delete_tids:
+                del sim_dict[delete_tid]
+
+        for tid, sim_list in self.sim_sorted.items():
+            self.sim_sorted[tid] = [x for x in sim_list if x[0] not in delete_tids]
+  
     def add_one(self, topic, preprocess_fn, stopwords, punc_frac_low, 
-                punc_frac_high, valid_count, valid_ratio, n_days, cut_off, T):
+                punc_frac_high, valid_count, valid_ratio, trigger_days, cut_off, T):
         latest = datetime.strptime(topic['POSTDATE'], self.datetime_format)
         oldest = datetime.strptime(self.dates[0], self.datetime_format) 
-        print('diff, n_days: ', (latest-oldest).days, n_days)
-        if (latest-oldest).days > n_days:
+        #print('diff, n_days: ', (latest-oldest).days, n_days)
+        if (latest-oldest).days > trigger_days:
             self.remove_old(cut_off)
 
         content = ' '.join(topic['body'].split())
         word_list = preprocess_fn(content, stopwords, punc_frac_low,  
                                   punc_frac_high, valid_count, valid_ratio)
 
-        print(word_list)
+        #print(word_list)
         if word_list is None: # ignore invalid topics
             return
+
+        new_tid = topic['topicid']
+        new_bow = self.dictionary.doc2bow(word_list)
+
+        def insert(tid, target_tid, target_sim_val):
+            sim_list = self.sim_sorted[tid]
+            
+            if len(sim_list) == 0:
+                sim_list.append([target_tid, target_sim_val])
+                return
+
+            l, r = 0, len(sim_list)
+            while l < r:
+                m = (l+r)//2
+                if sim_list[m][1] <= target_sim_val:
+                    r = m
+                else:
+                    l = m+1 
+
+            sim_list.insert(l, [target_tid, target_sim_val])
+      
+        self.sim_matrix[new_tid][new_tid] = 1.0       
+        for tid, bow, date in zip(self.valid_topics, self.corpus_bow, self.dates):
+            date = datetime.strptime(date, self.datetime_format)
+            day_diff = (latest-date).days
+            sim_val = matutils.cossim(new_bow, bow)*math.exp(-day_diff/T)
+            self.sim_matrix[tid][new_tid] = sim_val
+            self.sim_matrix[new_tid][tid] = sim_val
+            insert(tid, new_tid, sim_val)
+
+        self.sim_sorted[new_tid] = [[tid_j, sim_val] for tid_j, sim_val 
+                                    in self.sim_matrix[new_tid].items()]
+        self.sim_sorted[new_tid].sort(key=lambda x:x[1], reverse=True)
 
         self.corpus.append(word_list)
         self.dates.append(topic['POSTDATE'])
         self.valid_topics.append(topic['topicid'])
         self.dictionary.add_documents([word_list])
-        new_bow = self.dictionary.doc2bow(word_list)
         self.corpus_bow.append(new_bow)
-        
-        new_tid = self.valid_topics[-1]
-        print('new tid: ', new_tid)
-        for tid, bow, date in zip(self.valid_topics, self.corpus_bow, self.dates):
-            date = datetime.strptime(date, self.datetime_format)
-            day_diff = (datetime.now()-date).days
-            sim_val = matutils.cossim(new_bow, bow)
-            self.sim_matrix[tid][new_tid] = sim_val
-            self.sim_matrix[new_tid][tid] = sim_val*math.exp(-day_diff/T)
+        #print('oldest: ', self.dates[0])
+        #print('latest: ', self.dates[-1])
 
-        print('oldest: ', self.dates[0])
-        print('latest: ', self.dates[-1])
-
-    def is_duplicate(self, tid_1, tid_2, thresh):
-        return self.sim_matrix[tid_1][tid_2] > thresh
-
-    def is_irrelevant(self, tid_1, tid_2, thresh):
-        return self.sim_matrix[tid_1][tid_2] < thresh
-
-    def generate_recommendations(self, topic_id, duplicate_thresh, irrelevant_thresh):
-        recoms, sim_vec = [], self.sim_matrix[topic_id]
-        sim_vec = [(tid, sim_val) for tid, sim_val in sim_vec.items()]
-        sim_vec.sort(key=lambda x:x[1], reverse=True)
-        for tid, sim_val in sim_vec:
-            if len(recoms) == 3 or sim_val < irrelevant_thresh:
-                break
-            if sim_val < duplicate_thresh:
-                if len(recoms) == 0:
-                    recoms.append((tid, sim_val))
+    def delete_one(self, topic_id):
+        def bin_search(topic_id):
+            topic_list = self.valid_topics
+            l, r = 0, len(topic_list)-1
+            while l < r:
+                m = (l+r)//2
+                if int(topic_list[m]) < int(topic_id):
+                    l = m+1
+                elif int(topic_list[m]) > int(topic_id):
+                    r = m
                 else:
-                    prev_tid = recoms[-1][0]
-                    if not self.is_duplicate(tid, prev_tid, duplicate_thresh):
-                        recoms.append((tid, sim_val))
+                    return m 
 
-        return recoms
+            return l if topic_list[l] == topic_id else -1
+        
+        idx = bin_search(topic_id)
+        if idx >= 0:
+            del self.corpus[idx]
+            del self.corpus_bow[idx]
+            del self.dates[idx]
+            del self.valid_topics[idx]
+            del self.sim_matrix[topic_id]
+            del self.sim_sorted[topic_id]
+
+            for tid, sim_dict in self.sim_matrix.items():
+                del sim_dict[topic_id]
+
+            for tid, sim_list in self.sim_sorted.items():
+                self.sim_sorted[tid] = [x for x in sim_list if x[0] != topic_id]
+
+    def save_similarity_data(self, sim_matrix_path, sim_sorted_path):
+        '''
+        Saves the similarity matrix and sorted similarity lists
+        to disk
+        Args:
+        sim_matrix_path: file path for similarity matrix
+        sim_sorted_path: file path for sorted similarity lists
+        '''
+        with open(sim_matrix_path, 'w') as f:
+            json.dump(self.sim_matrix, f)
+
+        with open(sim_sorted_path, 'w') as f:
+            json.dump(self.sim_sorted, f)
+
+
+
 
 
 
