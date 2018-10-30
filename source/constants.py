@@ -1,6 +1,10 @@
-_CONFIG_FILE = 'config'
-_STOPWORD_FILE = 'stopwords.txt'
+from os import path
+
+_ROOT = '/Users/ai/Projects/recommender-system-for-online-forums'
+_CONFIG_FILE = os.path.join(_ROOT, 'config')
+_STOPWORD_FILE = os.path.join(_ROOT, 'stopwords.txt')
 _DB_INFO = ('192.168.1.102','tgbweb','tgb123321','taoguba', 3307, 'utf8mb4')
+_EXCHANGE_NAME = 'recommender'
 _DAYS = 90
 _T = 365
 _DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S' 
