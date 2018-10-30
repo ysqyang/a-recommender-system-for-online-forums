@@ -1,8 +1,17 @@
-from os import path
+import os
 
 _ROOT = '/Users/ai/Projects/recommender-system-for-online-forums'
+_COMPUTED_FOLDER = os.path.join(_ROOT, 'computed_results')
+_DATA_FOLDER = os.path.join(_ROOT, 'data')
 _CONFIG_FILE = os.path.join(_ROOT, 'config')
 _STOPWORD_FILE = os.path.join(_ROOT, 'stopwords.txt')
+_TOPIC_FILE = os.path.join(_DATA_FOLDER, 'topics')
+_REPLY_FILE = os.path.join(_DATA_FOLDER, 'replies')
+_TMP = os.path.join(_DATA_FOLDER, 'topics_tmp')
+_PROFILES = os.path.join(_COMPUTED_FOLDER, 'profiles')
+_PROFILE_WORDS = os.path.join(_COMPUTED_FOLDER, 'profile_words')
+_SIMILARITY_MATRIX = os.path.join(_COMPUTED_FOLDER, 'sim_matrix')
+_SIMILARITY_SORTED = os.path.join(_COMPUTED_FOLDER, 'sim_sorted')
 _DB_INFO = ('192.168.1.102','tgbweb','tgb123321','taoguba', 3307, 'utf8mb4')
 _EXCHANGE_NAME = 'recommender'
 _DAYS = 90
@@ -11,8 +20,6 @@ _DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 _TOPIC_FEATURES = ['TOTALVIEWNUM', 'TOTALREPLYNUM', 'POSTDATE', 
                    'USEFULNUM', 'GOLDUSEFULNUM', 'TOTALPCPOINT',
                    'TOPICPCPOINT']
-_TOPIC_FILE = 'topics'
-_REPLY_FILE = 'replies'
 _MIN_LEN = 90
 _MIN_REPLIES = 0
 _MIN_REPLIES_1 = 20
@@ -26,11 +33,5 @@ _TRIGGER_DAYS = 45
 _KEEP_DAYS = 30
 _TOP_NUM = 3
 #_NUM_SIM_ENTRIES = 10
-_TOPIC_ID_TO_REPLY_TABLE_NUM = './topic_id_to_reply_table_num'
 _REPLY_FEATURES = ['USEFULNUM', 'GOLDUSEFULNUM', 'TOTALPCPOINT'] 
 _WEIGHTS = [1, 1, 1]
-_PROFILES = './profiles'
-_PROFILE_WORDS = './profile_words'
-_SIMILARITY_MATRIX = './sim_matrix'
-_SIMILARITY_SORTED = './sim_sorted'
-_TMP = './topics_tmp'
