@@ -278,6 +278,11 @@ class Topic_collection(object):
                                       in self.sim_matrix[tid_i].items()]
             self.sim_sorted[tid_i].sort(key=lambda x:x[1], reverse=True)
 
+    def get_topics_by_keywords(self, keywords):
+        keyword_ids = [self.dictionary.token2id[kw] for kw in keywords]
+        for bow in self.corpus_bow:
+            
+
     def remove_old(self, cut_off):
         '''
         Removes all topics posted before date specified by cut_off 
