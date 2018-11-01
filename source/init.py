@@ -4,6 +4,7 @@ import utils
 import constants as const
 import database
 import json
+import logging
 
 def main():
     stopwords = utils.load_stopwords(const._STOPWORD_FILE)

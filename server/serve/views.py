@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
 import collections
 import json
+import logging
 import sys
 sys.path.insert(0, '/Users/ai/Projects/recommender-system-for-online-forums/source')
 print(sys.path)
@@ -13,8 +14,11 @@ def serve_recommendations(request):
     Given the similarity matrix, generate top_num recommendations for
     target_tid
     '''
+    logging.basicConfig(filename=const._SERVE_LOG_FILE, level=logging.DEBUG)
     if request.method == 'POST':
-    	return HttpResponse('Posting is not allowed!')
+    	return HttpResponse('Please use Only GET is allowed!', status=403)
+
+    print(request.GET)
 
     with open(const._SIMILARITY_MATRIX, 'r') as f:
         sim_mat = json.load(f)

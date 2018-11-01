@@ -1,22 +1,26 @@
 import utils
-import topic_profiling as tp
-import similarity as sim
-import argparse
+#import topic_profiling as tp
+#import similarity as sim
+#import argparse
 #from gensim import models
 import json
 import pika
 import constants as const
-import configparser
 import sys
+import logging
 import topics
 from datetime import datetime, timedelta
 
 def main():   
+    logging.basicConfig(filename=const._RUN_LOG_FILE, level=logging.DEBUG)
+
     with open(const._TOPIC_FILE, 'r') as f:
         topic_dict = json.load(f)
 
     tids = sorted(list(topic_dict.keys()))
-    stopwords = utils.load_stopwords(const._STOPWORD_FILE)
+    stopwords = utils.load_stopwords(const._STOPWORD_FILE)   
+    logging.info('Stopwords loaded to memory')
+
     collection = topics.Topic_collection(topic_dict, const._DATETIME_FORMAT)
     collection.make_corpus(preprocess_fn=utils.preprocess, 
                            stopwords=stopwords, 
@@ -24,14 +28,26 @@ def main():
                            punc_frac_high=const._PUNC_FRAC_HIGH,
                            valid_count=const._VALID_COUNT, 
                            valid_ratio=const._VALID_RATIO)
-
-    print('共{}条候选主贴可供推荐'.format(len(collection.valid_topics)))
+    
+    logging.info('%d recommendable topics found', len(collection.valid_topics))
     collection.get_bow()
+
+    logging.debug('corpus_size=%d, n_topics=%d, n_dates=%d, corpus_bow_size=%d',
+                  len(collection.corpus), len(collection.valid_topics),
+                  len(collection.dates), len(collection.corpus_bow))
+    
+    assert len(collection.corpus)==len(collection.valid_topics)==len(collection.dates)==len(collection.corpus_bow)
+
     collection.get_similarity_data(const._T)
+    logging.debug('sim_matrix_size=%d, sim_sorted_size=%d', len(collection.sim_matrix), len(collection.sim_sorted))
+    logging.debug()
+
+    assert len(collection.sim_matrix)==len(collection.sim_sorted)
+    assert all([])
+    
     collection.save_similarity_data(const._SIMILARITY_MATRIX, const._SIMILARITY_SORTED)
-
-    print('dates: ', collection.dates)
-
+    logging.info('Similarity matrix saved to %s', const._SIMILARITY_MATRIX)
+    logging.info('Similarity lists saved to %s', const._SIMILARITY_SORTED)
     '''
     config = utils.get_config(const._CONFIG_FILE)
     sections = config.sections()

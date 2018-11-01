@@ -2,7 +2,6 @@ import jieba
 import re
 import json
 import database
-import pickle
 import datetime
 import constants as const
 import configparser

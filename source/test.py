@@ -15,6 +15,7 @@ import database
 import pika
 import bisect
 import collections
+import logging
 '''
 class Stream(object):
     def __init__(self, topic_id, preprocess_fn, stopwords):
@@ -164,7 +165,7 @@ for topic_id, r in topics.items():
 
 print(n_replies)
 
-'''
+
 connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
 channel = connection.channel()
 
@@ -195,7 +196,7 @@ channel.basic_publish(exchange='x',
                       body=msg2)
 
 connection.close()
-'''
+
 stopwords = utils.load_stopwords('./stopwords.txt')
 
 docs = ['央视记者在英国大闹现场',
@@ -301,6 +302,12 @@ for tid, sim_list in dl.items():
 print(d)
 print(dl)
 '''
+
+a = b = d = 4
+c = 3.5
+
+logging.warning('a=%d, b=%d, c=%d, d=%d', a, b, c, d)
+assert a==b==c==d
 
 
 
