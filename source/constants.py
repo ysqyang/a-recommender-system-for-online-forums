@@ -1,6 +1,7 @@
 import os
 
-_ROOT = '/Users/ai/Projects/recommender-system-for-online-forums'
+_ROOT = '/home/ysqyang/Projects/recommender-system-for-online-forums'
+#_ROOT = '/Users/ai/Projects/recommender-system-for-online-forums'
 _COMPUTED_FOLDER = os.path.join(_ROOT, 'computed_results')
 _DATA_FOLDER = os.path.join(_ROOT, 'data')
 _LOG_FOLDER = os.path.join(_ROOT, 'logs')

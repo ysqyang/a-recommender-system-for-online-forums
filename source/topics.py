@@ -278,10 +278,11 @@ class Topic_collection(object):
                                       in self.sim_matrix[tid_i].items()]
             self.sim_sorted[tid_i].sort(key=lambda x:x[1], reverse=True)
 
+    '''
     def get_topics_by_keywords(self, keywords):
         keyword_ids = [self.dictionary.token2id[kw] for kw in keywords]
         for bow in self.corpus_bow:
-            
+    '''        
 
     def remove_old(self, cut_off):
         '''
@@ -321,19 +322,13 @@ class Topic_collection(object):
   
     def add_one(self, topic, preprocess_fn, stopwords, punc_frac_low, 
                 punc_frac_high, valid_count, valid_ratio, trigger_days, cut_off, T):
-        latest = datetime.strptime(topic['POSTDATE'], self.datetime_format)
-        oldest = datetime.strptime(self.dates[0], self.datetime_format) 
-        #print('diff, n_days: ', (latest-oldest).days, n_days)
-        if (latest-oldest).days > trigger_days:
-            self.remove_old(cut_off)
-
         content = ' '.join(topic['body'].split())
         word_list = preprocess_fn(content, stopwords, punc_frac_low,  
                                   punc_frac_high, valid_count, valid_ratio)
 
         #print(word_list)
         if word_list is None: # ignore invalid topics
-            return
+            return -1
 
         new_tid = topic['topicid']
         new_bow = self.dictionary.doc2bow(word_list)
@@ -376,6 +371,8 @@ class Topic_collection(object):
         #print('oldest: ', self.dates[0])
         #print('latest: ', self.dates[-1])
 
+        return 0
+
     def delete_one(self, topic_id):
         def bin_search(topic_id):
             topic_list = self.valid_topics
@@ -406,6 +403,17 @@ class Topic_collection(object):
             for tid, sim_list in self.sim_sorted.items():
                 self.sim_sorted[tid] = [x for x in sim_list if x[0] != topic_id]
 
+    def check_correctness(self):
+        '''
+        Perform correctness and consistency checks
+        '''
+        corpus_size = len(self.corpus)
+        assert corpus_size==len(self.valid_topics)==len(self.dates)==len(self.corpus_bow)
+        sim_matrix_len, sim_sorted_len = len(self.sim_matrix), len(self.sim_sorted)
+        assert sim_matrix_len==sim_sorted_len==corpus_size
+        assert all(len(sim_dict)==sim_matrix_len for tid, sim_dict in self.sim_matrix.items())
+        assert all(len(sim_list)==sim_sorted_len for tid, sim_list in self.sim_sorted.items())
+
     def save_similarity_data(self, sim_matrix_path, sim_sorted_path):
         '''
         Saves the similarity matrix and sorted similarity lists
@@ -414,15 +422,9 @@ class Topic_collection(object):
         sim_matrix_path: file path for similarity matrix
         sim_sorted_path: file path for sorted similarity lists
         '''
+        self.check_correctness() # always check correctness before saving
         with open(sim_matrix_path, 'w') as f:
             json.dump(self.sim_matrix, f)
 
         with open(sim_sorted_path, 'w') as f:
             json.dump(self.sim_sorted, f)
-
-
-
-
-
-
-

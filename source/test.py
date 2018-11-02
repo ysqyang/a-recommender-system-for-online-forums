@@ -165,7 +165,7 @@ for topic_id, r in topics.items():
 
 print(n_replies)
 
-
+'''
 connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
 channel = connection.channel()
 
@@ -176,8 +176,8 @@ channel.queue_declare(queue='new_topics')
 channel.queue_declare(queue='delete_topics')
 #channel.queue_declare(queue='active_topics')
 
-d1 = {'topicid': '1600002', 'TOTALVIEWNUM': 9, 'TOTALREPLYNUM': 0, 
-     'POSTDATE': '2018-10-29 23:35:21', 'USEFULNUM': 0, 'GOLDUSEFULNUM': 0, 
+d1 = {'topicid': '1600000', 'TOTALVIEWNUM': 9, 'TOTALREPLYNUM': 0, 
+     'POSTDATE': '2018-11-1 23:35:21', 'USEFULNUM': 0, 'GOLDUSEFULNUM': 0, 
      'TOTALPCPOINT': 0, 'TOPICPCPOINT': 0, 'body': '央视记者在英国大闹现场, 金州勇士力争三连冠。'}
 
 d2 = '1506315'
@@ -186,17 +186,16 @@ msg1 = json.dumps(d1)
 
 msg2 = json.dumps(d2)
 
-print(msg2, type(msg2))
-channel.basic_publish(exchange='x',
+channel.basic_publish(exchange=const._EXCHANGE_NAME,
                       routing_key='new',
                       body=msg1)
 
-channel.basic_publish(exchange='x',
+channel.basic_publish(exchange=const._EXCHANGE_NAME,
                       routing_key='delete',
                       body=msg2)
 
 connection.close()
-
+'''
 stopwords = utils.load_stopwords('./stopwords.txt')
 
 docs = ['央视记者在英国大闹现场',
@@ -303,11 +302,6 @@ print(d)
 print(dl)
 '''
 
-a = b = d = 4
-c = 3.5
-
-logging.warning('a=%d, b=%d, c=%d, d=%d', a, b, c, d)
-assert a==b==c==d
 
 
 
