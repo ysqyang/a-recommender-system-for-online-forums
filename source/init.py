@@ -2,13 +2,12 @@ import utils
 #import topic_profiling as tp
 #import similarity as sim
 import constants as const
-import database
+#import database
 import json
 import logging
 
 def main():
-    stopwords = utils.load_stopwords(const._STOPWORD_FILE)
-    db = database.Database(*const._DB_INFO)
+    logging.basicConfig(filename=const._RUN_LOG_FILE, filemode='w', level=logging.DEBUG)
     utils.load_topics(db, const._TOPIC_FEATURES, const._DAYS, 
                       const._MIN_LEN, const._MIN_REPLIES, 
                       const._MIN_REPLIES_1, const._TOPIC_FILE)

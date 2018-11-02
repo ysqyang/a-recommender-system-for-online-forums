@@ -283,7 +283,6 @@ class Topic_collection(object):
         keyword_ids = [self.dictionary.token2id[kw] for kw in keywords]
         for bow in self.corpus_bow:
     '''        
-
     def remove_old(self, cut_off):
         '''
         Removes all topics posted before date specified by cut_off 
@@ -303,11 +302,11 @@ class Topic_collection(object):
             elif mid_date.date() <= cut_off.date():
                 l = mid+1
             
-        self.corpus = self.corpus[l:]       
-        self.dates = self.dates[l:]
-        self.corpus_bow = self.corpus_bow[l:]
+        del self.corpus[:l]       
+        del self.dates[:l]
+        del self.corpus_bow[:l]
         delete_tids = set(self.valid_topics[:l])
-        self.valid_topics = self.valid_topics[l:]
+        del self.valid_topics[:l]
 
         for delete_tid in delete_tids:
             del self.sim_matrix[delete_tid]
@@ -332,6 +331,7 @@ class Topic_collection(object):
 
         new_tid = topic['topicid']
         new_bow = self.dictionary.doc2bow(word_list)
+        new_date = datetime.strptime(topic['POSTDATE'], self.datetime_format)
 
         def insert(tid, target_tid, target_sim_val):
             sim_list = self.sim_sorted[tid]
@@ -353,7 +353,7 @@ class Topic_collection(object):
         self.sim_matrix[new_tid][new_tid] = 1.0       
         for tid, bow, date in zip(self.valid_topics, self.corpus_bow, self.dates):
             date = datetime.strptime(date, self.datetime_format)
-            day_diff = (latest-date).days
+            day_diff = (new_date-date).days
             sim_val = matutils.cossim(new_bow, bow)*math.exp(-day_diff/T)
             self.sim_matrix[tid][new_tid] = sim_val
             self.sim_matrix[new_tid][tid] = sim_val
