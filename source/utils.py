@@ -5,6 +5,7 @@ import database
 import datetime
 import constants as const
 import configparser
+import logging
 
 def load_stopwords(stopwords_path):
     stopwords = set()
@@ -17,74 +18,18 @@ def load_stopwords(stopwords_path):
             stopwords.add(stopword.strip('\n'))
             n += 1
 
+    logging.info('Stopwords loaded to memory')
     return stopwords
-
-def load_topics(db, attrs, days, min_len, min_replies, min_replies_1, path):
-    topics = {}
-    attrs = ', '.join(attrs)
-    for i in range(10):
-        sql = '''SELECT t.TOPICID, ti.body, {}
-                 FROM topics_{} as t, topics_info_{} as ti
-                 WHERE t.TOPICID = ti.topicID AND 
-                 t.POSTDATE BETWEEN 
-                 NOW()-INTERVAL {} DAY AND NOW()'''.format(attrs, i, i, days)
-        with db.query(sql) as cursor:
-            for rec in cursor:
-                reply_cnt = int(rec['TOTALREPLYNUM'])
-                if reply_cnt < min_replies: 
-                    continue 
-                if len(rec['body']) < min_len and reply_cnt < min_replies_1:
-                    continue 
-                if rec['body'] is not None:
-                    topics[rec['TOPICID']] = {
-                        k:v for k,v in rec.items() if k != 'TOPICID'
-                    }
-
-    def convert_datetime(o):
-        if isinstance(o, datetime.datetime):
-            return o.__str__()
-
-    with open(path, 'w') as f:
-        json.dump(topics, f, default=convert_datetime)
-
-    print('过去{}天共计{}条有效主贴'.format(days, len(topics)))
-    return list(topics.keys())
-
-def load_replies(db, topic_ids, attrs, path):
-    replies = {topic_id:{} for topic_id in topic_ids}
-    attrs = ', '.join(attrs)
-    for topic_id in topic_ids:
-        i = 0
-        while i < 10:
-            sql = '''SELECT r.TOPICID, r.REPLYID, ri.body, {}
-                     FROM replies_{} as r, replies_info_{} as ri
-                     WHERE r.REPLYID = ri.replyID AND 
-                     r.TOPICID = {}'''.format(attrs, i, i, topic_id)
-            with db.query(sql) as cursor:
-                results = cursor.fetchall()
-            if len(results) == 0:
-                i += 1
-                continue
-            for rec in results:
-                if rec['body'] is not None:
-                    replies[rec['TOPICID']][rec['REPLYID']] = {
-                        k:v for k,v in rec.items() if k not in {'TOPICID', 'REPLYID'} 
-                    }
-            break
-
-    with open(path, 'w') as f:
-        json.dump(replies, f)  
-
-    print('以上主贴共计有{}条跟帖'.format(
-           sum([len(replies[topic_id]) for topic_id in replies])))
 
 def save_topics(topic_dict, path):
     with open(path, 'w') as f:
         json.dump(topic_dict, f)
+    logging.info('topic_dict saved to %s', path)
 
 def get_config(config_file_path):
     config = configparser.ConfigParser()
     config.read(config_file_path)
+    logging.info('Configuration read')
     return config
 
 def preprocess(text, stopwords, punc_frac_low, punc_frac_high, 
@@ -109,6 +54,7 @@ def preprocess(text, stopwords, punc_frac_low, punc_frac_high,
     
     ratio = cnt / len(text)
 
+    print(ratio)
     if ratio < punc_frac_low or ratio > punc_frac_high:
         return None
 
@@ -138,6 +84,8 @@ def preprocess(text, stopwords, punc_frac_low, punc_frac_high,
         return None
 
     if len(word_list)/len(set(word_list)) > valid_ratio:
+        print(word_list)
+        print(set(word_list))
         return None
 
     return word_list   

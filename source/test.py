@@ -176,8 +176,8 @@ channel.queue_declare(queue='new_topics')
 channel.queue_declare(queue='delete_topics')
 #channel.queue_declare(queue='active_topics')
 
-d1 = {'topicid': '1600000', 'TOTALVIEWNUM': 9, 'TOTALREPLYNUM': 0, 
-     'POSTDATE': '2018-11-1 23:35:21', 'USEFULNUM': 0, 'GOLDUSEFULNUM': 0, 
+d1 = {'topicid': '1600001', 'TOTALVIEWNUM': 9, 'TOTALREPLYNUM': 0, 
+     'POSTDATE': '2018-11-3 23:35:21', 'USEFULNUM': 0, 'GOLDUSEFULNUM': 0, 
      'TOTALPCPOINT': 0, 'TOPICPCPOINT': 0, 'body': '央视记者在英国大闹现场, 金州勇士力争三连冠。'}
 
 d2 = '1506315'
@@ -195,9 +195,9 @@ channel.basic_publish(exchange=const._EXCHANGE_NAME,
                       body=msg2)
 
 connection.close()
-'''
-stopwords = utils.load_stopwords('./stopwords.txt')
 
+
+'''
 docs = ['央视记者在英国大闹现场',
         '真爱国还是做秀？', 
         '外交部已经表态了',

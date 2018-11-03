@@ -8,6 +8,7 @@ import collections
 import math
 import json
 import constants as const
+import logging
 from scipy import stats
 from datetime import datetime
 
@@ -129,34 +130,35 @@ class Topic_collection(object):
     def __init__(self, topic_dict, datetime_format):
         self.topic_dict = topic_dict
         self.datetime_format = datetime_format
+        self.tid_to_index = {}  # mapping from topic id to corpus index
 
-    def make_corpus(self, preprocess_fn, stopwords, punc_frac_low, 
-                    punc_frac_high, valid_count, valid_ratio):
-        # iterates through all topics
-        self.corpus, self.dates, self.valid_topics, self.date_cuts = [], [], [], []
+    def get_corpus_data(self, preprocess_fn, stopwords, punc_frac_low, 
+                        punc_frac_high, valid_count, valid_ratio):
+        self.corpus_data = []
         # sorting topipc id's means sorting by post date
         sorted_topic_ids = sorted(list(self.topic_dict.keys()))
 
-        #last_date = datetime.strptime('2018-01-01 00:00:00', self.datetime_format)
-        for topic_id in sorted_topic_ids:
-            topic = self.topic_dict[topic_id]
-            post_date, content = topic['POSTDATE'], topic['body'] 
-            content = ' '.join(content.split())
+        i = 0
+        for topic_id in sorted_topic_ids: 
+            content = ' '.join(self.topic_dict[topic_id]['body'].split())
             word_list = preprocess_fn(content, stopwords, punc_frac_low,  
                                       punc_frac_high, valid_count, valid_ratio)
 
             if word_list is not None: # add only valid topics
-                self.corpus.append(word_list)
-                self.valid_topics.append(topic_id)
-                #cur_date = datetime.strptime(post_date, self.datetime_format)
-                #if cur_date.date() > last_date.date():
-                #    self.cuts.append(len(self.dates))
-                self.dates.append(post_date)
-                #last_date = cur_date
+                topic_data = {}
+                topic_data['topic_id'] = topic_id
+                topic_data['content'] = word_list
+                topic_data['date'] = self.topic_dict[topic_id]['POSTDATE']
+                self.corpus_data.append(topic_data)
+                self.tid_to_index[topic_id] = i
+                i += 1
 
-    def get_bow(self):
-        self.dictionary = corpora.Dictionary(self.corpus)
-        self.corpus_bow = [self.dictionary.doc2bow(doc) for doc in self.corpus]
+        corpus = [topic_data['content'] for topic_data in self.corpus_data]
+        self.dictionary = corpora.Dictionary(corpus)
+        for topic_data in self.corpus_data:
+            topic_data['bow'] = self.dictionary.doc2bow(topic_data['content'])
+
+        logging.info('%d topics available', len(self.corpus_data))
 
     def get_distributions(self, coeff):
         '''
@@ -265,18 +267,19 @@ class Topic_collection(object):
         '''
         self.sim_matrix = collections.defaultdict(dict)
         self.sim_sorted = collections.defaultdict(list)
-        for i, tid_i in enumerate(self.valid_topics):
-            vec_i = self.corpus_bow[i]
-            date_i = datetime.strptime(self.dates[i], self.datetime_format)
-            for j, tid_j in enumerate(self.valid_topics):
-                vec_j = self.corpus_bow[j]
-                date_j = datetime.strptime(self.dates[j], self.datetime_format)
+        for i, ti in enumerate(self.corpus_data):
+            date_i = datetime.strptime(ti['date'], self.datetime_format)
+            for tj in self.corpus_data[i:]:
+                date_j = datetime.strptime(tj['date'], self.datetime_format)
                 day_diff = abs((date_i-date_j).days)
-                self.sim_matrix[tid_i][tid_j] = matutils.cossim(vec_i, vec_j)*math.exp(-day_diff/T)
+                self.sim_matrix[ti['topic_id']][tj['topic_id']] = matutils.cossim(ti['bow'], tj['bow'])*math.exp(-day_diff/T)
+                self.sim_matrix[tj['topic_id']][ti['topic_id']] = self.sim_matrix[ti['topic_id']][tj['topic_id']]
 
-            self.sim_sorted[tid_i] = [[tid_j, sim_val] for tid_j, sim_val 
-                                      in self.sim_matrix[tid_i].items()]
-            self.sim_sorted[tid_i].sort(key=lambda x:x[1], reverse=True)
+            self.sim_sorted[ti['topic_id']] = [[tid_j, sim_val] for tid_j, sim_val 
+                                               in self.sim_matrix[ti['topic_id']].items()]
+            self.sim_sorted[ti['topic_id']].sort(key=lambda x:x[1], reverse=True)
+
+        logging.debug('sim_matrix_len=%d, sim_sorted_len=%d', len(self.sim_matrix), len(self.sim_sorted))
 
     '''
     def get_topics_by_keywords(self, keywords):
@@ -287,28 +290,34 @@ class Topic_collection(object):
         '''
         Removes all topics posted before date specified by cut_off 
         '''
-        oldest = datetime.strptime(self.dates[0], self.datetime_format)
-        latest = datetime.strptime(self.dates[-1], self.datetime_format)
+        if len(self.corpus_data) == 0:
+            logging.warning('The corpus is empty!')
+            return
 
-        if cut_off < oldest or cut_off > latest:
+        oldest = datetime.strptime(self.corpus_data[0]['date'], self.datetime_format)
+        latest = datetime.strptime(self.corpus_data[-1]['date'], self.datetime_format)
+
+        if cut_off <= oldest or cut_off > latest:
             return 
+        
+        logging.info('Removing old topics from the collection...')
         #binary search for the first entry later than cut_off
-        l, r = 0, len(self.dates)-1
+        l, r = 0, len(self.corpus_data)-1
         while l < r:
             mid = (l+r)//2
-            mid_date = datetime.strptime(self.dates[mid], self.datetime_format)
-            if mid_date.date() > cut_off.date():
+            mid_date = datetime.strptime(self.corpus_data[mid]['date'], self.datetime_format)
+            if mid_date.date() >= cut_off.date():
                 r = mid
-            elif mid_date.date() <= cut_off.date():
+            elif mid_date.date() < cut_off.date():
                 l = mid+1
             
-        del self.corpus[:l]       
-        del self.dates[:l]
-        del self.corpus_bow[:l]
-        delete_tids = set(self.valid_topics[:l])
-        del self.valid_topics[:l]
+        last_cut = self.corpus_data[l-1]['date']
+        new_oldest = self.corpus_data[l]['date']
+        delete_tids = set([t['topic_id'] for t in self.corpus_data[:l]])
+        del self.corpus_data[:l]
 
         for delete_tid in delete_tids:
+            del self.tid_to_index[delete_tid]
             del self.sim_matrix[delete_tid]
             del self.sim_sorted[delete_tid]
         
@@ -318,6 +327,17 @@ class Topic_collection(object):
 
         for tid, sim_list in self.sim_sorted.items():
             self.sim_sorted[tid] = [x for x in sim_list if x[0] not in delete_tids]
+                  
+        logging.debug('oldest among collection after removing: %s', new_oldest)
+        logging.debug('latest among deleted: %s', last_cut)
+        new_oldest = datetime.strptime(new_oldest, const._DATETIME_FORMAT)
+        last_cut = datetime.strptime(last_cut, const._DATETIME_FORMAT)
+        assert last_cut < cut_off <= new_oldest
+        logging.info('Old topics removed')
+        logging.info('%d topics available', len(self.corpus_data))
+        logging.info('Oldest topic is now %s', self.corpus_data[0]['date'])
+        logging.debug('tid_to_index_len=%d, sim_matrix_len=%d, sim_sorted_len=%d', 
+                      len(self.tid_to_index), len(self.sim_matrix), len(self.sim_sorted))
   
     def add_one(self, topic, preprocess_fn, stopwords, punc_frac_low, 
                 punc_frac_high, valid_count, valid_ratio, trigger_days, cut_off, T):
@@ -327,13 +347,19 @@ class Topic_collection(object):
 
         #print(word_list)
         if word_list is None: # ignore invalid topics
-            return -1
+            logging.info('Topic is not recommendable')
+            return 
+        
+        self.dictionary.add_documents([word_list])
+        new = {}
+        new['topic_id'] = topic['topicid']
+        new['bow'] = self.dictionary.doc2bow(word_list)
+        new['date'] = topic['POSTDATE']
+        new['content'] = word_list
+        self.tid_to_index[new['topic_id']] = len(self.corpus_data)
+        self.corpus_data.append(new)
 
-        new_tid = topic['topicid']
-        new_bow = self.dictionary.doc2bow(word_list)
-        new_date = datetime.strptime(topic['POSTDATE'], self.datetime_format)
-
-        def insert(tid, target_tid, target_sim_val):
+        def sim_insert(tid, target_tid, target_sim_val):
             sim_list = self.sim_sorted[tid]
             
             if len(sim_list) == 0:
@@ -350,50 +376,31 @@ class Topic_collection(object):
 
             sim_list.insert(l, [target_tid, target_sim_val])
       
-        self.sim_matrix[new_tid][new_tid] = 1.0       
-        for tid, bow, date in zip(self.valid_topics, self.corpus_bow, self.dates):
-            date = datetime.strptime(date, self.datetime_format)
+        self.sim_matrix[new['topic_id']][new['topic_id']] = 1.0       
+        for t in self.corpus_data:
+            date = datetime.strptime(t['date'], self.datetime_format)
+            new_date = datetime.strptime(new['date'], self.datetime_format)
             day_diff = (new_date-date).days
-            sim_val = matutils.cossim(new_bow, bow)*math.exp(-day_diff/T)
-            self.sim_matrix[tid][new_tid] = sim_val
-            self.sim_matrix[new_tid][tid] = sim_val
-            insert(tid, new_tid, sim_val)
+            sim_val = matutils.cossim(new['bow'], t['bow'])*math.exp(-day_diff/T)
+            self.sim_matrix[t['topic_id']][new['topic_id']] = sim_val
+            self.sim_matrix[new['topic_id']][t['topic_id']] = sim_val
+            sim_insert(t['topic_id'], new['topic_id'], sim_val)
 
-        self.sim_sorted[new_tid] = [[tid_j, sim_val] for tid_j, sim_val 
-                                    in self.sim_matrix[new_tid].items()]
-        self.sim_sorted[new_tid].sort(key=lambda x:x[1], reverse=True)
+        self.sim_sorted[new['topic_id']] = [[tid_j, sim_val] for tid_j, sim_val 
+                                            in self.sim_matrix[new['topic_id']].items()]
+        self.sim_sorted[new['topic_id']].sort(key=lambda x:x[1], reverse=True)
+       
+        logging.info('New topic has been added to the collection')
+        logging.info('Collection and similarity data have been updated')
+        logging.info('%d topics available', len(self.corpus_data))
+        logging.debug('tid_to_index_len=%d, sim_matrix_len=%d, sim_sorted_len=%d', 
+                      len(self.tid_to_index), len(self.sim_matrix), len(self.sim_sorted))
 
-        self.corpus.append(word_list)
-        self.dates.append(topic['POSTDATE'])
-        self.valid_topics.append(topic['topicid'])
-        self.dictionary.add_documents([word_list])
-        self.corpus_bow.append(new_bow)
-        #print('oldest: ', self.dates[0])
-        #print('latest: ', self.dates[-1])
-
-        return 0
-
-    def delete_one(self, topic_id):
-        def bin_search(topic_id):
-            topic_list = self.valid_topics
-            l, r = 0, len(topic_list)-1
-            while l < r:
-                m = (l+r)//2
-                if int(topic_list[m]) < int(topic_id):
-                    l = m+1
-                elif int(topic_list[m]) > int(topic_id):
-                    r = m
-                else:
-                    return m 
-
-            return l if topic_list[l] == topic_id else -1
-        
-        idx = bin_search(topic_id)
+    def delete_one(self, topic_id):       
+        idx = self.tid_to_index[topic_id]
         if idx >= 0:
-            del self.corpus[idx]
-            del self.corpus_bow[idx]
-            del self.dates[idx]
-            del self.valid_topics[idx]
+            del self.corpus_data[idx]
+            del self.tid_to_index[topic_id]
             del self.sim_matrix[topic_id]
             del self.sim_sorted[topic_id]
 
@@ -403,14 +410,20 @@ class Topic_collection(object):
             for tid, sim_list in self.sim_sorted.items():
                 self.sim_sorted[tid] = [x for x in sim_list if x[0] != topic_id]
 
+        logging.info('Topic has been deleted from the collection')
+        logging.info('Collection and similarity data have been updated')
+        logging.info('%d topics remaining', len(self.corpus_data))
+        logging.debug('corpus_size=%d', len(self.corpus_data))
+        logging.debug('tid_to_index_len=%d, sim_matrix_len=%d, sim_sorted_len=%d', 
+                      len(self.tid_to_index), len(self.sim_matrix), len(self.sim_sorted))
+
     def check_correctness(self):
         '''
         Perform correctness and consistency checks
         '''
-        corpus_size = len(self.corpus)
-        assert corpus_size==len(self.valid_topics)==len(self.dates)==len(self.corpus_bow)
+        assert len(self.corpus_data) == len(self.tid_to_index)
         sim_matrix_len, sim_sorted_len = len(self.sim_matrix), len(self.sim_sorted)
-        assert sim_matrix_len==sim_sorted_len==corpus_size
+        assert sim_matrix_len==sim_sorted_len==len(self.corpus_data)
         assert all(len(sim_dict)==sim_matrix_len for tid, sim_dict in self.sim_matrix.items())
         assert all(len(sim_list)==sim_sorted_len for tid, sim_list in self.sim_sorted.items())
 
@@ -428,3 +441,6 @@ class Topic_collection(object):
 
         with open(sim_sorted_path, 'w') as f:
             json.dump(self.sim_sorted, f)
+
+        logging.info('Similarity matrix saved to %s', sim_matrix_path)
+        logging.info('Similarity lists saved to %s', sim_sorted_path)

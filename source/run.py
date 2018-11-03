@@ -17,32 +17,20 @@ def main():
     with open(const._TOPIC_FILE, 'r') as f:
         topic_dict = json.load(f)
 
-    tids = sorted(list(topic_dict.keys()))
-    print('sorted tids: ', tids)
+    sorted_tids = sorted(list(topic_dict.keys()))
     stopwords = utils.load_stopwords(const._STOPWORD_FILE)   
-    logging.info('Stopwords loaded to memory')
 
     collection = topics.Topic_collection(topic_dict, const._DATETIME_FORMAT)
-    collection.make_corpus(preprocess_fn=utils.preprocess, 
-                           stopwords=stopwords, 
-                           punc_frac_low=const._PUNC_FRAC_LOW, 
-                           punc_frac_high=const._PUNC_FRAC_HIGH,
-                           valid_count=const._VALID_COUNT, 
-                           valid_ratio=const._VALID_RATIO)
-    
-    logging.info('%d recommendable topics found', len(collection.valid_topics))
-    collection.get_bow()
-
-    logging.debug('corpus_size=%d, n_topics=%d, n_dates=%d, corpus_bow_size=%d',
-                  len(collection.corpus), len(collection.valid_topics),
-                  len(collection.dates), len(collection.corpus_bow))
+    collection.get_corpus_data(preprocess_fn=utils.preprocess, 
+                               stopwords=stopwords, 
+                               punc_frac_low=const._PUNC_FRAC_LOW, 
+                               punc_frac_high=const._PUNC_FRAC_HIGH,
+                               valid_count=const._VALID_COUNT, 
+                               valid_ratio=const._VALID_RATIO)
 
     collection.get_similarity_data(const._T)
-    logging.debug('sim_matrix_len=%d, sim_sorted_len=%d', len(collection.sim_matrix), len(collection.sim_sorted))
 
     collection.save_similarity_data(const._SIMILARITY_MATRIX, const._SIMILARITY_SORTED)
-    logging.info('Similarity matrix saved to %s', const._SIMILARITY_MATRIX)
-    logging.info('Similarity lists saved to %s', const._SIMILARITY_SORTED)
     '''
     config = utils.get_config(const._CONFIG_FILE)
     logging.info('Configuration loaded')
@@ -76,72 +64,67 @@ def main():
         logging.info('Received new topic')
         new_topic = json.loads(body)
         topic_id = new_topic['topicid']
+        if topic_id in topic_dict:
+            logging.warning('Topic id already exists! Quitting handler...')
+            return
 
-        oldest, latest = topic_dict[tids[0]]['POSTDATE'], new_topic['POSTDATE']
+        oldest, latest = topic_dict[sorted_tids[0]]['POSTDATE'], new_topic['POSTDATE']
         logging.debug('oldest=%s, latest=%s', oldest, latest)
         oldest = datetime.strptime(oldest, const._DATETIME_FORMAT)
         latest = datetime.strptime(latest, const._DATETIME_FORMAT)
         cut_off = latest - timedelta(days=const._KEEP_DAYS)
 
         topic_dict[topic_id] = {k:v for k, v in new_topic.items() if k != 'topicid'}
+        sorted_tids.append(topic_id)
         
         def remove_old(tids, cut_off):
-            if cut_off < oldest or cut_off > latest:
+            if cut_off <= oldest or cut_off > latest:
                 return 
             
+            logging.info('Deleting old topics')
             for i, tid in enumerate(tids):
                 dt = datetime.strptime(topic_dict[tid]['POSTDATE'], const._DATETIME_FORMAT)
                 if dt.date() >= cut_off.date():
                     break  
                 del topic_dict[tid]
-            
+                
+            last_cut = topic_dict[tids[i-1]]['POSTDATE']
+            new_oldest = topic_dict[tids[i]]['POSTDATE']
+            logging.debug('oldest in topic file after removing: %s', new_oldest)
+            logging.debug('latest among deleted topics: %s', last_cut)
+            new_oldest = datetime.strptime(new_oldest, const._DATETIME_FORMAT)
+            last_cut = datetime.strptime(last_cut, const._DATETIME_FORMAT)
+            assert last_cut < cut_off <= new_oldest
             del tids[:i]
+            assert len(tids) == len(topic_dict) > 0
 
-        if (latest - oldest).days > const._TRIGGER_DAYS:
-            logging.info('Deleting old topics')
-            remove_old(tids, cut_off)
-            assert len(tids) > 0
-            oldest = topic_dict[tids[0]]['POSTDATE']
-            logging.debug('oldest_after_deleting=%s', oldest)
-            oldest = datetime.strptime(oldest, const._DATETIME_FORMAT)
-            assert oldest >= cut_off
-        
+        if (latest - oldest).days > const._TRIGGER_DAYS:           
+            remove_old(sorted_tids, cut_off)
+            print(sorted_tids)
+         
         utils.save_topics(topic_dict, const._TMP)
-        logging.info('topic_dict saved to %s', const._TMP)
+        logging.info('New topic added to local disk')
 
-        status = collection.add_one(topic=new_topic,
-                                    preprocess_fn=utils.preprocess, 
-                                    stopwords=stopwords,
-                                    punc_frac_low=const._PUNC_FRAC_LOW, 
-                                    punc_frac_high=const._PUNC_FRAC_HIGH, 
-                                    valid_count=const._VALID_COUNT,
-                                    valid_ratio=const._VALID_RATIO, 
-                                    trigger_days=const._TRIGGER_DAYS,
-                                    cut_off=cut_off, 
-                                    T=const._T)
+        collection.add_one(topic=new_topic,
+                           preprocess_fn=utils.preprocess, 
+                           stopwords=stopwords,
+                           punc_frac_low=const._PUNC_FRAC_LOW, 
+                           punc_frac_high=const._PUNC_FRAC_HIGH, 
+                           valid_count=const._VALID_COUNT,
+                           valid_ratio=const._VALID_RATIO, 
+                           trigger_days=const._TRIGGER_DAYS,
+                           cut_off=cut_off, 
+                           T=const._T)
 
-        if status == -1:
-            logging.info('Topic is not recommendable')
-        else:
-            logging.info('New topic has been added to the collection')
-            logging.info('Collection and similarity data have been updated')
-
-        oldest = collection.dates[0]
+        oldest = collection.corpus_data[0]['date']
         oldest = datetime.strptime(oldest, const._DATETIME_FORMAT)
         if (latest - oldest).days > const._TRIGGER_DAYS:
             collection.remove_old(cut_off)
-
-        logging.debug('corpus_size=%d, n_topics=%d, n_dates=%d, corpus_bow_size=%d',
-                      len(collection.corpus), len(collection.valid_topics),
-                      len(collection.dates), len(collection.corpus_bow))
-
-        logging.debug('sim_matrix_len=%d, sim_sorted_len=%d', len(collection.sim_matrix), len(collection.sim_sorted))
+            print(sorted([t['topic_id'] for t in collection.corpus_data]))
 
         collection.save_similarity_data(const._SIMILARITY_MATRIX, const._SIMILARITY_SORTED)
-        logging.info('Similarity matrix saved to %s', const._SIMILARITY_MATRIX)
-        logging.info('Similarity lists saved to %s', const._SIMILARITY_SORTED) 
 
-        print('sorted tids after adding new topic:', tids)      
+        #print('sorted tids after adding new topic:', tids)      
 
     def on_update_topic(ch, method, properties, body):
         update_topic = json.loads(body)
@@ -159,23 +142,14 @@ def main():
             return
 
         del topic_dict[delete_id]
-        tids.remove(delete_id)
-        assert delete_id not in tids and delete_id not in topic_dict
-        logging.info('Topic deleted from the collection')
+        sorted_tids.remove(delete_id)
+        assert delete_id not in sorted_tids and delete_id not in topic_dict
         utils.save_topics(topic_dict, const._TMP)
-        logging.info('topic_dict saved to %s', const._TMP)
+        logging.info('Topic deleted from local disk')
 
         collection.delete_one(delete_id)
-        logging.debug('corpus_size=%d, n_topics=%d, n_dates=%d, corpus_bow_size=%d',
-                      len(collection.corpus), len(collection.valid_topics),
-                      len(collection.dates), len(collection.corpus_bow))
-        logging.debug('sim_matrix_len=%d, sim_sorted_len=%d', len(collection.sim_matrix), len(collection.sim_sorted))
 
-        collection.save_similarity_data(const._SIMILARITY_MATRIX, const._SIMILARITY_SORTED)
-        logging.info('Similarity matrix saved to %s', const._SIMILARITY_MATRIX)
-        logging.info('Similarity lists saved to %s', const._SIMILARITY_SORTED)
-
-        print('sorted tids after deleting topic:', tids)      
+        collection.save_similarity_data(const._SIMILARITY_MATRIX, const._SIMILARITY_SORTED)    
 
     channel.basic_consume(on_new_topic,
                           queue='new_topics',

@@ -5,13 +5,22 @@ import constants as const
 #import database
 import json
 import logging
+import pika
 
 def main():
-    logging.basicConfig(filename=const._RUN_LOG_FILE, filemode='w', level=logging.DEBUG)
-    utils.load_topics(db, const._TOPIC_FEATURES, const._DAYS, 
-                      const._MIN_LEN, const._MIN_REPLIES, 
-                      const._MIN_REPLIES_1, const._TOPIC_FILE)
+    logging.basicConfig(filename=const._INIT_LOG_FILE, filemode='w', level=logging.DEBUG)
+    
+    channel.queue_declare(queue='all_topics')
+    
+    def on_new_topic(ch, method, properties, body):
+        logging.info('Received topics')
+        topic_dict = json.loads(body)
+        
 
+
+
+        
+        
     #utils.load_replies(db, topic_ids, const._REPLY_FEATURES, const._REPLY_FILE)
     '''
     word_weights = tp.compute_profiles(topic_ids=topic_ids,  
