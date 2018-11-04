@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import jieba
 import re
 import json
@@ -54,7 +56,6 @@ def preprocess(text, stopwords, punc_frac_low, punc_frac_high,
     
     ratio = cnt / len(text)
 
-    print(ratio)
     if ratio < punc_frac_low or ratio > punc_frac_high:
         return None
 
@@ -84,8 +85,6 @@ def preprocess(text, stopwords, punc_frac_low, punc_frac_high,
         return None
 
     if len(word_list)/len(set(word_list)) > valid_ratio:
-        print(word_list)
-        print(set(word_list))
         return None
 
     return word_list   

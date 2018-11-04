@@ -177,18 +177,18 @@ channel.queue_declare(queue='delete_topics')
 #channel.queue_declare(queue='active_topics')
 
 d1 = {'topicid': '1600001', 'TOTALVIEWNUM': 9, 'TOTALREPLYNUM': 0, 
-     'POSTDATE': '2018-11-3 23:35:21', 'USEFULNUM': 0, 'GOLDUSEFULNUM': 0, 
-     'TOTALPCPOINT': 0, 'TOPICPCPOINT': 0, 'body': '央视记者在英国大闹现场, 金州勇士力争三连冠。'}
+     'POSTDATE': '2018-11-4 11:35:21', 'USEFULNUM': 0, 'GOLDUSEFULNUM': 0, 
+     'TOTALPCPOINT': 0, 'TOPICPCPOINT': 0, 'body': '是一款流行的代码编辑器软件，也是HTML和散文先进的文本编辑器，可运行在Linux，Windows和Mac OS X。也是许多程序员喜欢使用的一款文本编辑器软件。'}
 
-d2 = '1506315'
+d2 = '1600001'
 
 msg1 = json.dumps(d1)
 
 msg2 = json.dumps(d2)
 
-channel.basic_publish(exchange=const._EXCHANGE_NAME,
-                      routing_key='new',
-                      body=msg1)
+#channel.basic_publish(exchange=const._EXCHANGE_NAME,
+#                      routing_key='new',
+#                      body=msg1)
 
 channel.basic_publish(exchange=const._EXCHANGE_NAME,
                       routing_key='delete',

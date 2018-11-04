@@ -77,30 +77,29 @@ def main():
         topic_dict[topic_id] = {k:v for k, v in new_topic.items() if k != 'topicid'}
         sorted_tids.append(topic_id)
         
-        def remove_old(tids, cut_off):
+        def remove_old(sorted_tids, cut_off):
             if cut_off <= oldest or cut_off > latest:
                 return 
             
             logging.info('Deleting old topics')
-            for i, tid in enumerate(tids):
+            for i, tid in enumerate(sorted_tids):
                 dt = datetime.strptime(topic_dict[tid]['POSTDATE'], const._DATETIME_FORMAT)
                 if dt.date() >= cut_off.date():
-                    break  
+                    break
+                last_cut = topic_dict[tid]['POSTDATE']  
                 del topic_dict[tid]
                 
-            last_cut = topic_dict[tids[i-1]]['POSTDATE']
-            new_oldest = topic_dict[tids[i]]['POSTDATE']
+            new_oldest = topic_dict[sorted_tids[i]]['POSTDATE']
             logging.debug('oldest in topic file after removing: %s', new_oldest)
             logging.debug('latest among deleted topics: %s', last_cut)
             new_oldest = datetime.strptime(new_oldest, const._DATETIME_FORMAT)
             last_cut = datetime.strptime(last_cut, const._DATETIME_FORMAT)
             assert last_cut < cut_off <= new_oldest
-            del tids[:i]
-            assert len(tids) == len(topic_dict) > 0
+            del sorted_tids[:i]
+            assert len(sorted_tids) == len(topic_dict) > 0
 
         if (latest - oldest).days > const._TRIGGER_DAYS:           
             remove_old(sorted_tids, cut_off)
-            print(sorted_tids)
          
         utils.save_topics(topic_dict, const._TMP)
         logging.info('New topic added to local disk')
@@ -120,7 +119,6 @@ def main():
         oldest = datetime.strptime(oldest, const._DATETIME_FORMAT)
         if (latest - oldest).days > const._TRIGGER_DAYS:
             collection.remove_old(cut_off)
-            print(sorted([t['topic_id'] for t in collection.corpus_data]))
 
         collection.save_similarity_data(const._SIMILARITY_MATRIX, const._SIMILARITY_SORTED)
 
@@ -138,14 +136,14 @@ def main():
         logging.info('Received topic to be deleted')
         delete_id = json.loads(body)
         if delete_id not in topic_dict:
-            logging.warning('Topic not found in the collection')
+            logging.warning('Topic %s not found in the collection', delete_id)
             return
 
         del topic_dict[delete_id]
         sorted_tids.remove(delete_id)
         assert delete_id not in sorted_tids and delete_id not in topic_dict
         utils.save_topics(topic_dict, const._TMP)
-        logging.info('Topic deleted from local disk')
+        logging.info('Topic %s deleted from local disk', delete_id)
 
         collection.delete_one(delete_id)
 

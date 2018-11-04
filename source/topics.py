@@ -130,7 +130,6 @@ class Topic_collection(object):
     def __init__(self, topic_dict, datetime_format):
         self.topic_dict = topic_dict
         self.datetime_format = datetime_format
-        self.tid_to_index = {}  # mapping from topic id to corpus index
 
     def get_corpus_data(self, preprocess_fn, stopwords, punc_frac_low, 
                         punc_frac_high, valid_count, valid_ratio):
@@ -138,7 +137,6 @@ class Topic_collection(object):
         # sorting topipc id's means sorting by post date
         sorted_topic_ids = sorted(list(self.topic_dict.keys()))
 
-        i = 0
         for topic_id in sorted_topic_ids: 
             content = ' '.join(self.topic_dict[topic_id]['body'].split())
             word_list = preprocess_fn(content, stopwords, punc_frac_low,  
@@ -150,8 +148,6 @@ class Topic_collection(object):
                 topic_data['content'] = word_list
                 topic_data['date'] = self.topic_dict[topic_id]['POSTDATE']
                 self.corpus_data.append(topic_data)
-                self.tid_to_index[topic_id] = i
-                i += 1
 
         corpus = [topic_data['content'] for topic_data in self.corpus_data]
         self.dictionary = corpora.Dictionary(corpus)
@@ -272,14 +268,16 @@ class Topic_collection(object):
             for tj in self.corpus_data[i:]:
                 date_j = datetime.strptime(tj['date'], self.datetime_format)
                 day_diff = abs((date_i-date_j).days)
-                self.sim_matrix[ti['topic_id']][tj['topic_id']] = matutils.cossim(ti['bow'], tj['bow'])*math.exp(-day_diff/T)
-                self.sim_matrix[tj['topic_id']][ti['topic_id']] = self.sim_matrix[ti['topic_id']][tj['topic_id']]
+                sim_val = matutils.cossim(ti['bow'], tj['bow'])*math.exp(-day_diff/T)
+                self.sim_matrix[ti['topic_id']][tj['topic_id']] = sim_val
+                self.sim_matrix[tj['topic_id']][ti['topic_id']] = sim_val
 
             self.sim_sorted[ti['topic_id']] = [[tid_j, sim_val] for tid_j, sim_val 
                                                in self.sim_matrix[ti['topic_id']].items()]
             self.sim_sorted[ti['topic_id']].sort(key=lambda x:x[1], reverse=True)
 
-        logging.debug('sim_matrix_len=%d, sim_sorted_len=%d', len(self.sim_matrix), len(self.sim_sorted))
+        logging.debug('sim_matrix_len=%d, sim_sorted_len=%d', 
+                      len(self.sim_matrix), len(self.sim_sorted))
 
     '''
     def get_topics_by_keywords(self, keywords):
@@ -317,7 +315,6 @@ class Topic_collection(object):
         del self.corpus_data[:l]
 
         for delete_tid in delete_tids:
-            del self.tid_to_index[delete_tid]
             del self.sim_matrix[delete_tid]
             del self.sim_sorted[delete_tid]
         
@@ -336,8 +333,8 @@ class Topic_collection(object):
         logging.info('Old topics removed')
         logging.info('%d topics available', len(self.corpus_data))
         logging.info('Oldest topic is now %s', self.corpus_data[0]['date'])
-        logging.debug('tid_to_index_len=%d, sim_matrix_len=%d, sim_sorted_len=%d', 
-                      len(self.tid_to_index), len(self.sim_matrix), len(self.sim_sorted))
+        logging.debug('sim_matrix_len=%d, sim_sorted_len=%d', 
+                      len(self.sim_matrix), len(self.sim_sorted))
   
     def add_one(self, topic, preprocess_fn, stopwords, punc_frac_low, 
                 punc_frac_high, valid_count, valid_ratio, trigger_days, cut_off, T):
@@ -356,7 +353,6 @@ class Topic_collection(object):
         new['bow'] = self.dictionary.doc2bow(word_list)
         new['date'] = topic['POSTDATE']
         new['content'] = word_list
-        self.tid_to_index[new['topic_id']] = len(self.corpus_data)
         self.corpus_data.append(new)
 
         def sim_insert(tid, target_tid, target_sim_val):
@@ -393,14 +389,27 @@ class Topic_collection(object):
         logging.info('New topic has been added to the collection')
         logging.info('Collection and similarity data have been updated')
         logging.info('%d topics available', len(self.corpus_data))
-        logging.debug('tid_to_index_len=%d, sim_matrix_len=%d, sim_sorted_len=%d', 
-                      len(self.tid_to_index), len(self.sim_matrix), len(self.sim_sorted))
+        logging.debug('sim_matrix_len=%d, sim_sorted_len=%d', 
+                      len(self.sim_matrix), len(self.sim_sorted))
 
     def delete_one(self, topic_id):       
-        idx = self.tid_to_index[topic_id]
+        if len(self.corpus_data) == 0:
+            logging.warning('THe collection is empty!')
+            return 
+
+        def bin_search(topic_id):
+            l, r = 0, len(self.corpus_data)-1
+            while l < r:
+                mid = (l+r)//2
+                if self.corpus_data[mid]['topic_id'] >= topic_id:
+                    r = mid
+                else:
+                    l = mid+1 
+            return l if self.corpus_data[l]['topic_id'] == topic_id else -1
+
+        idx = bin_search(topic_id)
         if idx >= 0:
             del self.corpus_data[idx]
-            del self.tid_to_index[topic_id]
             del self.sim_matrix[topic_id]
             del self.sim_sorted[topic_id]
 
@@ -410,18 +419,17 @@ class Topic_collection(object):
             for tid, sim_list in self.sim_sorted.items():
                 self.sim_sorted[tid] = [x for x in sim_list if x[0] != topic_id]
 
-        logging.info('Topic has been deleted from the collection')
+        logging.info('Topic %s has been deleted from the collection', topic_id)
         logging.info('Collection and similarity data have been updated')
         logging.info('%d topics remaining', len(self.corpus_data))
         logging.debug('corpus_size=%d', len(self.corpus_data))
-        logging.debug('tid_to_index_len=%d, sim_matrix_len=%d, sim_sorted_len=%d', 
-                      len(self.tid_to_index), len(self.sim_matrix), len(self.sim_sorted))
+        logging.debug('sim_matrix_len=%d, sim_sorted_len=%d', 
+                      len(self.sim_matrix), len(self.sim_sorted))
 
     def check_correctness(self):
         '''
         Perform correctness and consistency checks
         '''
-        assert len(self.corpus_data) == len(self.tid_to_index)
         sim_matrix_len, sim_sorted_len = len(self.sim_matrix), len(self.sim_sorted)
         assert sim_matrix_len==sim_sorted_len==len(self.corpus_data)
         assert all(len(sim_dict)==sim_matrix_len for tid, sim_dict in self.sim_matrix.items())
