@@ -31,7 +31,7 @@ def save_topics(topic_dict, path):
 def get_config(config_file_path):
     config = configparser.ConfigParser()
     config.read(config_file_path)
-    logging.info('Configuration read')
+    logging.info('Configuration loaded')
     return config
 
 def preprocess(text, stopwords, punc_frac_low, punc_frac_high, 

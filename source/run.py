@@ -20,12 +20,14 @@ def main():
     # load stopwords
     stopwords = utils.load_stopwords(const._STOPWORD_FILE)
 
+    '''
     if os.path.exists(const._TOPIC_FILE):
         with open(const._TOPIC_FILE, 'r') as f:
             topic_dict = json.load(f)
     else:
         topic_dict = {}
-
+    '''
+    topic_dict = {}
     sorted_tids = sorted(list(topic_dict.keys()))
     collection = topics.Topic_collection(topic_dict, const._DATETIME_FORMAT)
     collection.get_corpus_data(preprocess_fn=utils.preprocess, 
@@ -38,9 +40,9 @@ def main():
     collection.get_similarity_data(const._T)
     collection.save_similarity_data(const._SIMILARITY_MATRIX, const._SIMILARITY_SORTED)
     
+    '''
     # establish rabbitmq connection and declare queues
     config = utils.get_config(const._CONFIG_FILE)
-    logging.info('Configuration loaded')
     sections = config.sections()
 
     if len(sections) == 0:
@@ -54,7 +56,8 @@ def main():
     
     params = pika.ConnectionParameters(host=config[sec]['host'], 
                                        credentials=credentials)
-    #params = pika.ConnectionParameters(host='localhost')
+    '''
+    params = pika.ConnectionParameters(host='localhost')
     connection = pika.BlockingConnection(params)
     channel = connection.channel()
     channel.exchange_declare(exchange=const._EXCHANGE_NAME, exchange_type='direct')
@@ -69,10 +72,14 @@ def main():
     def on_new_topic(ch, method, properties, body):
         logging.info('Received new topic')
         new_topic = json.loads(body)
-        topic_id = new_topic['topicid']
+        print(new_topic)
+        topic_id = new_topic['topicID']
         if topic_id in topic_dict:
             logging.warning('Topic id already exists! Quitting handler...')
             return
+
+        topic_dict[topic_id] = {k:v for k, v in new_topic.items() if k != 'topicID'}
+        sorted_tids.append(topic_id)
 
         oldest, latest = topic_dict[sorted_tids[0]]['POSTDATE'], new_topic['POSTDATE']
         logging.debug('oldest=%s, latest=%s', oldest, latest)
@@ -80,9 +87,6 @@ def main():
         latest = datetime.strptime(latest, const._DATETIME_FORMAT)
         cut_off = latest - timedelta(days=const._KEEP_DAYS)
 
-        topic_dict[topic_id] = {k:v for k, v in new_topic.items() if k != 'topicID'}
-        sorted_tids.append(topic_id)
-        
         def remove_old(sorted_tids, cut_off):
             if cut_off <= oldest or cut_off > latest:
                 return 
@@ -121,10 +125,11 @@ def main():
                            cut_off=cut_off, 
                            T=const._T)
 
-        oldest = collection.corpus_data[0]['date']
-        oldest = datetime.strptime(oldest, const._DATETIME_FORMAT)
-        if (latest - oldest).days > const._TRIGGER_DAYS:
-            collection.remove_old(cut_off)
+        if len(collection.corpus_data) > 0:
+            oldest = collection.corpus_data[0]['date']
+            oldest = datetime.strptime(oldest, const._DATETIME_FORMAT)
+            if (latest - oldest).days > const._TRIGGER_DAYS:
+                collection.remove_old(cut_off)
 
         collection.save_similarity_data(const._SIMILARITY_MATRIX, const._SIMILARITY_SORTED)
 
@@ -133,9 +138,9 @@ def main():
     '''
     def on_update_topic(ch, method, properties, body):
         update_topic = json.loads(body)
-        topic_id = update_topic['topicid']
+        topic_id = update_topic['topicID']
         for attr in update_topic:
-            if attr != 'topicid':
+            if attr != 'topicID':
                 topic_dict[topic_id][attr] = update_topic[attr]
         utils.save_topics(topic_dict, const._TMP)
     '''

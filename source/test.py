@@ -167,7 +167,7 @@ for topic_id, r in topics.items():
 
 print(n_replies)
 
-
+'''
 connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
 channel = connection.channel()
 
@@ -178,27 +178,29 @@ channel.queue_declare(queue='new_topics')
 channel.queue_declare(queue='delete_topics')
 #channel.queue_declare(queue='active_topics')
 
+with open(const._TOPIC_FILE, 'r') as f:
+    topics = json.load(f) 
+
 d1 = {'topicid': '1600001', 'TOTALVIEWNUM': 9, 'TOTALREPLYNUM': 0, 
      'POSTDATE': '2018-11-4 11:35:21', 'USEFULNUM': 0, 'GOLDUSEFULNUM': 0, 
      'TOTALPCPOINT': 0, 'TOPICPCPOINT': 0, 'body': '是一款流行的代码编辑器软件，也是HTML和散文先进的文本编辑器，可运行在Linux，Windows和Mac OS X。也是许多程序员喜欢使用的一款文本编辑器软件。'}
 
-d2 = '1600001'
-
-msg1 = json.dumps(d1)
-
-msg2 = json.dumps(d2)
+sorted_tids = sorted(topics.keys())
+for tid in sorted_tids:
+    rec = topics[tid]
+    rec['topicID'] = tid
+    msg = json.dumps(rec)
+    channel.basic_publish(exchange=const._EXCHANGE_NAME,
+                          routing_key='new',
+                          body=msg)
 
 #channel.basic_publish(exchange=const._EXCHANGE_NAME,
-#                      routing_key='new',
-#                      body=msg1)
-
-channel.basic_publish(exchange=const._EXCHANGE_NAME,
-                      routing_key='delete',
-                      body=msg2)
+#                      routing_key='delete',
+#                      body=msg2)
 
 connection.close()
 
-
+'''
 docs = ['央视记者在英国大闹现场',
         '真爱国还是做秀？', 
         '外交部已经表态了',
@@ -302,13 +304,3 @@ for tid, sim_list in dl.items():
 print(d)
 print(dl)
 '''
-
-a = '的时间过来看'
-
-def change_a():
-    print('changing the value of a')
-    a = 3
-
-change_a()
-
-print(a)

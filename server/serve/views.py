@@ -10,7 +10,6 @@ sys.path.insert(0, '/Users/ai/Projects/recommender-system-for-online-forums/sour
 #print(sys.path)
 import constants as const
 
-# Create your views here.
 def serve_recommendations(request):
     '''
     Given the similarity matrix, generate top_num recommendations for
@@ -18,7 +17,7 @@ def serve_recommendations(request):
     '''
     logging.basicConfig(filename=const._SERVE_LOG_FILE, level=logging.DEBUG)
     if request.method == 'POST':
-    	return HttpResponse('Please use Only GET is allowed!', status=403)
+    	return HttpResponse('POST is not allowed!', status=403)
 
     print(request.GET)
 
@@ -28,7 +27,7 @@ def serve_recommendations(request):
     with open(const._SIMILARITY_SORTED, 'r') as f:
         sim_sorted = json.load(f)
 
-	target_tid = request.GET['topicid'] 
+	target_tid = request.GET['topicID'] 
 
     recoms = []
     for tid, sim_val in sim_sorted[target_id]: 
