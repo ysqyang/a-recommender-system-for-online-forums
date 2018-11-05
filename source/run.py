@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import utils
 #import topic_profiling as tp
 #import similarity as sim
@@ -7,19 +9,24 @@ import json
 import pika
 import constants as const
 import sys
+import os
 import logging
 import topics
 from datetime import datetime, timedelta
 
 def main():   
     logging.basicConfig(filename=const._RUN_LOG_FILE, filemode='w', level=logging.DEBUG)
+    
+    # load stopwords
+    stopwords = utils.load_stopwords(const._STOPWORD_FILE)
 
-    with open(const._TOPIC_FILE, 'r') as f:
-        topic_dict = json.load(f)
+    if os.path.exists(const._TOPIC_FILE):
+        with open(const._TOPIC_FILE, 'r') as f:
+            topic_dict = json.load(f)
+    else:
+        topic_dict = {}
 
     sorted_tids = sorted(list(topic_dict.keys()))
-    stopwords = utils.load_stopwords(const._STOPWORD_FILE)   
-
     collection = topics.Topic_collection(topic_dict, const._DATETIME_FORMAT)
     collection.get_corpus_data(preprocess_fn=utils.preprocess, 
                                stopwords=stopwords, 
@@ -29,9 +36,9 @@ def main():
                                valid_ratio=const._VALID_RATIO)
 
     collection.get_similarity_data(const._T)
-
     collection.save_similarity_data(const._SIMILARITY_MATRIX, const._SIMILARITY_SORTED)
-    '''
+    
+    # establish rabbitmq connection and declare queues
     config = utils.get_config(const._CONFIG_FILE)
     logging.info('Configuration loaded')
     sections = config.sections()
@@ -45,19 +52,18 @@ def main():
     credentials = pika.PlainCredentials(username=config[sec]['username'],
                                         password=config[sec]['password'])
     
-    params = pika.connectionParameters(host=config[sec]['host'], 
+    params = pika.ConnectionParameters(host=config[sec]['host'], 
                                        credentials=credentials)
-    '''
-    params = pika.ConnectionParameters(host='localhost')
+    #params = pika.ConnectionParameters(host='localhost')
     connection = pika.BlockingConnection(params)
     channel = connection.channel()
     channel.exchange_declare(exchange=const._EXCHANGE_NAME, exchange_type='direct')
-
+  
     channel.queue_declare(queue='new_topics')
-    channel.queue_declare(queue='update_topics')
+    #channel.queue_declare(queue='update_topics')
     channel.queue_declare(queue='delete_topics')
     channel.queue_bind(exchange=const._EXCHANGE_NAME, queue='new_topics', routing_key='new')
-    channel.queue_bind(exchange=const._EXCHANGE_NAME, queue='update_topics', routing_key='update')
+    #channel.queue_bind(exchange=const._EXCHANGE_NAME, queue='update_topics', routing_key='update')
     channel.queue_bind(exchange=const._EXCHANGE_NAME, queue='delete_topics', routing_key='delete')
 
     def on_new_topic(ch, method, properties, body):
@@ -74,7 +80,7 @@ def main():
         latest = datetime.strptime(latest, const._DATETIME_FORMAT)
         cut_off = latest - timedelta(days=const._KEEP_DAYS)
 
-        topic_dict[topic_id] = {k:v for k, v in new_topic.items() if k != 'topicid'}
+        topic_dict[topic_id] = {k:v for k, v in new_topic.items() if k != 'topicID'}
         sorted_tids.append(topic_id)
         
         def remove_old(sorted_tids, cut_off):
@@ -124,6 +130,7 @@ def main():
 
         #print('sorted tids after adding new topic:', tids)      
 
+    '''
     def on_update_topic(ch, method, properties, body):
         update_topic = json.loads(body)
         topic_id = update_topic['topicid']
@@ -131,6 +138,7 @@ def main():
             if attr != 'topicid':
                 topic_dict[topic_id][attr] = update_topic[attr]
         utils.save_topics(topic_dict, const._TMP)
+    '''
 
     def on_delete(ch, method, properties, body):
         logging.info('Received topic to be deleted')
@@ -153,15 +161,15 @@ def main():
                           queue='new_topics',
                           no_ack=True)
 
+    '''
     channel.basic_consume(on_update_topic, 
                           queue='update_topics',
                           no_ack=True)
-
+    '''
     channel.basic_consume(on_delete, 
                           queue='delete_topics',
                           no_ack=True)
-    
-    print(' [*] Waiting for messages. To exit press CTRL+C')
+    logging.info(' [*] Waiting for messages. To exit press CTRL+C')
     channel.start_consuming()
 
     '''

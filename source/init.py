@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import utils
 #import topic_profiling as tp
 #import similarity as sim
@@ -10,17 +12,45 @@ import pika
 def main():
     logging.basicConfig(filename=const._INIT_LOG_FILE, filemode='w', level=logging.DEBUG)
     
-    channel.queue_declare(queue='all_topics')
+    config = utils.get_config(const._CONFIG_FILE)
+    logging.info('Configuration loaded')
+    sections = config.sections()
+
+    if len(sections) == 0:
+        logging.error('Configuration file is empty. Exiting...')
+        sys.exit()
+
+    sec = sections[0]
     
-    def on_new_topic(ch, method, properties, body):
+    credentials = pika.PlainCredentials(username=config[sec]['username'],
+                                        password=config[sec]['password'])
+    
+    params = pika.ConnectionParameters(host=config[sec]['host'], 
+                                       credentials=credentials)
+
+    connection = pika.BlockingConnection(params)
+    channel = connection.channel()
+    channel.exchange_declare(exchange=const._EXCHANGE_NAME, exchange_type='direct')
+    channel.queue_declare(queue='all_topics')
+    channel.queue_bind(exchange=const._EXCHANGE_NAME, queue='all_topics', routing_key='all')
+
+    path = const._TOPIC_FILE
+    topic_dict = {}
+
+    def call_back(ch, method, properties, body):
         logging.info('Received topics')
-        topic_dict = json.loads(body)
-        
+        topic = json.loads(body)
+        topic_id = topic['topicID']
+        topic_dict[topic_id] = {k:v for k, v in new_topic.items() if k != 'topicID'} 
+        utils.save_topics(topic_dict, path)
+       
+    channel.basic_consume(call_back,
+                          queue='all_topics',
+                          no_ack=True)
 
-
-
-        
-        
+    logging.info(' [*] Waiting for messages. To exit press CTRL+C')
+    channel.start_consuming()
+             
     #utils.load_replies(db, topic_ids, const._REPLY_FEATURES, const._REPLY_FILE)
     '''
     word_weights = tp.compute_profiles(topic_ids=topic_ids,  

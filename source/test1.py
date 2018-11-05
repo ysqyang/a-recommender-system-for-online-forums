@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import pika
 import constants as const
 import json

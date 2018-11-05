@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 # Class definitions for streaming data from file
 from gensim import corpora, models, matutils
 #from gensim.similarities import Similarity
@@ -349,7 +351,7 @@ class Topic_collection(object):
         
         self.dictionary.add_documents([word_list])
         new = {}
-        new['topic_id'] = topic['topicid']
+        new['topic_id'] = topic['topicID']
         new['bow'] = self.dictionary.doc2bow(word_list)
         new['date'] = topic['POSTDATE']
         new['content'] = word_list

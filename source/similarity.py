@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from gensim import corpora
 import utils
 import copy

@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import numpy as np
 from sklearn import preprocessing
 import utils
@@ -165,7 +167,7 @@ for topic_id, r in topics.items():
 
 print(n_replies)
 
-'''
+
 connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
 channel = connection.channel()
 
@@ -197,7 +199,6 @@ channel.basic_publish(exchange=const._EXCHANGE_NAME,
 connection.close()
 
 
-'''
 docs = ['央视记者在英国大闹现场',
         '真爱国还是做秀？', 
         '外交部已经表态了',
@@ -302,6 +303,12 @@ print(d)
 print(dl)
 '''
 
+a = '的时间过来看'
 
+def change_a():
+    print('changing the value of a')
+    a = 3
 
+change_a()
 
+print(a)

@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import networkx as nx
 from gensim import corpora, models, similarities
 import numpy as np

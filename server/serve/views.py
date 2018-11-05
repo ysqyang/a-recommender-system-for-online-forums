@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
 import collections
@@ -5,7 +7,7 @@ import json
 import logging
 import sys
 sys.path.insert(0, '/Users/ai/Projects/recommender-system-for-online-forums/source')
-print(sys.path)
+#print(sys.path)
 import constants as const
 
 # Create your views here.
