@@ -12,14 +12,13 @@ import sys
 import os
 import logging
 import topics
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 def main():   
     logging.basicConfig(filename=const._RUN_LOG_FILE, filemode='w', level=logging.DEBUG)
     
     # load stopwords
     stopwords = utils.load_stopwords(const._STOPWORD_FILE)
-
     '''
     if os.path.exists(const._TOPIC_FILE):
         with open(const._TOPIC_FILE, 'r') as f:
@@ -29,7 +28,7 @@ def main():
     '''
     topic_dict = {}
     sorted_tids = sorted(list(topic_dict.keys()))
-    collection = topics.Topic_collection(topic_dict, const._DATETIME_FORMAT)
+    collection = topics.Topic_collection(topic_dict)
     collection.get_corpus_data(preprocess_fn=utils.preprocess, 
                                stopwords=stopwords, 
                                punc_frac_low=const._PUNC_FRAC_LOW, 
@@ -40,7 +39,6 @@ def main():
     collection.get_similarity_data(const._T)
     collection.save_similarity_data(const._SIMILARITY_MATRIX, const._SIMILARITY_SORTED)
     
-    '''
     # establish rabbitmq connection and declare queues
     config = utils.get_config(const._CONFIG_FILE)
     sections = config.sections()
@@ -56,8 +54,8 @@ def main():
     
     params = pika.ConnectionParameters(host=config[sec]['host'], 
                                        credentials=credentials)
-    '''
-    params = pika.ConnectionParameters(host='localhost')
+    
+    #params = pika.ConnectionParameters(host='localhost')
     connection = pika.BlockingConnection(params)
     channel = connection.channel()
     channel.exchange_declare(exchange=const._EXCHANGE_NAME, exchange_type='direct')
@@ -71,9 +69,10 @@ def main():
 
     def on_new_topic(ch, method, properties, body):
         logging.info('Received new topic')
-        new_topic = json.loads(body)
-        print(new_topic)
-        topic_id = new_topic['topicID']
+        #print(body, type(body))
+        new_topic = json.loads(json.loads(body))
+        print(new_topic, type(new_topic))
+        topic_id = str(new_topic['topicID'])
         if topic_id in topic_dict:
             logging.warning('Topic id already exists! Quitting handler...')
             return
@@ -81,10 +80,10 @@ def main():
         topic_dict[topic_id] = {k:v for k, v in new_topic.items() if k != 'topicID'}
         sorted_tids.append(topic_id)
 
-        oldest, latest = topic_dict[sorted_tids[0]]['POSTDATE'], new_topic['POSTDATE']
-        logging.debug('oldest=%s, latest=%s', oldest, latest)
-        oldest = datetime.strptime(oldest, const._DATETIME_FORMAT)
-        latest = datetime.strptime(latest, const._DATETIME_FORMAT)
+        oldest_stmp, latest_stmp = topic_dict[sorted_tids[0]]['postDate'], new_topic['postDate']
+        oldest, oldest_str = utils.convert_timestamp(oldest_stmp)
+        latest, latest_str = utils.convert_timestamp(latest_stmp)
+        logging.debug('oldest=%s, latest=%s', oldest_str, latest_str)
         cut_off = latest - timedelta(days=const._KEEP_DAYS)
 
         def remove_old(sorted_tids, cut_off):
@@ -93,17 +92,17 @@ def main():
             
             logging.info('Deleting old topics')
             for i, tid in enumerate(sorted_tids):
-                dt = datetime.strptime(topic_dict[tid]['POSTDATE'], const._DATETIME_FORMAT)
+                dt, _ = utils.convert_timestamp(topic_dict[tid]['postDate'])
                 if dt.date() >= cut_off.date():
                     break
-                last_cut = topic_dict[tid]['POSTDATE']  
+                last_cut_stmp = topic_dict[tid]['postDate']
+                last_cut, last_cut_str = utils.convert_timestamp(last_cut_stmp)  
                 del topic_dict[tid]
                 
-            new_oldest = topic_dict[sorted_tids[i]]['POSTDATE']
-            logging.debug('oldest in topic file after removing: %s', new_oldest)
-            logging.debug('latest among deleted topics: %s', last_cut)
-            new_oldest = datetime.strptime(new_oldest, const._DATETIME_FORMAT)
-            last_cut = datetime.strptime(last_cut, const._DATETIME_FORMAT)
+            new_oldest_stmp = topic_dict[sorted_tids[i]]['postDate']
+            new_oldest, new_oldest_str = utils.convert_timestamp(new_oldest_stmp)
+            logging.debug('oldest in topic file after removing: %s', new_oldest_str)
+            logging.debug('latest among deleted topics: %s', last_cut_str)
             assert last_cut < cut_off <= new_oldest
             del sorted_tids[:i]
             assert len(sorted_tids) == len(topic_dict) > 0
@@ -111,7 +110,7 @@ def main():
         if (latest - oldest).days > const._TRIGGER_DAYS:           
             remove_old(sorted_tids, cut_off)
          
-        utils.save_topics(topic_dict, const._TMP)
+        utils.save_topics(topic_dict, const._TOPIC_FILE)
         logging.info('New topic added to local disk')
 
         collection.add_one(topic=new_topic,
@@ -126,8 +125,7 @@ def main():
                            T=const._T)
 
         if len(collection.corpus_data) > 0:
-            oldest = collection.corpus_data[0]['date']
-            oldest = datetime.strptime(oldest, const._DATETIME_FORMAT)
+            oldest, _ = utils.convert_timestamp(collection.corpus_data[0]['date'])
             if (latest - oldest).days > const._TRIGGER_DAYS:
                 collection.remove_old(cut_off)
 
@@ -142,7 +140,7 @@ def main():
         for attr in update_topic:
             if attr != 'topicID':
                 topic_dict[topic_id][attr] = update_topic[attr]
-        utils.save_topics(topic_dict, const._TMP)
+        utils.save_topics(topic_dict, const._TOPIC_FILE)
     '''
 
     def on_delete(ch, method, properties, body):
@@ -155,7 +153,7 @@ def main():
         del topic_dict[delete_id]
         sorted_tids.remove(delete_id)
         assert delete_id not in sorted_tids and delete_id not in topic_dict
-        utils.save_topics(topic_dict, const._TMP)
+        utils.save_topics(topic_dict, const._TOPIC_FILE)
         logging.info('Topic %s deleted from local disk', delete_id)
 
         collection.delete_one(delete_id)

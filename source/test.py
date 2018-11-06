@@ -18,6 +18,7 @@ import pika
 import bisect
 import collections
 import logging
+import ast
 '''
 class Stream(object):
     def __init__(self, topic_id, preprocess_fn, stopwords):
@@ -167,7 +168,7 @@ for topic_id, r in topics.items():
 
 print(n_replies)
 
-'''
+
 connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
 channel = connection.channel()
 
@@ -200,7 +201,7 @@ for tid in sorted_tids:
 
 connection.close()
 
-'''
+
 docs = ['央视记者在英国大闹现场',
         '真爱国还是做秀？', 
         '外交部已经表态了',
@@ -304,3 +305,38 @@ for tid, sim_list in dl.items():
 print(d)
 print(dl)
 '''
+
+byte_str = b'"{\\"topicID\\":1505943,\\"postDate\\":1538991852000,\\"body\\":\\"\\\\\\" \xe6\xb3\x95\xe8\x90\xa8\xe6\xb3\x95\xe8\x90\xa8\xe6\xb3\x95\xe8\x90\xa8\\\\\\"\\"}"'
+
+json_str = """
+{
+    "id" : 90,
+    "name" : "python",
+    "url" : "http://www.v2ex.com/go/python",
+    "title" : "Python",
+    "title_alternative" : "Python",
+    "topics" : 7646,
+    "stars" : 4862
+}
+"""
+res = json.loads(byte_str)
+print(res)
+
+res = json.loads(res)
+print(res)
+
+print(res['topicID']) # 90
+print(res['body']) # http://www.v2ex.com/go/python
+
+dt, dt_str = utils.convert_timestamp(res['postDate'])
+
+print(dt, dt_str)
+print(type(dt), type(dt_str))
+
+d = {1:{'a': 4.4, 'b': 6.3}, 2:{'a': 2.2, 'b': 3.1}}
+
+for val in d.values():
+    val['c'] = val['a'] + val['b']
+
+print(d)
+

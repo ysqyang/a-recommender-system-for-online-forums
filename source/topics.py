@@ -12,7 +12,6 @@ import json
 import constants as const
 import logging
 from scipy import stats
-from datetime import datetime
 
 class Topic(object):
     '''
@@ -129,133 +128,28 @@ class Topic_collection(object):
     Corpus object for streaming and preprocessing 
     texts from topics_info tables
     '''
-    def __init__(self, topic_dict, datetime_format):
+    def __init__(self, topic_dict):
         self.topic_dict = topic_dict
-        self.datetime_format = datetime_format
 
     def get_corpus_data(self, preprocess_fn, stopwords, punc_frac_low, 
                         punc_frac_high, valid_count, valid_ratio):
-        self.corpus_data = []
-        # sorting topipc id's means sorting by post date
-        sorted_topic_ids = sorted(list(self.topic_dict.keys()))
-
-        for topic_id in sorted_topic_ids: 
-            content = ' '.join(self.topic_dict[topic_id]['body'].split())
+        self.corpus_data = {}
+        for topic_id, attrs in self.topic_dict.items(): 
+            content = ' '.join(attrs['body'].split())
             word_list = preprocess_fn(content, stopwords, punc_frac_low,  
                                       punc_frac_high, valid_count, valid_ratio)
 
             if word_list is not None: # add only valid topics
-                topic_data = {}
-                topic_data['topic_id'] = topic_id
-                topic_data['content'] = word_list
-                topic_data['date'] = self.topic_dict[topic_id]['POSTDATE']
-                self.corpus_data.append(topic_data)
+                self.corpus_data[topic_id] = {}
+                self.corpus_data[topic_id]['content'] = word_list
+                self.corpus_data[topic_id]['date'] = attrs['postDate']
 
-        corpus = [topic_data['content'] for topic_data in self.corpus_data]
+        corpus = [topic_data['content'] for topic_data in self.corpus_data.values()]
         self.dictionary = corpora.Dictionary(corpus)
-        for topic_data in self.corpus_data:
-            topic_data['bow'] = self.dictionary.doc2bow(topic_data['content'])
+        for attrs in self.corpus_data.values():
+            attrs['bow'] = self.dictionary.doc2bow(attrs['content'])
 
         logging.info('%d topics available', len(self.corpus_data))
-
-    def get_distributions(self, coeff):
-        '''
-        Computes the word distribution for each document in the collection 
-        from in-document and in-corpus frequencies
-        Args:
-        coeff: contribution coefficient for in-document word frequency
-               in computing word distribution
-        '''
-        n_words = len(self.dictionary.token2id)
-        self.distributions = []
-        corpus_freq = [0]*n_words
-        num_tokens_corpus = sum(sum(x[1] for x in vec) for vec in self.corpus_bow)
-
-        for i, vec in enumerate(self.corpus_bow):
-            # ignore documents that have less than _MIN_WORDS words 
-            if len(vec) == 0:
-                self.distributions.append([])
-            else:
-                # total number of tokens (with repetitions) in current doc
-                num_tokens = sum(x[1] for x in vec)
-                dst = [0]*n_words
-                for (word_id, count) in vec:
-                    dst[word_id] = coeff*count/num_tokens
-                    # update word frequency in corpus
-                    corpus_freq[word_id] += count/num_tokens_corpus
-                self.distributions.append(dst)
-                '''
-                dst = [(self.dictionary[i], val) for i, val in enumerate(dst)]
-                dst.sort(key=lambda x:x[1], reverse=True)
-                print([(word, val) for word, val in dst if val > 0])
-                '''
-        for i, dst in enumerate(self.distributions):
-            if len(dst) > 0:
-                for word_id in range(n_words):
-                    # add contribution from in-corpus frequency
-                    dst[word_id] += (1-coeff)*corpus_freq[word_id]
-                '''
-                dst1 = [(self.dictionary[i], val) for i, val in enumerate(dst)]
-                dst1.sort(key=lambda x:x[1], reverse=True)
-                print([word for word, val in dst1[:20]])
-                '''
-
-    def get_distribution_given_profile(self, profile_words):
-        '''
-        Computes the word distribution given the apprearance of profile_words
-        Args:
-        profile_words: list of words that represent a discussion thread
-                       (i.e., topic with all replies)
-        Returns:
-        Word distribution given the apprearance of profile_words
-        '''
-        profile_wids = []
-        for word in profile_words:
-            if word in self.dictionary.token2id:
-                profile_wids.append(self.dictionary.token2id[word])
-
-        #print(profile_word_ids)
-        distribution = [0]*len(self.dictionary.token2id)
-        # compute the joint probability of observing each dictionary
-        # word together with profile words 
-
-        # convert to natural log to avoid numerical issues
-        log_probs = [sum(math.log(v[wid]) for wid in profile_wids)
-                     if len(v) > 0 else -float('inf') for v in self.distributions]
-        # assuming uniform prior distribution over all docs in corpus,
-        # the joint probability is the sum of joint probabilities over
-        # all docs       
-        for v, log_prob in zip(self.distributions, log_probs):
-            #print(log_prob)
-            for wid in range(len(v)): 
-                if wid not in profile_wids:
-                    distribution[wid] += math.exp(log_prob+math.log(v[wid]))
-
-        # normalize the probabilities
-        s = sum(distribution)
-        for i in range(len(distribution)):
-            distribution[i] /= s
-        
-        return distribution
-
-    def get_similarity_given_distribution(self, distribution, T):
-        '''
-        Computes the similarity scores between a topic profile and 
-        the documents in the corpus with time adjustments
-        Args:
-        distribution: word probability distribution given a topic profile
-        T:            time attenuation factor
-        Returns:
-        Similarity scores between a topic profile and the documents 
-        in the corpus
-        '''
-        sim, now = {}, datetime.now() 
-        for date, vec, tid in zip(self.dates, self.distributions, self.valid_topics):
-            if len(vec) > 0:     
-                date = datetime.strptime(date, self.datetime_format)
-                day_diff = (now - date).days
-                sim[tid] = stats.entropy(pk=distribution, qk=vec)*math.exp(day_diff/T)
-        return sim
 
     def get_similarity_data(self, T):
         '''
@@ -265,18 +159,17 @@ class Topic_collection(object):
         '''
         self.sim_matrix = collections.defaultdict(dict)
         self.sim_sorted = collections.defaultdict(list)
-        for i, ti in enumerate(self.corpus_data):
-            date_i = datetime.strptime(ti['date'], self.datetime_format)
-            for tj in self.corpus_data[i:]:
-                date_j = datetime.strptime(tj['date'], self.datetime_format)
+        for tid_i, attrs_i in self.corpus_data.items():
+            date_i, _ = utils.convert_timestamp(attrs_i['date'])
+            for tid_j, attrs_j in self.corpus_data.items():
+                date_j, _ = utils.convert_timestamp(attrs_j['date'])
                 day_diff = abs((date_i-date_j).days)
-                sim_val = matutils.cossim(ti['bow'], tj['bow'])*math.exp(-day_diff/T)
-                self.sim_matrix[ti['topic_id']][tj['topic_id']] = sim_val
-                self.sim_matrix[tj['topic_id']][ti['topic_id']] = sim_val
+                sim_val = matutils.cossim(attrs_i['bow'], attrs_j['bow'])*math.exp(-day_diff/T)
+                self.sim_matrix[tid_i][tid_j] = sim_val
 
-            self.sim_sorted[ti['topic_id']] = [[tid_j, sim_val] for tid_j, sim_val 
-                                               in self.sim_matrix[ti['topic_id']].items()]
-            self.sim_sorted[ti['topic_id']].sort(key=lambda x:x[1], reverse=True)
+            self.sim_sorted[tid_i] = [[tid_j, sim_val] for tid_j, sim_val 
+                                               in self.sim_matrix[tid_i].items()]
+            self.sim_sorted[tid_i].sort(key=lambda x:x[1], reverse=True)
 
         logging.debug('sim_matrix_len=%d, sim_sorted_len=%d', 
                       len(self.sim_matrix), len(self.sim_sorted))
@@ -286,37 +179,20 @@ class Topic_collection(object):
         keyword_ids = [self.dictionary.token2id[kw] for kw in keywords]
         for bow in self.corpus_bow:
     '''        
+
     def remove_old(self, cut_off):
         '''
         Removes all topics posted before date specified by cut_off 
         '''
-        if len(self.corpus_data) == 0:
-            logging.warning('The corpus is empty!')
-            return
-
-        oldest = datetime.strptime(self.corpus_data[0]['date'], self.datetime_format)
-        latest = datetime.strptime(self.corpus_data[-1]['date'], self.datetime_format)
-
-        if cut_off <= oldest or cut_off > latest:
-            return 
-        
         logging.info('Removing old topics from the collection...')
-        #binary search for the first entry later than cut_off
-        l, r = 0, len(self.corpus_data)-1
-        while l < r:
-            mid = (l+r)//2
-            mid_date = datetime.strptime(self.corpus_data[mid]['date'], self.datetime_format)
-            if mid_date.date() >= cut_off.date():
-                r = mid
-            elif mid_date.date() < cut_off.date():
-                l = mid+1
-            
-        last_cut = self.corpus_data[l-1]['date']
-        new_oldest = self.corpus_data[l]['date']
-        delete_tids = set([t['topic_id'] for t in self.corpus_data[:l]])
-        del self.corpus_data[:l]
 
+        delete_tids = []
+        for tid, attrs in self.corpus_data.items():
+            dt, dt_str = utils.convert_timestamp(attrs['date'])
+            if dt  
+        
         for delete_tid in delete_tids:
+            del self.corpus_data[]
             del self.sim_matrix[delete_tid]
             del self.sim_sorted[delete_tid]
         
@@ -327,10 +203,8 @@ class Topic_collection(object):
         for tid, sim_list in self.sim_sorted.items():
             self.sim_sorted[tid] = [x for x in sim_list if x[0] not in delete_tids]
                   
-        logging.debug('oldest among collection after removing: %s', new_oldest)
-        logging.debug('latest among deleted: %s', last_cut)
-        new_oldest = datetime.strptime(new_oldest, const._DATETIME_FORMAT)
-        last_cut = datetime.strptime(last_cut, const._DATETIME_FORMAT)
+        logging.debug('oldest among collection after removing: %s', new_oldest_str)
+        logging.debug('latest among deleted: %s', last_cut_str)
         assert last_cut < cut_off <= new_oldest
         logging.info('Old topics removed')
         logging.info('%d topics available', len(self.corpus_data))
@@ -353,9 +227,9 @@ class Topic_collection(object):
         new = {}
         new['topic_id'] = topic['topicID']
         new['bow'] = self.dictionary.doc2bow(word_list)
-        new['date'] = topic['POSTDATE']
+        new['date'] = topic['postDate']
         new['content'] = word_list
-        self.corpus_data.append(new)
+        self.corpus_data[''].append(new)
 
         def sim_insert(tid, target_tid, target_sim_val):
             sim_list = self.sim_sorted[tid]
@@ -376,8 +250,8 @@ class Topic_collection(object):
       
         self.sim_matrix[new['topic_id']][new['topic_id']] = 1.0       
         for t in self.corpus_data:
-            date = datetime.strptime(t['date'], self.datetime_format)
-            new_date = datetime.strptime(new['date'], self.datetime_format)
+            date, _ = utils.convert_timestamp(t['date'])
+            new_date, _ = utils.convert_timestamp(new['date'])
             day_diff = (new_date-date).days
             sim_val = matutils.cossim(new['bow'], t['bow'])*math.exp(-day_diff/T)
             self.sim_matrix[t['topic_id']][new['topic_id']] = sim_val
@@ -395,31 +269,19 @@ class Topic_collection(object):
                       len(self.sim_matrix), len(self.sim_sorted))
 
     def delete_one(self, topic_id):       
-        if len(self.corpus_data) == 0:
-            logging.warning('THe collection is empty!')
+        if topic_id not in self.corpus_data:
+            logging.warning('Collection is empty!')
             return 
 
-        def bin_search(topic_id):
-            l, r = 0, len(self.corpus_data)-1
-            while l < r:
-                mid = (l+r)//2
-                if self.corpus_data[mid]['topic_id'] >= topic_id:
-                    r = mid
-                else:
-                    l = mid+1 
-            return l if self.corpus_data[l]['topic_id'] == topic_id else -1
+        del self.corpus_data[topic_id]
+        del self.sim_matrix[topic_id]
+        del self.sim_sorted[topic_id]
 
-        idx = bin_search(topic_id)
-        if idx >= 0:
-            del self.corpus_data[idx]
-            del self.sim_matrix[topic_id]
-            del self.sim_sorted[topic_id]
+        for tid, sim_dict in self.sim_matrix.items():
+            del sim_dict[topic_id]
 
-            for tid, sim_dict in self.sim_matrix.items():
-                del sim_dict[topic_id]
-
-            for tid, sim_list in self.sim_sorted.items():
-                self.sim_sorted[tid] = [x for x in sim_list if x[0] != topic_id]
+        for tid, sim_list in self.sim_sorted.items():
+            self.sim_sorted[tid] = [x for x in sim_list if x[0] != topic_id]
 
         logging.info('Topic %s has been deleted from the collection', topic_id)
         logging.info('Collection and similarity data have been updated')
