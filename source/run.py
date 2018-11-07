@@ -38,7 +38,7 @@ def main():
 
     collection.get_similarity_data(const._T)
     collection.save_similarity_data(const._SIMILARITY_MATRIX, const._SIMILARITY_SORTED)
-    
+    '''
     # establish rabbitmq connection and declare queues
     config = utils.get_config(const._CONFIG_FILE)
     sections = config.sections()
@@ -54,8 +54,8 @@ def main():
     
     params = pika.ConnectionParameters(host=config[sec]['host'], 
                                        credentials=credentials)
-    
-    #params = pika.ConnectionParameters(host='localhost')
+    '''
+    params = pika.ConnectionParameters(host='localhost')
     connection = pika.BlockingConnection(params)
     channel = connection.channel()
     channel.exchange_declare(exchange=const._EXCHANGE_NAME, exchange_type='direct')

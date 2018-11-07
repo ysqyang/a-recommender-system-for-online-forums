@@ -19,6 +19,7 @@ import bisect
 import collections
 import logging
 import ast
+import time
 '''
 class Stream(object):
     def __init__(self, topic_id, preprocess_fn, stopwords):
@@ -178,16 +179,22 @@ channel.exchange_declare(exchange=const._EXCHANGE_NAME,
 channel.queue_declare(queue='new_topics')
 channel.queue_declare(queue='delete_topics')
 #channel.queue_declare(queue='active_topics')
-
+'''
 with open(const._TOPIC_FILE, 'r') as f:
-    topics = json.load(f) 
+    topics = json.load(f)
 
+for tid, info in topics.items():
+    t = datetime.strptime(info['POSTDATE'], const._DATETIME_FORMAT)
+    topics[tid] = {'postDate': time.mktime(t.timetuple()),
+                   'body': info['body']}
+
+utils.save_topics(topics, const._TMP)
+'''
 d1 = {'topicid': '1600001', 'TOTALVIEWNUM': 9, 'TOTALREPLYNUM': 0, 
      'POSTDATE': '2018-11-4 11:35:21', 'USEFULNUM': 0, 'GOLDUSEFULNUM': 0, 
      'TOTALPCPOINT': 0, 'TOPICPCPOINT': 0, 'body': '是一款流行的代码编辑器软件，也是HTML和散文先进的文本编辑器，可运行在Linux，Windows和Mac OS X。也是许多程序员喜欢使用的一款文本编辑器软件。'}
 
-sorted_tids = sorted(topics.keys())
-for tid in sorted_tids:
+for tid in topics:
     rec = topics[tid]
     rec['topicID'] = tid
     msg = json.dumps(rec)
@@ -200,7 +207,6 @@ for tid in sorted_tids:
 #                      body=msg2)
 
 connection.close()
-
 
 docs = ['央视记者在英国大闹现场',
         '真爱国还是做秀？', 
@@ -304,7 +310,7 @@ for tid, sim_list in dl.items():
 
 print(d)
 print(dl)
-'''
+
 
 byte_str = b'"{\\"topicID\\":1505943,\\"postDate\\":1538991852000,\\"body\\":\\"\\\\\\" \xe6\xb3\x95\xe8\x90\xa8\xe6\xb3\x95\xe8\x90\xa8\xe6\xb3\x95\xe8\x90\xa8\\\\\\"\\"}"'
 
@@ -340,3 +346,4 @@ for val in d.values():
 
 print(d)
 
+'''
