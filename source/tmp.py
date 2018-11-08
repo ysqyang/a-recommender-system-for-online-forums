@@ -96,3 +96,134 @@
                 day_diff = (now - date).days
                 sim[tid] = stats.entropy(pk=distribution, qk=vec)*math.exp(day_diff/T)
         return sim
+
+    def get_similarity_data(self):
+        '''
+        Computes the pairwise cosine similarities for the corpus 
+        with time adjustments and the corresponding similarity lists
+        sorted by similarity value
+        '''
+        for tid_i, info_i in self.corpus_data.items():
+            date_i, _ = utils.convert_timestamp(info_i['date'])
+            for tid_j, info_j in self.corpus_data.items():
+                date_j, _ = utils.convert_timestamp(info_j['date'])
+                day_diff = abs((date_i-date_j).days)
+                sim_val = matutils.cossim(info_i['bow'], info_j['bow'])*math.exp(-day_diff/self.T)
+                self.sim_matrix[tid_i][tid_j] = sim_val
+
+            self.sim_sorted[tid_i] = [[tid_j, sim_val] for tid_j, sim_val 
+                                               in self.sim_matrix[tid_i].items()]
+            self.sim_sorted[tid_i].sort(key=lambda x:x[1], reverse=True)
+
+        logging.debug('sim_matrix_len=%d, sim_sorted_len=%d', 
+                      len(self.sim_matrix), len(self.sim_sorted))
+
+class Topic(object):
+    '''
+    Corpus object for streaming and preprocessing 
+    texts from the topics_info and replies_info tables
+    '''
+    def __init__(self, topic_id):
+        self.topic_file = const._TOPIC_FILE
+        self.reply_file = const._REPLY_FILE
+        self.topic_id = topic_id
+
+    def make_corpus_with_scores(self, preprocess_fn, stopwords,
+                                punc_frac_low, punc_frac_high, valid_count,
+                                valid_ratio, features, weights):
+        '''
+        Creates a corpus for this topic and computes importance scores
+        for replies
+        Args:
+        preprocess_fn: function to preprocess a document
+        stopwords:     set of stopwords 
+        features:      attributes to include in importance evaluation
+        weights:       weights associated with attributes in features
+        '''
+        self.corpus, self.scores, feature_matrix = [], [], []
+        # iteration starts with the topic content first
+        with open(self.topic_file, 'r') as f:
+            data = json.load(f)
+        content = ' '.join(data[str(self.topic_id)]['body'].split())
+        word_list = preprocess_fn(content, stopwords)
+        if word_list is None:
+            self.valid = False
+            return
+
+        self.valid = True
+        self.corpus.append(word_list)
+        with open(self.reply_file, 'r') as f:
+            # iterates through replies under this topic id       
+            data = json.load(f)
+        
+        replies = data[str(self.topic_id)]
+
+        for reply_id, rec in replies.items():
+            content = ' '.join(rec['body'].split())
+            word_list = preprocess_fn(content, stopwords, punc_frac_low, 
+                                      punc_frac_high, valid_count, valid_ratio)
+            if word_list is not None:
+                feature_vec = [rec[feature] for feature in features]
+                feature_matrix.append(feature_vec)
+                self.corpus.append(word_list)
+            
+        if len(feature_matrix) == 0:
+            return
+        s, scaler = sum(weights), preprocessing.MinMaxScaler() 
+        if s == 0:
+            raise ValueError('weights cannot be all zeros')
+        norm_weights = [wt/s for wt in weights]  # normalize weights
+         
+        # normalize features using min-max scaler
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            self.feature_matrix = scaler.fit_transform(feature_matrix)
+            for feature_vec in self.feature_matrix:
+                self.scores.append(np.dot(feature_vec, norm_weights))
+
+        #normalize scores
+        max_score = max(self.scores) + 1e-8 # add 1e-8 to prevent division by zero
+        for i in range(len(self.scores)):
+            self.scores[i] /= max_score
+
+    def get_dictionary(self):
+        self.dictionary = corpora.Dictionary(self.corpus)
+
+    def get_word_weight(self, alpha=0.7, smartirs='atn'):
+        '''
+        Computes word importance
+        Args:
+        bow:      bag-of-words representation of corpus
+        alpha:    contribution coefficient for the topic content
+        smartirs: tf-idf weighting variants 
+        '''
+        self.word_weight = collections.defaultdict(float) 
+        if len(self.corpus) == 0:
+            return
+
+        corpus_bow = [self.dictionary.doc2bow(doc) for doc in self.corpus]
+        # if there is no replies under this topic, use augmented term frequency
+        # as word weight
+        if len(corpus_bow) == 1:
+            if len(corpus_bow[0]) > 0:
+                max_freq = max(x[1] for x in corpus_bow[0])
+                self.word_weight = {self.dictionary[x[0]]:(1+x[1]/max_freq)/2 
+                                    for x in corpus_bow[0]}
+            return
+
+        model = models.TfidfModel(corpus_bow, smartirs=smartirs)
+
+        tfidf = model[corpus_bow[0]]
+        max_weight = max([x[1] for x in tfidf])
+        for word_id, weight in tfidf:
+            self.word_weight[self.dictionary[word_id]] += alpha*weight/max_weight
+
+        for doc, score in zip(corpus_bow[1:], self.scores):
+            tfidf = model[doc]
+            if len(tfidf) == 0:
+                continue
+            max_weight = max([x[1] for x in tfidf])
+            for wid, weight in tfidf:
+                weight /= max_weight
+                if score > 1e-8:
+                    self.word_weight[self.dictionary[wid]] += (1-alpha)*score*weight

@@ -17,27 +17,28 @@ from datetime import timedelta
 def main():   
     logging.basicConfig(filename=const._RUN_LOG_FILE, filemode='w', level=logging.DEBUG)
     
+    if const._TRIGGER_DAYS <= const._KEEP_DAYS:
+        error_msg = 'Trigger_days must be strictly greater than keep_days'
+        logging.error(error_msg)
+        raise ValueError(error_msg)
+
     # load stopwords
     stopwords = utils.load_stopwords(const._STOPWORD_FILE)
-    '''
-    if os.path.exists(const._TOPIC_FILE):
-        with open(const._TOPIC_FILE, 'r') as f:
-            topic_dict = json.load(f)
-    else:
-        topic_dict = {}
-    '''
-    topic_dict = {}
-    sorted_tids = sorted(list(topic_dict.keys()))
-    collection = topics.Topic_collection(topic_dict)
-    collection.get_corpus_data(preprocess_fn=utils.preprocess, 
-                               stopwords=stopwords, 
-                               punc_frac_low=const._PUNC_FRAC_LOW, 
-                               punc_frac_high=const._PUNC_FRAC_HIGH,
-                               valid_count=const._VALID_COUNT, 
-                               valid_ratio=const._VALID_RATIO)
+    collection = topics.Topic_collection(puncs=const._PUNCS, 
+                                         singles=const._SINGLES, 
+                                         stopwords=stopwords, 
+                                         punc_frac_low=const._PUNC_FRAC_LOW,
+                                         punc_frac_high=const._PUNC_FRAC_HIGH, 
+                                         valid_count=const._VALID_COUNT, 
+                                         valid_ratio=const._VALID_RATIO, 
+                                         T=const._T)
 
-    collection.get_similarity_data(const._T)
-    collection.save_similarity_data(const._SIMILARITY_MATRIX, const._SIMILARITY_SORTED)
+    # load previously saved corpus and similarity data if possible
+    if os.path.exists(const._CORPUS_DATA)           \
+       and os.path.exists(const._SIMILARITY_MATRIX) \
+       and os.path.exists(const._SIMILARITY_SORTED):
+        collection.load(const._CORPUS_DATA, const._SIMILARITY_MATRIX, const._SIMILARITY_SORTED)
+    
     '''
     # establish rabbitmq connection and declare queues
     config = utils.get_config(const._CONFIG_FILE)
@@ -54,6 +55,7 @@ def main():
     
     params = pika.ConnectionParameters(host=config[sec]['host'], 
                                        credentials=credentials)
+    
     '''
     params = pika.ConnectionParameters(host='localhost')
     connection = pika.BlockingConnection(params)
@@ -61,77 +63,39 @@ def main():
     channel.exchange_declare(exchange=const._EXCHANGE_NAME, exchange_type='direct')
   
     channel.queue_declare(queue='new_topics')
-    #channel.queue_declare(queue='update_topics')
     channel.queue_declare(queue='delete_topics')
+    #channel.queue_declare(queue='update_topics')   
     channel.queue_bind(exchange=const._EXCHANGE_NAME, queue='new_topics', routing_key='new')
-    #channel.queue_bind(exchange=const._EXCHANGE_NAME, queue='update_topics', routing_key='update')
     channel.queue_bind(exchange=const._EXCHANGE_NAME, queue='delete_topics', routing_key='delete')
-
+    #channel.queue_bind(exchange=const._EXCHANGE_NAME, queue='update_topics', routing_key='update')
+    
     def on_new_topic(ch, method, properties, body):
         logging.info('Received new topic')
         #print(body, type(body))
         new_topic = json.loads(json.loads(body))
         print(new_topic, type(new_topic))
-        topic_id = str(new_topic['topicID'])
-        if topic_id in topic_dict:
-            logging.warning('Topic id already exists! Quitting handler...')
+
+        collection.add_one(new_topic)
+
+        oldest, latest = collection.get_oldest(), collection.get_latest()
+        if oldest and latest and (latest-oldest).days > const._TRIGGER_DAYS:
+            cut_off = latest - const._KEEP_DAYS
+            collection.remove_old(cut_off)
+
+        collection.save(const._CORPUS_DATA, const._SIMILARITY_MATRIX, 
+                        const._SIMILARITY_SORTED) 
+        #print('sorted tids after adding new topic:', tids)      
+
+    def on_delete(ch, method, properties, body):
+        logging.info('Received topic to be deleted')
+        delete_id = json.loads(body)
+        if delete_id not in collection.corpus_data:
+            logging.warning('Topic %s not found in the collection', delete_id)
             return
 
-        topic_dict[topic_id] = {k:v for k, v in new_topic.items() if k != 'topicID'}
-        sorted_tids.append(topic_id)
-
-        oldest_stmp, latest_stmp = topic_dict[sorted_tids[0]]['postDate'], new_topic['postDate']
-        oldest, oldest_str = utils.convert_timestamp(oldest_stmp)
-        latest, latest_str = utils.convert_timestamp(latest_stmp)
-        logging.debug('oldest=%s, latest=%s', oldest_str, latest_str)
-        cut_off = latest - timedelta(days=const._KEEP_DAYS)
-
-        def remove_old(sorted_tids, cut_off):
-            if cut_off <= oldest or cut_off > latest:
-                return 
-            
-            logging.info('Deleting old topics')
-            for i, tid in enumerate(sorted_tids):
-                dt, _ = utils.convert_timestamp(topic_dict[tid]['postDate'])
-                if dt.date() >= cut_off.date():
-                    break
-                last_cut_stmp = topic_dict[tid]['postDate']
-                last_cut, last_cut_str = utils.convert_timestamp(last_cut_stmp)  
-                del topic_dict[tid]
-                
-            new_oldest_stmp = topic_dict[sorted_tids[i]]['postDate']
-            new_oldest, new_oldest_str = utils.convert_timestamp(new_oldest_stmp)
-            logging.debug('oldest in topic file after removing: %s', new_oldest_str)
-            logging.debug('latest among deleted topics: %s', last_cut_str)
-            assert last_cut < cut_off <= new_oldest
-            del sorted_tids[:i]
-            assert len(sorted_tids) == len(topic_dict) > 0
-
-        if (latest - oldest).days > const._TRIGGER_DAYS:           
-            remove_old(sorted_tids, cut_off)
-         
-        utils.save_topics(topic_dict, const._TOPIC_FILE)
-        logging.info('New topic added to local disk')
-
-        collection.add_one(topic=new_topic,
-                           preprocess_fn=utils.preprocess, 
-                           stopwords=stopwords,
-                           punc_frac_low=const._PUNC_FRAC_LOW, 
-                           punc_frac_high=const._PUNC_FRAC_HIGH, 
-                           valid_count=const._VALID_COUNT,
-                           valid_ratio=const._VALID_RATIO, 
-                           trigger_days=const._TRIGGER_DAYS,
-                           cut_off=cut_off, 
-                           T=const._T)
-
-        if len(collection.corpus_data) > 0:
-            oldest, _ = utils.convert_timestamp(collection.corpus_data[0]['date'])
-            if (latest - oldest).days > const._TRIGGER_DAYS:
-                collection.remove_old(cut_off)
-
-        collection.save_similarity_data(const._SIMILARITY_MATRIX, const._SIMILARITY_SORTED)
-
-        #print('sorted tids after adding new topic:', tids)      
+        collection.delete_one(delete_id)
+        collection.save(const._CORPUS_DATA, const._SIMILARITY_MATRIX, 
+                        const._SIMILARITY_SORTED) 
 
     '''
     def on_update_topic(ch, method, properties, body):
@@ -141,37 +105,19 @@ def main():
             if attr != 'topicID':
                 topic_dict[topic_id][attr] = update_topic[attr]
         utils.save_topics(topic_dict, const._TOPIC_FILE)
-    '''
-
-    def on_delete(ch, method, properties, body):
-        logging.info('Received topic to be deleted')
-        delete_id = json.loads(body)
-        if delete_id not in topic_dict:
-            logging.warning('Topic %s not found in the collection', delete_id)
-            return
-
-        del topic_dict[delete_id]
-        sorted_tids.remove(delete_id)
-        assert delete_id not in sorted_tids and delete_id not in topic_dict
-        utils.save_topics(topic_dict, const._TOPIC_FILE)
-        logging.info('Topic %s deleted from local disk', delete_id)
-
-        collection.delete_one(delete_id)
-
-        collection.save_similarity_data(const._SIMILARITY_MATRIX, const._SIMILARITY_SORTED)    
-
+    '''   
     channel.basic_consume(on_new_topic,
                           queue='new_topics',
+                          no_ack=True)
+    channel.basic_consume(on_delete, 
+                          queue='delete_topics',
                           no_ack=True)
 
     '''
     channel.basic_consume(on_update_topic, 
                           queue='update_topics',
                           no_ack=True)
-    '''
-    channel.basic_consume(on_delete, 
-                          queue='delete_topics',
-                          no_ack=True)
+    '''    
     logging.info(' [*] Waiting for messages. To exit press CTRL+C')
     channel.start_consuming()
 

@@ -169,7 +169,7 @@ for topic_id, r in topics.items():
 
 print(n_replies)
 
-
+'''
 connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
 channel = connection.channel()
 
@@ -188,26 +188,26 @@ for tid, info in topics.items():
     topics[tid] = {'postDate': time.mktime(t.timetuple()),
                    'body': info['body']}
 
-utils.save_topics(topics, const._TMP)
-'''
-d1 = {'topicid': '1600001', 'TOTALVIEWNUM': 9, 'TOTALREPLYNUM': 0, 
-     'POSTDATE': '2018-11-4 11:35:21', 'USEFULNUM': 0, 'GOLDUSEFULNUM': 0, 
-     'TOTALPCPOINT': 0, 'TOPICPCPOINT': 0, 'body': '是一款流行的代码编辑器软件，也是HTML和散文先进的文本编辑器，可运行在Linux，Windows和Mac OS X。也是许多程序员喜欢使用的一款文本编辑器软件。'}
-
 for tid in topics:
     rec = topics[tid]
     rec['topicID'] = tid
-    msg = json.dumps(rec)
+    msg = bytes(json.dumps(rec))
     channel.basic_publish(exchange=const._EXCHANGE_NAME,
                           routing_key='new',
                           body=msg)
-
+'''
+d1 = {'topicID': '1600001', 'postDate': '2018-11-4 11:35:21', 'body': '是一款流行的代码编辑器软件，也是HTML和散文先进的文本编辑器，可运行在Linux，Windows和Mac OS X。也是许多程序员喜欢使用的一款文本编辑器软件。'}
 #channel.basic_publish(exchange=const._EXCHANGE_NAME,
 #                      routing_key='delete',
 #                      body=msg2)
+msg = bytes(json.dumps(d1), encoding='utf-8')
 
+s = json.loads(msg)
+print(s, type(s))
+d = json.loads(s)
+print(d, type(d))
 connection.close()
-
+'''
 docs = ['央视记者在英国大闹现场',
         '真爱国还是做秀？', 
         '外交部已经表态了',
@@ -311,9 +311,6 @@ for tid, sim_list in dl.items():
 print(d)
 print(dl)
 
-
-byte_str = b'"{\\"topicID\\":1505943,\\"postDate\\":1538991852000,\\"body\\":\\"\\\\\\" \xe6\xb3\x95\xe8\x90\xa8\xe6\xb3\x95\xe8\x90\xa8\xe6\xb3\x95\xe8\x90\xa8\\\\\\"\\"}"'
-
 json_str = """
 {
     "id" : 90,
@@ -347,3 +344,6 @@ for val in d.values():
 print(d)
 
 '''
+
+
+ 
