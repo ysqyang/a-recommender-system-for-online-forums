@@ -12,9 +12,10 @@ import sys
 import os
 import logging
 import topics
-from datetime import timedelta
+import argparse
+from datetime import datetime
 
-def main():   
+def main(args):   
     logging.basicConfig(filename=const._RUN_LOG_FILE, filemode='w', level=logging.DEBUG)
     
     if const._TRIGGER_DAYS <= const._KEEP_DAYS:
@@ -24,18 +25,21 @@ def main():
 
     # load stopwords
     stopwords = utils.load_stopwords(const._STOPWORD_FILE)
-    collection = topics.Topic_collection(puncs=const._PUNCS, 
-                                         singles=const._SINGLES, 
-                                         stopwords=stopwords, 
-                                         punc_frac_low=const._PUNC_FRAC_LOW,
-                                         punc_frac_high=const._PUNC_FRAC_HIGH, 
-                                         valid_count=const._VALID_COUNT, 
-                                         valid_ratio=const._VALID_RATIO, 
-                                         T=const._T)
+    collection = topics.Topic_collection(puncs          = const._PUNCS, 
+                                         singles        = const._SINGLES, 
+                                         stopwords      = stopwords, 
+                                         punc_frac_low  = const._PUNC_FRAC_LOW,
+                                         punc_frac_high = const._PUNC_FRAC_HIGH, 
+                                         valid_count    = const._VALID_COUNT, 
+                                         valid_ratio    = const._VALID_RATIO,
+                                         trigger_days   = const._TRIGGER_DAYS,
+                                         keep_days      = const._KEEP_DAYS, 
+                                         T              = const._T)
+    collection.get_dictionary()
 
     # load previously saved corpus and similarity data if possible
-    if os.path.exists(const._CORPUS_DATA)           \
-       and os.path.exists(const._SIMILARITY_MATRIX) \
+    if args.l and os.path.exists(const._CORPUS_DATA) \
+       and os.path.exists(const._SIMILARITY_MATRIX)  \
        and os.path.exists(const._SIMILARITY_SORTED):
         collection.load(const._CORPUS_DATA, const._SIMILARITY_MATRIX, const._SIMILARITY_SORTED)
     
@@ -72,18 +76,14 @@ def main():
     def on_new_topic(ch, method, properties, body):
         logging.info('Received new topic')
         #print(body, type(body))
-        new_topic = json.loads(json.loads(body))
-        print(new_topic, type(new_topic))
+        new_topic = json.loads(body)
+        #new_topic = json.loads(new_topic)
+        status = collection.add_one(new_topic)
 
-        collection.add_one(new_topic)
-
-        oldest, latest = collection.get_oldest(), collection.get_latest()
-        if oldest and latest and (latest-oldest).days > const._TRIGGER_DAYS:
-            cut_off = latest - const._KEEP_DAYS
-            collection.remove_old(cut_off)
-
-        collection.save(const._CORPUS_DATA, const._SIMILARITY_MATRIX, 
-                        const._SIMILARITY_SORTED) 
+        if status:
+            print(collection.oldest, collection.latest, datetime.fromtimestamp(new_topic['postDate']))
+            collection.save(const._CORPUS_DATA, const._SIMILARITY_MATRIX, 
+                            const._SIMILARITY_SORTED) 
         #print('sorted tids after adding new topic:', tids)      
 
     def on_delete(ch, method, properties, body):
@@ -153,7 +153,7 @@ def main():
     '''
 
 if __name__ == '__main__': 
-    #parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser()
     
     #parser.add_argument('--alpha', type=float, default=0.7, 
     #                     help='''contribution coefficient for topic content 
@@ -166,5 +166,6 @@ if __name__ == '__main__':
     #parser.add_argument('--T', type=float, default=365, help='time attenuation factor')
     #parser.add_argument('--smartirs', type=str, default='atn', help='type of tf-idf variants')
 
-    #args = parser.parse_args()
-    main()
+    parser.add_argument('-l', action='store_true', help='load previously saved corpus and similarity data')
+    args = parser.parse_args()
+    main(args)

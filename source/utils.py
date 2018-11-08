@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 
-import re
 import json
 import database
-from datetime import datetime
 import constants as const
 import configparser
 import logging
@@ -27,8 +25,4 @@ def get_config(config_file_path):
     config.read(config_file_path)
     logging.info('Configuration loaded')
     return config
-
-def convert_timestamp(timestamp):
-    dt = datetime.fromtimestamp(timestamp/1000)
-    dt_string = dt.strftime(const._DATETIME_FORMAT) 
-    return dt, dt_string  
+  

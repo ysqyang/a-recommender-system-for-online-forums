@@ -13,16 +13,21 @@ import jieba
 import constants as const
 import logging
 from scipy import stats
+import re
+from datetime import datetime, timedelta
 
 class Topic_collection(object):
     '''
     Corpus collection
     '''
     def __init__(self, puncs, singles, stopwords, punc_frac_low, 
-                 punc_frac_high, valid_count, valid_ratio, T):
+                 punc_frac_high, valid_count, valid_ratio, 
+                 trigger_days, keep_days, T):
         self.corpus_data = {}
         self.sim_matrix = collections.defaultdict(dict)
         self.sim_sorted = collections.defaultdict(list)
+        self.oldest = datetime.max
+        self.latest = datetime.min
         self.puncs = puncs
         self.singles = singles
         self.stopwords = stopwords
@@ -30,6 +35,8 @@ class Topic_collection(object):
         self.punc_frac_high = punc_frac_high
         self.valid_count = valid_count
         self.valid_ratio = valid_ratio
+        self.trigger_days = trigger_days
+        self.keep_days = keep_days
         self.T = T
 
     def preprocess(self, text):
@@ -85,18 +92,6 @@ class Topic_collection(object):
         corpus = [info['content'] for info in self.corpus_data.values()]
         self.dictionary = corpora.Dictionary(corpus)
 
-    def get_oldest(self):
-        if len(self.corpus_data) > 0:
-            oldest_stmp = self.corpus_data[min(self.corpus_data.keys())]['date']
-            oldest, _ = utils.convert_timestamp(oldest_stmp)
-            return oldest
-        
-    def get_latest(self):
-        if len(self.corpus_data) > 0:
-            latest_stmp = self.corpus_data[min(self.corpus_data.keys())]['date']
-            latest, _ = utils.convert_timestamp(latest_stmp)
-            return latest 
-
     def load(self, corpus_data_path, sim_matrix_path, sim_sorted_path):       
         with open(corpus_data_path, 'r') as f1, \
              open(sim_matrix_path, 'r') as f2,  \
@@ -112,6 +107,9 @@ class Topic_collection(object):
         self.check_correctness()
         logging.info('%d topics available', len(self.corpus_data))
         self.get_dictionary()
+        min_tid, max_tid = min(self.corpus_data.keys()), max(self.corpus_data.keys())
+        self.oldest = datetime.fromtimestamp(self.corpus_data[min_tid]['date'])
+        self.latest = datetime.fromtimestamp(self.corpus_data[max_tid]['date'])
 
     '''
     def get_topics_by_keywords(self, keywords):
@@ -125,7 +123,7 @@ class Topic_collection(object):
         logging.info('Removing old topics from the collection...')
         delete_tids = []
         for tid, info in self.corpus_data.items():
-            dt, dt_str = utils.convert_timestamp(info['date'])
+            dt = datetime.fromtimestamp(info['date'])
             if dt < cut_off:
                 delete_tids.append(tid)
 
@@ -141,21 +139,35 @@ class Topic_collection(object):
         for tid, sim_list in self.sim_sorted.items():
             self.sim_sorted[tid] = [x for x in sim_list if x[0] not in delete_tids]
         
+        oldest_stmp = self.corpus_data[min(self.corpus_data.keys())]['date'] 
+        self.oldest = datetime.fromtimestamp(oldest_stmp)
         logging.info('%d topics available', len(self.corpus_data))
         logging.debug('sim_matrix_len=%d, sim_sorted_len=%d', 
                       len(self.sim_matrix), len(self.sim_sorted))
   
     def add_one(self, topic):
+        new_date = datetime.fromtimestamp(topic['postDate'])
+        if (self.latest - new_date).days > self.trigger_days:
+            logging.info('Topic is not in date range')
+            return False
+
         word_list = self.preprocess(' '.join(topic['body'].split()))
         if word_list is None: # ignore invalid topics
             logging.info('Topic is not recommendable')
-            return 
+            return False
         
         self.dictionary.add_documents([word_list])
-        new_tid, new_date_stmp = str(topic['topicID']), topic['postDate']
+        new_tid = str(topic['topicID'])
+        #print(new_tid, type(new_tid))
         self.corpus_data[new_tid] = {'date': topic['postDate'],
                                      'content': word_list,
                                      'bow': self.dictionary.doc2bow(word_list)}
+
+        self.oldest = min(self.oldest, new_date)
+        self.latest = max(self.latest, new_date)
+
+        if (self.latest - self.oldest).days > self.trigger_days:
+            self.remove_old(self.latest - timedelta(days=self.keep_days))
 
         def sim_insert(sim_list, target_tid, target_sim_val):
             i = 0
@@ -163,9 +175,8 @@ class Topic_collection(object):
                 i += 1
             sim_list.insert(i, [target_tid, target_sim_val])
              
-        new_date, _ = utils.convert_timestamp(new_date_stmp)
         for tid, info in self.corpus_data.items():
-            date, _ = utils.convert_timestamp(info['date'])
+            date = datetime.fromtimestamp(info['date'])
             day_diff = (new_date-date).days
             sim_val = matutils.cossim(self.corpus_data[new_tid]['bow'], 
                                       info['bow'])*math.exp(-day_diff/self.T)
@@ -177,16 +188,21 @@ class Topic_collection(object):
                                     in self.sim_matrix[new_tid].items()]
         self.sim_sorted[new_tid].sort(key=lambda x:x[1], reverse=True)
        
+        assert (self.latest - self.oldest).days <= self.trigger_days
         logging.info('New topic has been added to the collection')
         logging.info('Collection and similarity data have been updated')
         logging.info('%d topics available', len(self.corpus_data))
         logging.debug('sim_matrix_len=%d, sim_sorted_len=%d', 
                       len(self.sim_matrix), len(self.sim_sorted))
 
+        return True
+
     def delete_one(self, topic_id):       
         if topic_id not in self.corpus_data:
             logging.warning('Collection is empty!')
             return 
+
+        delete_date = datetime.fromtimestamp(self.corpus_data[topic_id]['date'])
 
         del self.corpus_data[topic_id]
         del self.sim_matrix[topic_id]
@@ -197,6 +213,11 @@ class Topic_collection(object):
 
         for tid, sim_list in self.sim_sorted.items():
             self.sim_sorted[tid] = [x for x in sim_list if x[0] != topic_id]
+
+        if delete_date == self.oldest:
+            self.oldest = self.corpus_data[min(self.corpus_data.keys())]['date']
+        if delete_date == self.latest:
+            self.latest = self.corpus_data[max(self.corpus_data.keys())]['date']
 
         logging.info('Topic %s has been deleted from the collection', topic_id)
         logging.info('Collection and similarity data have been updated')

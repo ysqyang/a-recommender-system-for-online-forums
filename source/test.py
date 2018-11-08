@@ -179,7 +179,7 @@ channel.exchange_declare(exchange=const._EXCHANGE_NAME,
 channel.queue_declare(queue='new_topics')
 channel.queue_declare(queue='delete_topics')
 #channel.queue_declare(queue='active_topics')
-'''
+
 with open(const._TOPIC_FILE, 'r') as f:
     topics = json.load(f)
 
@@ -191,21 +191,16 @@ for tid, info in topics.items():
 for tid in topics:
     rec = topics[tid]
     rec['topicID'] = tid
-    msg = bytes(json.dumps(rec))
+    msg = json.dumps(rec)
     channel.basic_publish(exchange=const._EXCHANGE_NAME,
                           routing_key='new',
                           body=msg)
-'''
+
 d1 = {'topicID': '1600001', 'postDate': '2018-11-4 11:35:21', 'body': '是一款流行的代码编辑器软件，也是HTML和散文先进的文本编辑器，可运行在Linux，Windows和Mac OS X。也是许多程序员喜欢使用的一款文本编辑器软件。'}
 #channel.basic_publish(exchange=const._EXCHANGE_NAME,
 #                      routing_key='delete',
 #                      body=msg2)
-msg = bytes(json.dumps(d1), encoding='utf-8')
 
-s = json.loads(msg)
-print(s, type(s))
-d = json.loads(s)
-print(d, type(d))
 connection.close()
 '''
 docs = ['央视记者在英国大闹现场',
