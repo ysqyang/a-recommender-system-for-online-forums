@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 import os
 
-_ROOT             = '/home/ysqyang/Projects/recommender-system-for-online-forums'
-#_ROOT              = '/usr/recommender/'
+#_ROOT              = '/home/ysqyang/Projects/recommender-system-for-online-forums'
+_ROOT              = '/usr/recommender/'
+#_ROOT              = '/Users/ai/Projects/recommender-system-for-online-forums'
 _COMPUTED_FOLDER   = os.path.join(_ROOT, 'computed_results')
 _DATA_FOLDER       = os.path.join(_ROOT, 'data')
 _LOG_FOLDER        = os.path.join(_ROOT, 'logs')
@@ -26,6 +27,7 @@ _TOPIC_FEATURES    = ['TOTALVIEWNUM', 'TOTALREPLYNUM', 'POSTDATE',
                       'USEFULNUM', 'GOLDUSEFULNUM', 'TOTALPCPOINT',
                       'TOPICPCPOINT']
 _REPLY_FEATURES    = ['USEFULNUM', 'GOLDUSEFULNUM', 'TOTALPCPOINT']
+_TIMESTAMP_FACTOR  = 1000
 _DAYS              = 90
 _T                 = 365    #time decay factor
 _MIN_LEN           = 90

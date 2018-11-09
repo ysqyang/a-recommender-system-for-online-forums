@@ -169,7 +169,6 @@ for topic_id, r in topics.items():
 
 print(n_replies)
 
-'''
 connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
 channel = connection.channel()
 
@@ -202,7 +201,7 @@ d1 = {'topicID': '1600001', 'postDate': '2018-11-4 11:35:21', 'body': '是一款
 #                      body=msg2)
 
 connection.close()
-'''
+
 docs = ['央视记者在英国大闹现场',
         '真爱国还是做秀？', 
         '外交部已经表态了',
@@ -339,6 +338,11 @@ for val in d.values():
 print(d)
 
 '''
+
+a = '9999999'
+b = '19999999'
+
+print(max(a, b))
 
 
  

@@ -45,7 +45,7 @@ class Topic_collection(object):
         invalid documents 
         Args:
         text:            text to be tokenized 
-        '''  
+          
         cnt = 0
         for c in text:
             if c in self.puncs:
@@ -78,6 +78,8 @@ class Topic_collection(object):
             return None
 
         return word_list 
+        '''
+        return jieba.lcut(text, cut_all=False)
 
     def check_correctness(self):
         '''
@@ -158,7 +160,6 @@ class Topic_collection(object):
         
         self.dictionary.add_documents([word_list])
         new_tid = str(topic['topicID'])
-        #print(new_tid, type(new_tid))
         self.corpus_data[new_tid] = {'date': topic['postDate'],
                                      'content': word_list,
                                      'bow': self.dictionary.doc2bow(word_list)}
@@ -198,9 +199,10 @@ class Topic_collection(object):
         return True
 
     def delete_one(self, topic_id):       
+        topic_id = str(topic_id)
         if topic_id not in self.corpus_data:
             logging.warning('Collection is empty!')
-            return 
+            return False 
 
         delete_date = datetime.fromtimestamp(self.corpus_data[topic_id]['date'])
 
@@ -214,10 +216,15 @@ class Topic_collection(object):
         for tid, sim_list in self.sim_sorted.items():
             self.sim_sorted[tid] = [x for x in sim_list if x[0] != topic_id]
 
-        if delete_date == self.oldest:
-            self.oldest = self.corpus_data[min(self.corpus_data.keys())]['date']
-        if delete_date == self.latest:
-            self.latest = self.corpus_data[max(self.corpus_data.keys())]['date']
+        if len(self.corpus_data) == 0:
+            self.oldest, self.latest = datetime.max, datetime.min
+        else:    
+            if delete_date == self.oldest:
+                oldest_stmp = self.corpus_data[min(self.corpus_data.keys())]['date']
+                self.oldest = datetime.fromtimestamp(oldest_stmp)
+            if delete_date == self.latest:
+                latest_stmp = self.corpus_data[max(self.corpus_data.keys())]['date']
+                self.latest = datetime.fromtimestamp(latest_stmp)
 
         logging.info('Topic %s has been deleted from the collection', topic_id)
         logging.info('Collection and similarity data have been updated')
@@ -225,6 +232,8 @@ class Topic_collection(object):
         logging.debug('corpus_size=%d', len(self.corpus_data))
         logging.debug('sim_matrix_len=%d, sim_sorted_len=%d', 
                       len(self.sim_matrix), len(self.sim_sorted))
+
+        return True
 
     def save(self, corpus_data_path, sim_matrix_path, sim_sorted_path):
         '''

@@ -3,5 +3,5 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path('', views.serve, name='serve'),
+    path('', views.serve_recommendations, name='serve_recommendations'),
 ]

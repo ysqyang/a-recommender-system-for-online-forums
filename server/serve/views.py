@@ -17,7 +17,7 @@ def serve_recommendations(request):
     '''
     logging.basicConfig(filename=const._SERVE_LOG_FILE, level=logging.DEBUG)
     if request.method == 'POST':
-    	return HttpResponse('POST is not allowed!', status=403)
+        return HttpResponse('POST is not allowed!', status=403)
 
     print(request.GET)
 
@@ -27,7 +27,7 @@ def serve_recommendations(request):
     with open(const._SIMILARITY_SORTED, 'r') as f:
         sim_sorted = json.load(f)
 
-	target_tid = request.GET['topicID'] 
+    target_tid = request.GET['topicID']
 
     recoms = []
     for tid, sim_val in sim_sorted[target_id]: 
@@ -39,6 +39,6 @@ def serve_recommendations(request):
         if recoms == [] or sim_mat[tid][recoms[-1]] < const._DUPLICATE_THRESH:
             recoms.append(tid)
             if len(recoms) == const._TOP_NUM:
-            	break
+                break
 
     return JsonResponse(recoms)
