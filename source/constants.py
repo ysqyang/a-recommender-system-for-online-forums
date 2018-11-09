@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import os
 
-#_ROOT              = '/home/ysqyang/Projects/recommender-system-for-online-forums'
-_ROOT              = '/usr/recommender/'
+_ROOT              = '/home/ysqyang/Projects/recommender-system-for-online-forums'
+#_ROOT              = '/usr/recommender/'
 #_ROOT              = '/Users/ai/Projects/recommender-system-for-online-forums'
 _COMPUTED_FOLDER   = os.path.join(_ROOT, 'computed_results')
 _DATA_FOLDER       = os.path.join(_ROOT, 'data')
@@ -11,8 +11,7 @@ _CONFIG_FILE       = os.path.join(_ROOT, 'config')
 _STOPWORD_FILE     = os.path.join(_ROOT, 'stopwords.txt')
 _TOPIC_FILE        = os.path.join(_DATA_FOLDER, 'topics')
 _REPLY_FILE        = os.path.join(_DATA_FOLDER, 'replies')
-_TMP               = os.path.join(_DATA_FOLDER, 'topics_tmp')
-_INIT_LOG_FILE     = os.path.join(_LOG_FOLDER, 'init_log') 
+_TMP               = os.path.join(_DATA_FOLDER, 'topics_tmp') 
 _RUN_LOG_FILE      = os.path.join(_LOG_FOLDER, 'run_log') 
 _SERVE_LOG_FILE    = os.path.join(_LOG_FOLDER, 'serve_log')
 _PROFILES          = os.path.join(_COMPUTED_FOLDER, 'profiles')

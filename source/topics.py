@@ -45,7 +45,7 @@ class Topic_collection(object):
         invalid documents 
         Args:
         text:            text to be tokenized 
-          
+        '''  
         cnt = 0
         for c in text:
             if c in self.puncs:
@@ -78,8 +78,6 @@ class Topic_collection(object):
             return None
 
         return word_list 
-        '''
-        return jieba.lcut(text, cut_all=False)
 
     def check_correctness(self):
         '''
