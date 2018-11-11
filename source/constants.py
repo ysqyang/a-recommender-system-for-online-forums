@@ -26,7 +26,7 @@ _TOPIC_FEATURES    = ['TOTALVIEWNUM', 'TOTALREPLYNUM', 'POSTDATE',
                       'USEFULNUM', 'GOLDUSEFULNUM', 'TOTALPCPOINT',
                       'TOPICPCPOINT']
 _REPLY_FEATURES    = ['USEFULNUM', 'GOLDUSEFULNUM', 'TOTALPCPOINT']
-_TIMESTAMP_FACTOR  = 1000
+_TIMESTAMP_FACTOR  = 1
 _DAYS              = 90
 _T                 = 365    #time decay factor
 _MIN_LEN           = 90

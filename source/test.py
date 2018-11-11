@@ -48,7 +48,6 @@ for tid in topics:
                           routing_key='new',
                           body=msg)
 
-d1 = {'topicID': '1600001', 'postDate': '2018-11-4 11:35:21', 'body': '是一款流行的代码编辑器软件，也是HTML和散文先进的文本编辑器，可运行在Linux，Windows和Mac OS X。也是许多程序员喜欢使用的一款文本编辑器软件。'}
 #channel.basic_publish(exchange=const._EXCHANGE_NAME,
 #                      routing_key='delete',
 #                      body=msg2)
@@ -58,7 +57,7 @@ connection.close()
 with open(const._TOPIC_FILE, 'r') as f:
     topics = json.load(f)
 
-tid = 1506381
+tid = 1506377
 print(topics[str(tid)]['body'])
 
 query_dict = {'topicID': str(tid)}
@@ -66,9 +65,9 @@ r = requests.get('http://127.0.0.1:8000/serve/', params=query_dict)
 
 print('*'*80)
 print('您可能感兴趣的内容...')
-print('*'*80)
+
 recoms = r.json()
 
 for tid in recoms:
+    print('*'*80)
     print(topics[tid]['body'])
- 

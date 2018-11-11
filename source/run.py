@@ -20,16 +20,17 @@ def main(args):
     
     # load stopwords
     stopwords = utils.load_stopwords(const._STOPWORD_FILE)
-    collection = topics.Topic_collection(puncs          = const._PUNCS, 
-                                         singles        = const._SINGLES, 
-                                         stopwords      = stopwords, 
-                                         punc_frac_low  = const._PUNC_FRAC_LOW,
-                                         punc_frac_high = const._PUNC_FRAC_HIGH, 
-                                         valid_count    = const._VALID_COUNT, 
-                                         valid_ratio    = const._VALID_RATIO,
-                                         trigger_days   = const._TRIGGER_DAYS,
-                                         keep_days      = const._KEEP_DAYS, 
-                                         T              = const._T)
+    collection = topics.Topic_collection(puncs             = const._PUNCS, 
+                                         singles           = const._SINGLES, 
+                                         stopwords         = stopwords, 
+                                         punc_frac_low     = const._PUNC_FRAC_LOW,
+                                         punc_frac_high    = const._PUNC_FRAC_HIGH, 
+                                         valid_count       = const._VALID_COUNT, 
+                                         valid_ratio       = const._VALID_RATIO,
+                                         trigger_days      = const._TRIGGER_DAYS,
+                                         keep_days         = const._KEEP_DAYS, 
+                                         T                 = const._T,
+                                         irrelevant_thresh = const._IRRELEVANT_THRESH)
     collection.get_dictionary()
 
     # load previously saved corpus and similarity data if possible
@@ -70,9 +71,9 @@ def main(args):
     
     def on_new_topic(ch, method, properties, body):
         new_topic = json.loads(body)
-        new_topic = json.loads(new_topic)
+        #new_topic = json.loads(new_topic)
         new_topic['postDate'] /= const._TIMESTAMP_FACTOR
-        logging.info('Received new topic, id=%d', new_topic['topicID'])
+        logging.info('Received new topic, id=%s', new_topic['topicID'])
 
         status = collection.add_one(new_topic)
 
@@ -83,8 +84,8 @@ def main(args):
 
     def on_delete(ch, method, properties, body):
         delete_topic = json.loads(body)
-        delete_topic = json.loads(delete_topic)
-        logging.info('Deleting topic %d', delete_topic['topicID'])
+        #delete_topic = json.loads(delete_topic)
+        logging.info('Deleting topic %s', delete_topic['topicID'])
         delete_id = str(delete_topic['topicID'])
         delete_date = datetime.fromtimestamp(collection.corpus_data[delete_id]['date'])
         status = collection.delete_one(delete_id)
