@@ -83,6 +83,7 @@ def main(args):
     def on_new_topic(ch, method, properties, body):
         while type(body) != dict:
             body = json.loads(body)
+        
         new_topic = body
         new_topic['postDate'] /= const._TIMESTAMP_FACTOR
         logging.info('Received new topic, id=%s', new_topic['topicID'])
@@ -97,6 +98,8 @@ def main(args):
     def on_delete(ch, method, properties, body):
         while type(body) != dict:
             body = json.loads(body)
+
+        delete_topic = body
         logging.info('Deleting topic %s', delete_topic['topicID'])
         delete_id = str(delete_topic['topicID'])
         delete_date = datetime.fromtimestamp(collection.corpus_data[delete_id]['date'])
@@ -106,10 +109,12 @@ def main(args):
             collection.save(const._CORPUS_DATA, const._SIMILARITY_MATRIX, 
                             const._SIMILARITY_SORTED) 
 
-    '''
     def on_subject_update(ch, method, properties, body):
-        while type(body) != 'dict':
+        while type(body) != dict:
             body = json.loads(body)
+
+        subject_dict = body
+
 
 
     

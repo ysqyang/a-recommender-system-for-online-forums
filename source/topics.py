@@ -152,8 +152,6 @@ class Topics(object):
         oldest_stmp = self.corpus_data[str(min_tid)]['date'] 
         self.oldest = datetime.fromtimestamp(oldest_stmp)
         logging.info('%d topics available', len(self.corpus_data))
-        logging.debug('sim_matrix_len=%d, sim_sorted_len=%d', 
-                      len(self.sim_matrix), len(self.sim_sorted))
   
     def add_one(self, topic):
         new_date = datetime.fromtimestamp(topic['postDate'])
