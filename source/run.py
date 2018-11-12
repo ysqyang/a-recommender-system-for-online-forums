@@ -114,9 +114,9 @@ def main(args):
             body = json.loads(body)
 
         subject_dict = body
-
-
-
+        logging.info('Updating recommendations for subject %s', subject_dict['subID'])
+        keyword_weight
+        recoms = collection.get_topics_by_keywords(keyword_weight)
     
     def on_update_topic(ch, method, properties, body):
         update_topic = json.loads(body)
