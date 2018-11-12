@@ -21,7 +21,7 @@ import logging
 import os
 import time
 import requests
-'''
+
 connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
 channel = connection.channel()
 
@@ -53,7 +53,7 @@ for tid in topics:
 #                      body=msg2)
 
 connection.close()
-
+'''
 with open(const._TOPIC_FILE, 'r') as f:
     topics = json.load(f)
 
@@ -74,4 +74,4 @@ for tid in recoms:
 
 '''
 
-print(os.path.dirname(os.getcwd()))
+

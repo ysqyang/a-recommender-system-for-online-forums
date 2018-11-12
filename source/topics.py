@@ -15,7 +15,7 @@ from scipy import stats
 import re
 from datetime import datetime, timedelta
 
-class Topic_collection(object):
+class Topics(object):
     '''
     Corpus collection
     '''

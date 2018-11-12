@@ -16,48 +16,59 @@ import argparse
 from datetime import datetime
 
 def main(args):   
-    logging.basicConfig(filename=const._RUN_LOG_FILE, filemode='w', level=logging.DEBUG)
+    logging.basicConfig(filename=const._RUN_LOG_FILE, filemode='w', 
+                        level=logging.DEBUG)
     
     # load stopwords
     stopwords = utils.load_stopwords(const._STOPWORD_FILE)
-    collection = topics.Topic_collection(puncs             = const._PUNCS, 
-                                         singles           = const._SINGLES, 
-                                         stopwords         = stopwords, 
-                                         punc_frac_low     = const._PUNC_FRAC_LOW,
-                                         punc_frac_high    = const._PUNC_FRAC_HIGH, 
-                                         valid_count       = const._VALID_COUNT, 
-                                         valid_ratio       = const._VALID_RATIO,
-                                         trigger_days      = const._TRIGGER_DAYS,
-                                         keep_days         = const._KEEP_DAYS, 
-                                         T                 = const._T,
-                                         irrelevant_thresh = const._IRRELEVANT_THRESH)
+    collection = topics.Topics(puncs             = const._PUNCS, 
+                               singles           = const._SINGLES, 
+                               stopwords         = stopwords, 
+                               punc_frac_low     = const._PUNC_FRAC_LOW,
+                               punc_frac_high    = const._PUNC_FRAC_HIGH, 
+                               valid_count       = const._VALID_COUNT, 
+                               valid_ratio       = const._VALID_RATIO,
+                               trigger_days      = const._TRIGGER_DAYS,
+                               keep_days         = const._KEEP_DAYS, 
+                               T                 = const._T,
+                               irrelevant_thresh = const._IRRELEVANT_THRESH)
+
     collection.get_dictionary()
 
     # load previously saved corpus and similarity data if possible
-    if args.l and os.path.exists(const._CORPUS_DATA) \
-       and os.path.exists(const._SIMILARITY_MATRIX)  \
-       and os.path.exists(const._SIMILARITY_SORTED):
-        collection.load(const._CORPUS_DATA, const._SIMILARITY_MATRIX, const._SIMILARITY_SORTED)
+    if args.l:
+        if os.path.exists(const._CORPUS_DATA) \
+          and os.path.exists(const._SIMILARITY_MATRIX)  \
+          and os.path.exists(const._SIMILARITY_SORTED):
+            collection.load(const._CORPUS_DATA, const._SIMILARITY_MATRIX, 
+                            const._SIMILARITY_SORTED)
+        else:
+            logging.error('Data file not found')
+            sys.exit()
     
-    '''
     # establish rabbitmq connection and declare queues
-    config = utils.get_config(const._CONFIG_FILE)
-    sections = config.sections()
+    if args.c:
+        if os.path.exists(const._CONFIG_FILE):
+            config = utils.get_config(const._CONFIG_FILE)
+            sections = config.sections()
+            if len(sections) == 0:
+                logging.error('Configuration file is empty')
+                sys.exit()
 
-    if len(sections) == 0:
-        logging.error('Configuration file is empty. Exiting...')
-        sys.exit()
-
-    sec = sections[0]
+            sec = sections[0]
+            
+            credentials = pika.PlainCredentials(username=config[sec]['username'],
+                                                password=config[sec]['password'])
+            
+            params = pika.ConnectionParameters(host=config[sec]['host'], 
+                                               credentials=credentials)
+        else:
+            logging.error('Configuration file not found')
+            sys.exit()
     
-    credentials = pika.PlainCredentials(username=config[sec]['username'],
-                                        password=config[sec]['password'])
+    else:
+        params = pika.ConnectionParameters(host='localhost')
     
-    params = pika.ConnectionParameters(host=config[sec]['host'], 
-                                       credentials=credentials)
-    
-    '''
-    params = pika.ConnectionParameters(host='localhost')
     connection = pika.BlockingConnection(params)
     channel = connection.channel()
     channel.exchange_declare(exchange=const._EXCHANGE_NAME, exchange_type='direct')
@@ -70,8 +81,9 @@ def main(args):
     #channel.queue_bind(exchange=const._EXCHANGE_NAME, queue='update_topics', routing_key='update')
     
     def on_new_topic(ch, method, properties, body):
-        new_topic = json.loads(body)
-        new_topic = json.loads(new_topic)
+        while type(body) != dict:
+            body = json.loads(body)
+        new_topic = body
         new_topic['postDate'] /= const._TIMESTAMP_FACTOR
         logging.info('Received new topic, id=%s', new_topic['topicID'])
 
@@ -83,8 +95,8 @@ def main(args):
                             const._SIMILARITY_SORTED)      
 
     def on_delete(ch, method, properties, body):
-        delete_topic = json.loads(body)
-        delete_topic = json.loads(delete_topic)
+        while type(body) != dict:
+            body = json.loads(body)
         logging.info('Deleting topic %s', delete_topic['topicID'])
         delete_id = str(delete_topic['topicID'])
         delete_date = datetime.fromtimestamp(collection.corpus_data[delete_id]['date'])
@@ -96,7 +108,9 @@ def main(args):
 
     '''
     def on_subject_update(ch, method, properties, body):
-        body = json.loads(body)
+        while type(body) != 'dict':
+            body = json.loads(body)
+
 
     
     def on_update_topic(ch, method, properties, body):
@@ -168,5 +182,6 @@ if __name__ == '__main__':
     #parser.add_argument('--smartirs', type=str, default='atn', help='type of tf-idf variants')
 
     parser.add_argument('-l', action='store_true', help='load previously saved corpus and similarity data')
+    parser.add_argument('-c', action='store_true', help='load message queue connection configurations from file')   
     args = parser.parse_args()
     main(args)
