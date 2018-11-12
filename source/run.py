@@ -39,7 +39,7 @@ def main(args):
        and os.path.exists(const._SIMILARITY_SORTED):
         collection.load(const._CORPUS_DATA, const._SIMILARITY_MATRIX, const._SIMILARITY_SORTED)
     
-    
+    '''
     # establish rabbitmq connection and declare queues
     config = utils.get_config(const._CONFIG_FILE)
     sections = config.sections()
@@ -56,8 +56,8 @@ def main(args):
     params = pika.ConnectionParameters(host=config[sec]['host'], 
                                        credentials=credentials)
     
-    
-    #params = pika.ConnectionParameters(host='localhost')
+    '''
+    params = pika.ConnectionParameters(host='localhost')
     connection = pika.BlockingConnection(params)
     channel = connection.channel()
     channel.exchange_declare(exchange=const._EXCHANGE_NAME, exchange_type='direct')
@@ -71,7 +71,7 @@ def main(args):
     
     def on_new_topic(ch, method, properties, body):
         new_topic = json.loads(body)
-        #new_topic = json.loads(new_topic)
+        new_topic = json.loads(new_topic)
         new_topic['postDate'] /= const._TIMESTAMP_FACTOR
         logging.info('Received new topic, id=%s', new_topic['topicID'])
 
@@ -84,7 +84,7 @@ def main(args):
 
     def on_delete(ch, method, properties, body):
         delete_topic = json.loads(body)
-        #delete_topic = json.loads(delete_topic)
+        delete_topic = json.loads(delete_topic)
         logging.info('Deleting topic %s', delete_topic['topicID'])
         delete_id = str(delete_topic['topicID'])
         delete_date = datetime.fromtimestamp(collection.corpus_data[delete_id]['date'])
@@ -95,6 +95,10 @@ def main(args):
                             const._SIMILARITY_SORTED) 
 
     '''
+    def on_subject_update(ch, method, properties, body):
+        body = json.loads(body)
+
+    
     def on_update_topic(ch, method, properties, body):
         update_topic = json.loads(body)
         topic_id = update_topic['topicID']
