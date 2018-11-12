@@ -18,7 +18,7 @@ import pika
 import bisect
 import collections
 import logging
-import ast
+import os
 import time
 import requests
 '''
@@ -53,7 +53,7 @@ for tid in topics:
 #                      body=msg2)
 
 connection.close()
-'''
+
 with open(const._TOPIC_FILE, 'r') as f:
     topics = json.load(f)
 
@@ -71,3 +71,7 @@ recoms = r.json()
 for tid in recoms:
     print('*'*80)
     print(topics[tid]['body'])
+
+'''
+
+print(os.path.dirname(os.getcwd()))
