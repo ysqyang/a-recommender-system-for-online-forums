@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import os
 
-_ROOT              = '/home/ysqyang/Projects/recommender-system-for-online-forums'
-#_ROOT              = '/usr/recommender/'
+#_ROOT              = '/home/ysqyang/Projects/recommender-system-for-online-forums'
+_ROOT              = '/usr/recommender/'
 #_ROOT              = '/Users/ai/Projects/recommender-system-for-online-forums'
 _COMPUTED_FOLDER   = os.path.join(_ROOT, 'computed_results')
 _DATA_FOLDER       = os.path.join(_ROOT, 'data')
@@ -44,8 +44,8 @@ _TOP_NUM           = 3
 _WEIGHTS           = [1, 1, 1]
 _PUNCS             = {'。', '，', '、', '：', ':', ';', '；', '“', '”', ' '}        
 _SINGLES           = {'一', '二', '三', '四', '五',
-	                  '六', '七', '八', '九', '十', 
-	                  '两', '这', '那', '不', '很',
-	                  '是', '只', '就', '你', '我', 
-	                  '他', '她', '它', '啊', '呵',
-	                  '哈', '哦'}
+                      '六', '七', '八', '九', '十', 
+                      '两', '这', '那', '不', '很',
+                      '是', '只', '就', '你', '我', 
+                      '他', '她', '它', '啊', '呵',
+                      '哈', '哦'}
