@@ -10,7 +10,6 @@ from collections import defaultdict
 import math
 import json
 import jieba
-import constants as const
 import logging
 from scipy import stats
 import re

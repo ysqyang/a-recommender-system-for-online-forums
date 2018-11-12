@@ -6,9 +6,6 @@ import collections
 import json
 import logging
 import os
-import sys
-sys.path.insert(0, '/home/ysqyang/Projects/recommender-system-for-online-forums/source')
-#print(sys.path)
 import constants as const
 
 def serve_recommendations(request):
@@ -18,13 +15,15 @@ def serve_recommendations(request):
     '''
     logging.basicConfig(filename=const._SERVE_LOG_FILE, level=logging.DEBUG)
     if request.method == 'POST':
-        return HttpResponse('METHOD not allowed!', status=405)
+        logging.error('Method not allowed!')
+        return HttpResponse('Method not allowed!', status=405)
 
     print(request.GET)
 
     if not os.path.exists(const._SIMILARITY_MATRIX)  \
        or not os.path.exists(const._SIMILARITY_SORTED):
-       return HttpResponse('No recommendations available', status=404)
+       logging.error('Data unavailable')
+       return HttpResponse('Data unavailable', status=404)
         
     with open(const._SIMILARITY_MATRIX, 'r') as f1,  \
          open(const._SIMILARITY_SORTED, 'r') as f2:
@@ -34,6 +33,7 @@ def serve_recommendations(request):
     target_tid = str(request.GET['topicID'])
   
     if target_tid not in sim_sorted:
+        logging.info('Nothing to recommend')
         return JsonResponse([], safe=False)
 
     recoms = []
@@ -48,4 +48,5 @@ def serve_recommendations(request):
             if len(recoms) == const._TOP_NUM:
                 break
 
+    logging.info('Found %d recommendations', len(recoms))
     return JsonResponse(recoms, safe=False)

@@ -1,0 +1,399 @@
+INFO:root:Stopwords loaded to memory
+INFO:gensim.corpora.dictionary:built Dictionary(0 unique tokens: []) from 0 documents (total 0 corpus positions)
+INFO:root:Corpus data loaded to memory
+INFO:root:Similarity matrix loaded to memory
+INFO:root:Similarity lists loaded to memory
+INFO:root:5 topics available
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(0 unique tokens: [])
+INFO:gensim.corpora.dictionary:built Dictionary(9 unique tokens: [' ', '6', 'sh600330', '发个', '帖']...) from 5 documents (total 87 corpus positions)
+INFO:root:Configuration loaded
+DEBUG:pika.adapters.select_connection:Using EPollPoller
+DEBUG:pika.callback:Added: {'callback': <bound method Connection._on_connection_start of <SelectConnection CLOSED socket=None params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 1}
+DEBUG:pika.callback:Added: {'callback': <bound method Connection._on_connection_close of <SelectConnection CLOSED socket=None params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 1}
+DEBUG:pika.callback:Added: {'callback': <bound method _CallbackResult.set_value_once of <pika.adapters.blocking_connection._CallbackResult object at 0x7fd8978020c8>>, 'one_shot': False, 'only': None, 'arguments': None}
+DEBUG:pika.callback:Added: {'callback': <bound method _CallbackResult.set_value_once of <pika.adapters.blocking_connection._CallbackResult object at 0x7fd897802208>>, 'one_shot': False, 'only': None, 'arguments': None}
+DEBUG:pika.callback:Added: {'callback': <bound method _CallbackResult.set_value_once of <pika.adapters.blocking_connection._CallbackResult object at 0x7fd897802288>>, 'one_shot': False, 'only': None, 'arguments': None}
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756af28> with deadline=1541743406.136647 and callback=<bound method Connection._on_connect_timer of <SelectConnection INIT socket=None params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>; now=1541743406.136647; delay=0
+INFO:pika.adapters.base_connection:Pika version 0.12.0 connecting to 192.168.1.102:5672
+DEBUG:pika.callback:Processing 0:Connection.Start
+DEBUG:pika.callback:Processing use of oneshot callback
+DEBUG:pika.callback:0 registered uses left
+DEBUG:pika.callback:Removing callback #0: {'callback': <bound method Connection._on_connection_start of <SelectConnection PROTOCOL socket=('172.17.0.2', 55608)->('192.168.1.102', 5672) params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 0}
+DEBUG:pika.callback:Calling <bound method Connection._on_connection_start of <SelectConnection PROTOCOL socket=('172.17.0.2', 55608)->('192.168.1.102', 5672) params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>> for "0:Connection.Start"
+DEBUG:pika.callback:Added: {'callback': <bound method Connection._on_connection_tune of <SelectConnection START socket=('172.17.0.2', 55608)->('192.168.1.102', 5672) params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 1}
+DEBUG:pika.callback:Processing 0:Connection.Tune
+DEBUG:pika.callback:Processing use of oneshot callback
+DEBUG:pika.callback:0 registered uses left
+DEBUG:pika.callback:Removing callback #0: {'callback': <bound method Connection._on_connection_tune of <SelectConnection START socket=('172.17.0.2', 55608)->('192.168.1.102', 5672) params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 0}
+DEBUG:pika.callback:Calling <bound method Connection._on_connection_tune of <SelectConnection START socket=('172.17.0.2', 55608)->('192.168.1.102', 5672) params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>> for "0:Connection.Tune"
+DEBUG:pika.connection:Creating a HeartbeatChecker: 60
+DEBUG:pika.heartbeat:timeout: 60.000000 send_interval: 30.000000 check_interval: 65.000000
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd8978112b0> with deadline=1541743436.1473866 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541743406.1473866; delay=30.0
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd897811390> with deadline=1541743471.1477506 and callback=<bound method HeartbeatChecker._check_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541743406.1477506; delay=65
+DEBUG:pika.callback:Added: {'callback': <bound method Connection._on_connection_open of <SelectConnection TUNE socket=('172.17.0.2', 55608)->('192.168.1.102', 5672) params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 1}
+DEBUG:pika.callback:Processing 0:Connection.OpenOk
+DEBUG:pika.callback:Processing use of oneshot callback
+DEBUG:pika.callback:0 registered uses left
+DEBUG:pika.callback:Removing callback #0: {'callback': <bound method Connection._on_connection_open of <SelectConnection TUNE socket=('172.17.0.2', 55608)->('192.168.1.102', 5672) params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 0}
+DEBUG:pika.callback:Calling <bound method Connection._on_connection_open of <SelectConnection TUNE socket=('172.17.0.2', 55608)->('192.168.1.102', 5672) params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>> for "0:Connection.OpenOk"
+DEBUG:pika.callback:Processing 0:_on_connection_open
+DEBUG:pika.callback:Calling <bound method _CallbackResult.set_value_once of <pika.adapters.blocking_connection._CallbackResult object at 0x7fd897802208>> for "0:_on_connection_open"
+DEBUG:pika.connection:Creating channel 1
+DEBUG:pika.callback:Added: {'callback': <bound method Connection._on_channel_cleanup of <SelectConnection OPEN socket=('172.17.0.2', 55608)->('192.168.1.102', 5672) params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>, 'one_shot': True, 'only': <Channel number=1 CLOSED conn=<SelectConnection OPEN socket=('172.17.0.2', 55608)->('192.168.1.102', 5672) params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>, 'arguments': None, 'calls': 1}
+DEBUG:pika.callback:Added: {'callback': <bound method Channel._on_getempty of <Channel number=1 OPENING conn=<SelectConnection OPEN socket=('172.17.0.2', 55608)->('192.168.1.102', 5672) params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': False, 'only': None, 'arguments': None}
+DEBUG:pika.callback:Added: {'callback': <bound method Channel._on_cancel of <Channel number=1 OPENING conn=<SelectConnection OPEN socket=('172.17.0.2', 55608)->('192.168.1.102', 5672) params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': False, 'only': None, 'arguments': None}
+DEBUG:pika.callback:Added: {'callback': <bound method Channel._on_flow of <Channel number=1 OPENING conn=<SelectConnection OPEN socket=('172.17.0.2', 55608)->('192.168.1.102', 5672) params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': False, 'only': None, 'arguments': None}
+DEBUG:pika.callback:Added: {'callback': <bound method Channel._on_close of <Channel number=1 OPENING conn=<SelectConnection OPEN socket=('172.17.0.2', 55608)->('192.168.1.102', 5672) params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 1}
+DEBUG:pika.channel:Entering blocking state on frame <Channel.Open(['out_of_band='])>; acceptable_replies=[<class 'pika.spec.Channel.OpenOk'>]
+DEBUG:pika.channel:Adding on_synchronous_complete callback
+DEBUG:pika.callback:Added: {'callback': <bound method Channel._on_synchronous_complete of <Channel number=1 OPENING conn=<SelectConnection OPEN socket=('172.17.0.2', 55608)->('192.168.1.102', 5672) params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 1}
+DEBUG:pika.channel:Adding passed-in callback
+DEBUG:pika.callback:Added: {'callback': <bound method Channel._on_openok of <Channel number=1 OPENING conn=<SelectConnection OPEN socket=('172.17.0.2', 55608)->('192.168.1.102', 5672) params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 1}
+DEBUG:pika.callback:Added: {'callback': <bound method BlockingChannel._on_consumer_cancelled_by_broker of <BlockingChannel impl=<Channel number=1 OPENING conn=<SelectConnection OPEN socket=('172.17.0.2', 55608)->('192.168.1.102', 5672) params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>>>, 'one_shot': False, 'only': None, 'arguments': None}
+DEBUG:pika.callback:Added: {'callback': <bound method _CallbackResult.signal_once of <pika.adapters.blocking_connection._CallbackResult object at 0x7fd89779bbc8>>, 'one_shot': False, 'only': None, 'arguments': None}
+DEBUG:pika.callback:Added: {'callback': <bound method BlockingChannel._on_channel_closed of <BlockingChannel impl=<Channel number=1 OPENING conn=<SelectConnection OPEN socket=('172.17.0.2', 55608)->('192.168.1.102', 5672) params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 1}
+DEBUG:pika.callback:Added: {'callback': <bound method _CallbackResult.set_value_once of <pika.adapters.blocking_connection._CallbackResult object at 0x7fd89779bc08>>, 'one_shot': False, 'only': None, 'arguments': None}
+INFO:pika.adapters.blocking_connection:Created channel=1
+DEBUG:pika.callback:Processing 1:Channel.OpenOk
+DEBUG:pika.callback:Processing use of oneshot callback
+DEBUG:pika.callback:0 registered uses left
+DEBUG:pika.callback:Removing callback #0: {'callback': <bound method Channel._on_synchronous_complete of <Channel number=1 OPENING conn=<SelectConnection OPEN socket=('172.17.0.2', 55608)->('192.168.1.102', 5672) params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 0}
+DEBUG:pika.callback:Processing use of oneshot callback
+DEBUG:pika.callback:0 registered uses left
+DEBUG:pika.callback:Removing callback #0: {'callback': <bound method Channel._on_openok of <Channel number=1 OPENING conn=<SelectConnection OPEN socket=('172.17.0.2', 55608)->('192.168.1.102', 5672) params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 0}
+DEBUG:pika.callback:Calling <bound method Channel._on_synchronous_complete of <Channel number=1 OPENING conn=<SelectConnection OPEN socket=('172.17.0.2', 55608)->('192.168.1.102', 5672) params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>> for "1:Channel.OpenOk"
+DEBUG:pika.channel:0 blocked frames
+DEBUG:pika.callback:Calling <bound method Channel._on_openok of <Channel number=1 OPENING conn=<SelectConnection OPEN socket=('172.17.0.2', 55608)->('192.168.1.102', 5672) params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>> for "1:Channel.OpenOk"
+DEBUG:pika.channel:Entering blocking state on frame <Exchange.Declare(['arguments={}', 'auto_delete=False', 'durable=False', 'exchange=recommender', 'internal=False', 'nowait=False', 'passive=False', 'ticket=0', 'type=direct'])>; acceptable_replies=[<class 'pika.spec.Exchange.DeclareOk'>]
+DEBUG:pika.channel:Adding on_synchronous_complete callback
+DEBUG:pika.callback:Added: {'callback': <bound method Channel._on_synchronous_complete of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('172.17.0.2', 55608)->('192.168.1.102', 5672) params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 1}
+DEBUG:pika.channel:Adding passed-in callback
+DEBUG:pika.callback:Added: {'callback': <bound method _CallbackResult.set_value_once of <pika.adapters.blocking_connection._CallbackResult object at 0x7fd89779bc48>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 1}
+DEBUG:pika.callback:Processing 1:Exchange.DeclareOk
+DEBUG:pika.callback:Processing use of oneshot callback
+DEBUG:pika.callback:0 registered uses left
+DEBUG:pika.callback:Removing callback #0: {'callback': <bound method Channel._on_synchronous_complete of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('172.17.0.2', 55608)->('192.168.1.102', 5672) params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 0}
+DEBUG:pika.callback:Processing use of oneshot callback
+DEBUG:pika.callback:0 registered uses left
+DEBUG:pika.callback:Removing callback #0: {'callback': <bound method _CallbackResult.set_value_once of <pika.adapters.blocking_connection._CallbackResult object at 0x7fd89779bc48>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 0}
+DEBUG:pika.callback:Calling <bound method Channel._on_synchronous_complete of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('172.17.0.2', 55608)->('192.168.1.102', 5672) params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>> for "1:Exchange.DeclareOk"
+DEBUG:pika.channel:0 blocked frames
+DEBUG:pika.callback:Calling <bound method _CallbackResult.set_value_once of <pika.adapters.blocking_connection._CallbackResult object at 0x7fd89779bc48>> for "1:Exchange.DeclareOk"
+DEBUG:pika.channel:Entering blocking state on frame <Queue.Declare(['arguments={}', 'auto_delete=False', 'durable=False', 'exclusive=False', 'nowait=False', 'passive=False', 'queue=new_topics', 'ticket=0'])>; acceptable_replies=[(<class 'pika.spec.Queue.DeclareOk'>, {'queue': 'new_topics'})]
+DEBUG:pika.channel:Adding on_synchronous_complete callback
+DEBUG:pika.callback:Added: {'callback': <bound method Channel._on_synchronous_complete of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('172.17.0.2', 55608)->('192.168.1.102', 5672) params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': True, 'only': None, 'arguments': {'queue': 'new_topics'}, 'calls': 1}
+DEBUG:pika.channel:Adding passed-in callback
+DEBUG:pika.callback:Added: {'callback': <bound method _CallbackResult.set_value_once of <pika.adapters.blocking_connection._CallbackResult object at 0x7fd89779bc48>>, 'one_shot': True, 'only': None, 'arguments': {'queue': 'new_topics'}, 'calls': 1}
+DEBUG:pika.callback:Processing 1:Queue.DeclareOk
+DEBUG:pika.callback:Processing use of oneshot callback
+DEBUG:pika.callback:0 registered uses left
+DEBUG:pika.callback:Comparing {'queue': 'new_topics'} to {'queue': 'new_topics'}
+DEBUG:pika.callback:Removing callback #0: {'callback': <bound method Channel._on_synchronous_complete of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('172.17.0.2', 55608)->('192.168.1.102', 5672) params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': True, 'only': None, 'arguments': {'queue': 'new_topics'}, 'calls': 0}
+DEBUG:pika.callback:Processing use of oneshot callback
+DEBUG:pika.callback:0 registered uses left
+DEBUG:pika.callback:Comparing {'queue': 'new_topics'} to {'queue': 'new_topics'}
+DEBUG:pika.callback:Removing callback #0: {'callback': <bound method _CallbackResult.set_value_once of <pika.adapters.blocking_connection._CallbackResult object at 0x7fd89779bc48>>, 'one_shot': True, 'only': None, 'arguments': {'queue': 'new_topics'}, 'calls': 0}
+DEBUG:pika.callback:Calling <bound method Channel._on_synchronous_complete of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('172.17.0.2', 55608)->('192.168.1.102', 5672) params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>> for "1:Queue.DeclareOk"
+DEBUG:pika.channel:0 blocked frames
+DEBUG:pika.callback:Calling <bound method _CallbackResult.set_value_once of <pika.adapters.blocking_connection._CallbackResult object at 0x7fd89779bc48>> for "1:Queue.DeclareOk"
+DEBUG:pika.channel:Entering blocking state on frame <Queue.Declare(['arguments={}', 'auto_delete=False', 'durable=False', 'exclusive=False', 'nowait=False', 'passive=False', 'queue=delete_topics', 'ticket=0'])>; acceptable_replies=[(<class 'pika.spec.Queue.DeclareOk'>, {'queue': 'delete_topics'})]
+DEBUG:pika.channel:Adding on_synchronous_complete callback
+DEBUG:pika.callback:Added: {'callback': <bound method Channel._on_synchronous_complete of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('172.17.0.2', 55608)->('192.168.1.102', 5672) params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': True, 'only': None, 'arguments': {'queue': 'delete_topics'}, 'calls': 1}
+DEBUG:pika.channel:Adding passed-in callback
+DEBUG:pika.callback:Added: {'callback': <bound method _CallbackResult.set_value_once of <pika.adapters.blocking_connection._CallbackResult object at 0x7fd89779bc48>>, 'one_shot': True, 'only': None, 'arguments': {'queue': 'delete_topics'}, 'calls': 1}
+DEBUG:pika.callback:Processing 1:Queue.DeclareOk
+DEBUG:pika.callback:Processing use of oneshot callback
+DEBUG:pika.callback:0 registered uses left
+DEBUG:pika.callback:Comparing {'queue': 'delete_topics'} to {'queue': 'delete_topics'}
+DEBUG:pika.callback:Removing callback #0: {'callback': <bound method Channel._on_synchronous_complete of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('172.17.0.2', 55608)->('192.168.1.102', 5672) params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': True, 'only': None, 'arguments': {'queue': 'delete_topics'}, 'calls': 0}
+DEBUG:pika.callback:Processing use of oneshot callback
+DEBUG:pika.callback:0 registered uses left
+DEBUG:pika.callback:Comparing {'queue': 'delete_topics'} to {'queue': 'delete_topics'}
+DEBUG:pika.callback:Removing callback #0: {'callback': <bound method _CallbackResult.set_value_once of <pika.adapters.blocking_connection._CallbackResult object at 0x7fd89779bc48>>, 'one_shot': True, 'only': None, 'arguments': {'queue': 'delete_topics'}, 'calls': 0}
+DEBUG:pika.callback:Calling <bound method Channel._on_synchronous_complete of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('172.17.0.2', 55608)->('192.168.1.102', 5672) params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>> for "1:Queue.DeclareOk"
+DEBUG:pika.channel:0 blocked frames
+DEBUG:pika.callback:Calling <bound method _CallbackResult.set_value_once of <pika.adapters.blocking_connection._CallbackResult object at 0x7fd89779bc48>> for "1:Queue.DeclareOk"
+DEBUG:pika.channel:Entering blocking state on frame <Queue.Bind(['arguments={}', 'exchange=recommender', 'nowait=False', 'queue=new_topics', 'routing_key=new', 'ticket=0'])>; acceptable_replies=[<class 'pika.spec.Queue.BindOk'>]
+DEBUG:pika.channel:Adding on_synchronous_complete callback
+DEBUG:pika.callback:Added: {'callback': <bound method Channel._on_synchronous_complete of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('172.17.0.2', 55608)->('192.168.1.102', 5672) params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 1}
+DEBUG:pika.channel:Adding passed-in callback
+DEBUG:pika.callback:Added: {'callback': <bound method _CallbackResult.set_value_once of <pika.adapters.blocking_connection._CallbackResult object at 0x7fd89779bc48>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 1}
+DEBUG:pika.callback:Processing 1:Queue.BindOk
+DEBUG:pika.callback:Processing use of oneshot callback
+DEBUG:pika.callback:0 registered uses left
+DEBUG:pika.callback:Removing callback #0: {'callback': <bound method Channel._on_synchronous_complete of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('172.17.0.2', 55608)->('192.168.1.102', 5672) params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 0}
+DEBUG:pika.callback:Processing use of oneshot callback
+DEBUG:pika.callback:0 registered uses left
+DEBUG:pika.callback:Removing callback #0: {'callback': <bound method _CallbackResult.set_value_once of <pika.adapters.blocking_connection._CallbackResult object at 0x7fd89779bc48>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 0}
+DEBUG:pika.callback:Calling <bound method Channel._on_synchronous_complete of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('172.17.0.2', 55608)->('192.168.1.102', 5672) params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>> for "1:Queue.BindOk"
+DEBUG:pika.channel:0 blocked frames
+DEBUG:pika.callback:Calling <bound method _CallbackResult.set_value_once of <pika.adapters.blocking_connection._CallbackResult object at 0x7fd89779bc48>> for "1:Queue.BindOk"
+DEBUG:pika.channel:Entering blocking state on frame <Queue.Bind(['arguments={}', 'exchange=recommender', 'nowait=False', 'queue=delete_topics', 'routing_key=delete', 'ticket=0'])>; acceptable_replies=[<class 'pika.spec.Queue.BindOk'>]
+DEBUG:pika.channel:Adding on_synchronous_complete callback
+DEBUG:pika.callback:Added: {'callback': <bound method Channel._on_synchronous_complete of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('172.17.0.2', 55608)->('192.168.1.102', 5672) params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 1}
+DEBUG:pika.channel:Adding passed-in callback
+DEBUG:pika.callback:Added: {'callback': <bound method _CallbackResult.set_value_once of <pika.adapters.blocking_connection._CallbackResult object at 0x7fd89779bc48>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 1}
+DEBUG:pika.callback:Processing 1:Queue.BindOk
+DEBUG:pika.callback:Processing use of oneshot callback
+DEBUG:pika.callback:0 registered uses left
+DEBUG:pika.callback:Removing callback #0: {'callback': <bound method Channel._on_synchronous_complete of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('172.17.0.2', 55608)->('192.168.1.102', 5672) params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 0}
+DEBUG:pika.callback:Processing use of oneshot callback
+DEBUG:pika.callback:0 registered uses left
+DEBUG:pika.callback:Removing callback #0: {'callback': <bound method _CallbackResult.set_value_once of <pika.adapters.blocking_connection._CallbackResult object at 0x7fd89779bc48>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 0}
+DEBUG:pika.callback:Calling <bound method Channel._on_synchronous_complete of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('172.17.0.2', 55608)->('192.168.1.102', 5672) params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>> for "1:Queue.BindOk"
+DEBUG:pika.channel:0 blocked frames
+DEBUG:pika.callback:Calling <bound method _CallbackResult.set_value_once of <pika.adapters.blocking_connection._CallbackResult object at 0x7fd89779bc48>> for "1:Queue.BindOk"
+DEBUG:pika.channel:Entering blocking state on frame <Basic.Consume(['arguments={}', 'consumer_tag=ctag1.eed9d1dab6274218a18c4ba8b58214f3', 'exclusive=False', 'no_ack=True', 'no_local=False', 'nowait=False', 'queue=new_topics', 'ticket=0'])>; acceptable_replies=[(<class 'pika.spec.Basic.ConsumeOk'>, {'consumer_tag': 'ctag1.eed9d1dab6274218a18c4ba8b58214f3'})]
+DEBUG:pika.channel:Adding on_synchronous_complete callback
+DEBUG:pika.callback:Added: {'callback': <bound method Channel._on_synchronous_complete of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('172.17.0.2', 55608)->('192.168.1.102', 5672) params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': True, 'only': None, 'arguments': {'consumer_tag': 'ctag1.eed9d1dab6274218a18c4ba8b58214f3'}, 'calls': 1}
+DEBUG:pika.channel:Adding passed-in callback
+DEBUG:pika.callback:Added: {'callback': <bound method Channel._on_eventok of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('172.17.0.2', 55608)->('192.168.1.102', 5672) params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': True, 'only': None, 'arguments': {'consumer_tag': 'ctag1.eed9d1dab6274218a18c4ba8b58214f3'}, 'calls': 1}
+DEBUG:pika.callback:Processing 1:Basic.ConsumeOk
+DEBUG:pika.callback:Processing use of oneshot callback
+DEBUG:pika.callback:0 registered uses left
+DEBUG:pika.callback:Comparing {'consumer_tag': 'ctag1.eed9d1dab6274218a18c4ba8b58214f3'} to {'consumer_tag': 'ctag1.eed9d1dab6274218a18c4ba8b58214f3'}
+DEBUG:pika.callback:Removing callback #1: {'callback': <bound method Channel._on_synchronous_complete of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('172.17.0.2', 55608)->('192.168.1.102', 5672) params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': True, 'only': None, 'arguments': {'consumer_tag': 'ctag1.eed9d1dab6274218a18c4ba8b58214f3'}, 'calls': 0}
+DEBUG:pika.callback:Processing use of oneshot callback
+DEBUG:pika.callback:0 registered uses left
+DEBUG:pika.callback:Comparing {'consumer_tag': 'ctag1.eed9d1dab6274218a18c4ba8b58214f3'} to {'consumer_tag': 'ctag1.eed9d1dab6274218a18c4ba8b58214f3'}
+DEBUG:pika.callback:Removing callback #1: {'callback': <bound method Channel._on_eventok of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('172.17.0.2', 55608)->('192.168.1.102', 5672) params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': True, 'only': None, 'arguments': {'consumer_tag': 'ctag1.eed9d1dab6274218a18c4ba8b58214f3'}, 'calls': 0}
+DEBUG:pika.callback:Calling <bound method _CallbackResult.signal_once of <pika.adapters.blocking_connection._CallbackResult object at 0x7fd89779bbc8>> for "1:Basic.ConsumeOk"
+DEBUG:pika.callback:Calling <bound method Channel._on_synchronous_complete of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('172.17.0.2', 55608)->('192.168.1.102', 5672) params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>> for "1:Basic.ConsumeOk"
+DEBUG:pika.channel:0 blocked frames
+DEBUG:pika.callback:Calling <bound method Channel._on_eventok of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('172.17.0.2', 55608)->('192.168.1.102', 5672) params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>> for "1:Basic.ConsumeOk"
+DEBUG:pika.channel:Discarding frame <METHOD(['channel_number=1', 'frame_type=1', "method=<Basic.ConsumeOk(['consumer_tag=ctag1.eed9d1dab6274218a18c4ba8b58214f3'])>"])>
+DEBUG:pika.channel:Entering blocking state on frame <Basic.Consume(['arguments={}', 'consumer_tag=ctag1.0d3ea1af36434e958caea8bddc472257', 'exclusive=False', 'no_ack=True', 'no_local=False', 'nowait=False', 'queue=delete_topics', 'ticket=0'])>; acceptable_replies=[(<class 'pika.spec.Basic.ConsumeOk'>, {'consumer_tag': 'ctag1.0d3ea1af36434e958caea8bddc472257'})]
+DEBUG:pika.channel:Adding on_synchronous_complete callback
+DEBUG:pika.callback:Added: {'callback': <bound method Channel._on_synchronous_complete of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('172.17.0.2', 55608)->('192.168.1.102', 5672) params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': True, 'only': None, 'arguments': {'consumer_tag': 'ctag1.0d3ea1af36434e958caea8bddc472257'}, 'calls': 1}
+DEBUG:pika.channel:Adding passed-in callback
+DEBUG:pika.callback:Added: {'callback': <bound method Channel._on_eventok of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('172.17.0.2', 55608)->('192.168.1.102', 5672) params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': True, 'only': None, 'arguments': {'consumer_tag': 'ctag1.0d3ea1af36434e958caea8bddc472257'}, 'calls': 1}
+DEBUG:pika.callback:Processing 1:Basic.ConsumeOk
+DEBUG:pika.callback:Processing use of oneshot callback
+DEBUG:pika.callback:0 registered uses left
+DEBUG:pika.callback:Comparing {'consumer_tag': 'ctag1.0d3ea1af36434e958caea8bddc472257'} to {'consumer_tag': 'ctag1.0d3ea1af36434e958caea8bddc472257'}
+DEBUG:pika.callback:Removing callback #1: {'callback': <bound method Channel._on_synchronous_complete of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('172.17.0.2', 55608)->('192.168.1.102', 5672) params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': True, 'only': None, 'arguments': {'consumer_tag': 'ctag1.0d3ea1af36434e958caea8bddc472257'}, 'calls': 0}
+DEBUG:pika.callback:Processing use of oneshot callback
+DEBUG:pika.callback:0 registered uses left
+DEBUG:pika.callback:Comparing {'consumer_tag': 'ctag1.0d3ea1af36434e958caea8bddc472257'} to {'consumer_tag': 'ctag1.0d3ea1af36434e958caea8bddc472257'}
+DEBUG:pika.callback:Removing callback #1: {'callback': <bound method Channel._on_eventok of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('172.17.0.2', 55608)->('192.168.1.102', 5672) params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': True, 'only': None, 'arguments': {'consumer_tag': 'ctag1.0d3ea1af36434e958caea8bddc472257'}, 'calls': 0}
+DEBUG:pika.callback:Calling <bound method _CallbackResult.signal_once of <pika.adapters.blocking_connection._CallbackResult object at 0x7fd89779bbc8>> for "1:Basic.ConsumeOk"
+DEBUG:pika.callback:Calling <bound method Channel._on_synchronous_complete of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('172.17.0.2', 55608)->('192.168.1.102', 5672) params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>> for "1:Basic.ConsumeOk"
+DEBUG:pika.channel:0 blocked frames
+DEBUG:pika.callback:Calling <bound method Channel._on_eventok of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('172.17.0.2', 55608)->('192.168.1.102', 5672) params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>> for "1:Basic.ConsumeOk"
+DEBUG:pika.channel:Discarding frame <METHOD(['channel_number=1', 'frame_type=1', "method=<Basic.ConsumeOk(['consumer_tag=ctag1.0d3ea1af36434e958caea8bddc472257'])>"])>
+INFO:root: [*] Waiting for messages. To exit press CTRL+C
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd8978111d0> with deadline=1541743466.1550057 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541743436.1550057; delay=30.0
+DEBUG:pika.heartbeat:Received heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd897811198> with deadline=1541743496.1571803 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541743466.1571803; delay=30.0
+DEBUG:pika.heartbeat:Received 1 heartbeat frames, sent 2, idle intervals 0
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd8978112b0> with deadline=1541743536.155503 and callback=<bound method HeartbeatChecker._check_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541743471.155503; delay=65
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd8978111d0> with deadline=1541743526.1667445 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541743496.1667445; delay=30.0
+INFO:root:Received topic to be deleted
+INFO:root:Topic 1506592 has been deleted from the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:4 topics remaining
+DEBUG:root:corpus_size=4
+DEBUG:root:sim_matrix_len=4, sim_sorted_len=4
+INFO:root:Corpus data saved to /usr/recommender/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /usr/recommender/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /usr/recommender/computed_results/sim_sorted
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756ab38> with deadline=1541743556.1732802 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541743526.1732802; delay=30.0
+DEBUG:pika.heartbeat:Received 1 heartbeat frames, sent 4, idle intervals 0
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756ab00> with deadline=1541743601.1643782 and callback=<bound method HeartbeatChecker._check_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541743536.1643782; delay=65
+DEBUG:pika.heartbeat:Received heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756a668> with deadline=1541743586.17855 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541743556.17855; delay=30.0
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756ab70> with deadline=1541743616.1884854 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541743586.1884854; delay=30.0
+DEBUG:pika.heartbeat:Received 2 heartbeat frames, sent 6, idle intervals 0
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756ab38> with deadline=1541743666.1685925 and callback=<bound method HeartbeatChecker._check_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541743601.1685925; delay=65
+DEBUG:pika.heartbeat:Received heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756a668> with deadline=1541743646.1901867 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541743616.1901867; delay=30.0
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756ab00> with deadline=1541743676.1986396 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541743646.1986396; delay=30.0
+DEBUG:pika.heartbeat:Received 3 heartbeat frames, sent 8, idle intervals 0
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756ab70> with deadline=1541743731.1757126 and callback=<bound method HeartbeatChecker._check_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541743666.1757126; delay=65
+DEBUG:pika.heartbeat:Received heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756a668> with deadline=1541743706.2020638 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541743676.2020638; delay=30.0
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756ab38> with deadline=1541743736.2139626 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541743706.2139626; delay=30.0
+DEBUG:pika.heartbeat:Received 4 heartbeat frames, sent 10, idle intervals 0
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756ab00> with deadline=1541743796.1973543 and callback=<bound method HeartbeatChecker._check_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541743731.1973543; delay=65
+DEBUG:pika.heartbeat:Received heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756a668> with deadline=1541743766.2175395 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541743736.2175395; delay=30.0
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756ab70> with deadline=1541743796.2224479 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541743766.2224479; delay=30.0
+INFO:root:Received topic to be deleted
+INFO:root:Topic 1506589 has been deleted from the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:3 topics remaining
+DEBUG:root:corpus_size=3
+DEBUG:root:sim_matrix_len=3, sim_sorted_len=3
+INFO:root:Corpus data saved to /usr/recommender/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /usr/recommender/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /usr/recommender/computed_results/sim_sorted
+DEBUG:pika.heartbeat:Received 5 heartbeat frames, sent 12, idle intervals 0
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756a9e8> with deadline=1541743861.2073293 and callback=<bound method HeartbeatChecker._check_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541743796.2073293; delay=65
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756a668> with deadline=1541743826.2246883 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541743796.2246883; delay=30.0
+DEBUG:pika.heartbeat:Received heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756ab00> with deadline=1541743856.2290163 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541743826.2290163; delay=30.0
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756ab70> with deadline=1541743886.237363 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541743856.237363; delay=30.0
+DEBUG:pika.heartbeat:Received 6 heartbeat frames, sent 15, idle intervals 0
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756a668> with deadline=1541743926.2192476 and callback=<bound method HeartbeatChecker._check_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541743861.2192476; delay=65
+DEBUG:pika.heartbeat:Received heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756ab00> with deadline=1541743916.2411363 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541743886.2411363; delay=30.0
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756a9e8> with deadline=1541743946.2518926 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541743916.2518926; delay=30.0
+DEBUG:pika.heartbeat:Received 7 heartbeat frames, sent 17, idle intervals 0
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756ab70> with deadline=1541743991.2267804 and callback=<bound method HeartbeatChecker._check_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541743926.2267804; delay=65
+DEBUG:pika.heartbeat:Received heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756ab00> with deadline=1541743976.2559443 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541743946.2559443; delay=30.0
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756a668> with deadline=1541744006.2684753 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541743976.2684753; delay=30.0
+DEBUG:pika.heartbeat:Received 8 heartbeat frames, sent 19, idle intervals 0
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756a9e8> with deadline=1541744056.2305725 and callback=<bound method HeartbeatChecker._check_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541743991.2305725; delay=65
+DEBUG:pika.heartbeat:Received heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756ab00> with deadline=1541744036.2712944 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541744006.2712944; delay=30.0
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756ab70> with deadline=1541744066.2836995 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541744036.2836995; delay=30.0
+DEBUG:pika.heartbeat:Received 9 heartbeat frames, sent 21, idle intervals 0
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756a668> with deadline=1541744121.2368565 and callback=<bound method HeartbeatChecker._check_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541744056.2368565; delay=65
+DEBUG:pika.heartbeat:Received heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756ab00> with deadline=1541744096.2874064 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541744066.2874064; delay=30.0
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756a9e8> with deadline=1541744126.2985575 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541744096.2985575; delay=30.0
+DEBUG:pika.heartbeat:Received 10 heartbeat frames, sent 23, idle intervals 0
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756ab70> with deadline=1541744186.2456195 and callback=<bound method HeartbeatChecker._check_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541744121.2456195; delay=65
+DEBUG:pika.heartbeat:Received heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756ab00> with deadline=1541744156.3061032 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541744126.3061032; delay=30.0
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756a668> with deadline=1541744186.3147254 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541744156.3147254; delay=30.0
+DEBUG:pika.heartbeat:Received heartbeat frame
+DEBUG:pika.heartbeat:Received 12 heartbeat frames, sent 25, idle intervals 0
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756a9e8> with deadline=1541744251.2476256 and callback=<bound method HeartbeatChecker._check_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541744186.2476256; delay=65
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756ab00> with deadline=1541744216.317532 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541744186.317532; delay=30.0
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756ab70> with deadline=1541744246.3296988 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541744216.3296988; delay=30.0
+DEBUG:pika.heartbeat:Received heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756a668> with deadline=1541744276.3331077 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541744246.3331077; delay=30.0
+DEBUG:pika.heartbeat:Received 13 heartbeat frames, sent 28, idle intervals 0
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756ab00> with deadline=1541744316.2536595 and callback=<bound method HeartbeatChecker._check_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541744251.2536595; delay=65
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756ab70> with deadline=1541744306.3399162 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541744276.3399162; delay=30.0
+DEBUG:pika.heartbeat:Received heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756a9e8> with deadline=1541744336.3459234 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541744306.3459234; delay=30.0
+DEBUG:pika.heartbeat:Received 14 heartbeat frames, sent 30, idle intervals 0
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756a668> with deadline=1541744381.2688608 and callback=<bound method HeartbeatChecker._check_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541744316.2688608; delay=65
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756ab70> with deadline=1541744366.3584456 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541744336.3584456; delay=30.0
+DEBUG:pika.heartbeat:Received heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756ab00> with deadline=1541744396.3617518 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541744366.3617518; delay=30.0
+DEBUG:pika.heartbeat:Received 15 heartbeat frames, sent 32, idle intervals 0
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756a9e8> with deadline=1541744446.2720048 and callback=<bound method HeartbeatChecker._check_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541744381.2720048; delay=65
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756ab70> with deadline=1541744426.3704374 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541744396.3704374; delay=30.0
+DEBUG:pika.heartbeat:Received heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756a668> with deadline=1541744456.3796601 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541744426.3796601; delay=30.0
+DEBUG:pika.heartbeat:Received 16 heartbeat frames, sent 34, idle intervals 0
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756ab00> with deadline=1541744511.2849627 and callback=<bound method HeartbeatChecker._check_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541744446.2849627; delay=65
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756ab70> with deadline=1541744486.388511 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541744456.388511; delay=30.0
+DEBUG:pika.heartbeat:Received heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756a9e8> with deadline=1541744516.397444 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541744486.397444; delay=30.0
+DEBUG:pika.heartbeat:Received 17 heartbeat frames, sent 36, idle intervals 0
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756a668> with deadline=1541744576.2922776 and callback=<bound method HeartbeatChecker._check_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541744511.2922776; delay=65
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756ab70> with deadline=1541744546.4034185 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541744516.4034185; delay=30.0
+DEBUG:pika.heartbeat:Received heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756ab00> with deadline=1541744576.4086027 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541744546.4086027; delay=30.0
+DEBUG:pika.heartbeat:Received 18 heartbeat frames, sent 38, idle intervals 0
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756a9e8> with deadline=1541744641.300611 and callback=<bound method HeartbeatChecker._check_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541744576.300611; delay=65
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756ab70> with deadline=1541744606.411107 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541744576.411107; delay=30.0
+DEBUG:pika.heartbeat:Received heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756a668> with deadline=1541744636.4231644 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541744606.4231644; delay=30.0
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756ab00> with deadline=1541744666.4360898 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>; now=1541744636.4360898; delay=30.0
+ERROR:pika.adapters.base_connection:Read empty data, calling disconnect
+INFO:pika.connection:Disconnected from RabbitMQ at 192.168.1.102:5672 (-1): EOF
+DEBUG:pika.heartbeat:Removing timer for next heartbeat send interval
+DEBUG:pika.adapters.select_connection:remove_timeout: removing timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756ab00> with deadline=1541744666.4360898 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>
+DEBUG:pika.heartbeat:Removing timer for next heartbeat check interval
+DEBUG:pika.adapters.select_connection:remove_timeout: removing timeout <pika.adapters.select_connection._Timeout object at 0x7fd89756a9e8> with deadline=1541744641.300611 and callback=<bound method HeartbeatChecker._check_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7fd897811240>>
+DEBUG:pika.channel:Handling meta-close on <Channel number=1 OPEN conn=<SelectConnection CLOSED socket=None params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>
+DEBUG:pika.callback:Processing 1:_on_channel_cleanup
+DEBUG:pika.callback:Processing use of oneshot callback
+DEBUG:pika.callback:0 registered uses left
+DEBUG:pika.callback:Removing callback #0: {'callback': <bound method Connection._on_channel_cleanup of <SelectConnection CLOSED socket=None params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>, 'one_shot': True, 'only': <Channel number=1 CLOSED conn=<SelectConnection CLOSED socket=None params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>, 'arguments': None, 'calls': 0}
+DEBUG:pika.callback:Calling <bound method Connection._on_channel_cleanup of <SelectConnection CLOSED socket=None params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>> for "1:_on_channel_cleanup"
+DEBUG:pika.connection:Removed channel 1
+DEBUG:pika.callback:Clearing out '1' from the stack
+DEBUG:pika.callback:Processing 0:_on_connection_closed
+DEBUG:pika.callback:Calling <bound method _CallbackResult.set_value_once of <pika.adapters.blocking_connection._CallbackResult object at 0x7fd897802288>> for "0:_on_connection_closed"
+DEBUG:pika.callback:Added: {'callback': <bound method Connection._on_connection_start of <SelectConnection CLOSED socket=None params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 1}
+DEBUG:pika.callback:Incremented callback reference counter: {'callback': <bound method Connection._on_connection_close of <SelectConnection CLOSED socket=None params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 2}
+ERROR:pika.adapters.blocking_connection:Connection close detected; result=BlockingConnection__OnClosedArgs(connection=<SelectConnection CLOSED socket=None params=<ConnectionParameters host=192.168.1.102 port=5672 virtual_host=/ ssl=False>>, reason_code=-1, reason_text='EOF')
