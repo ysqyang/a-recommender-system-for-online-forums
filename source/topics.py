@@ -113,12 +113,15 @@ class Topic_collection(object):
         self.latest = datetime.fromtimestamp(self.corpus_data[str(max_tid)]['date'])
 
     def get_topics_by_keywords(self, keyword_weight):
+        now = datetime.now()
         recoms = defaultdict(int)
         for tid, info in self.corpus_data.items():
+            post_time = datetime.fromtimestamp(info['date'])
             for word_id, freq in info['bow']:
                 word = self.dictionary[word_id]
                 if word in keyword_weight:
                     recoms[tid] += freq*keyword_weight[word]
+            recoms[tid] *= math.exp((now-post_time).days/self.T)
 
         return sorted(recoms.items(), key=lambda x:x[1], reverse=True)
             
