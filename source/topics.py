@@ -121,7 +121,7 @@ class Topics(object):
                 word = self.dictionary[word_id]
                 if word in keyword_weight:
                     recoms[tid] += freq*keyword_weight[word]
-            recoms[tid] *= math.exp((now-post_time).days/self.T)
+            recoms[tid] *= math.exp(-(now-post_time).days/self.T)
 
         return sorted(recoms.items(), key=lambda x:x[1], reverse=True)
             
@@ -153,7 +153,7 @@ class Topics(object):
         self.oldest = datetime.fromtimestamp(oldest_stmp)
         logging.info('%d topics available', len(self.corpus_data))
   
-    def add_one(self, topic):
+    def add_one(self, topic, truncate=True):
         new_date = datetime.fromtimestamp(topic['postDate'])
         if (self.latest - new_date).days > self.trigger_days:
             logging.info('Topic is not in date range')
@@ -175,7 +175,7 @@ class Topics(object):
         self.oldest = min(self.oldest, new_date)
         self.latest = max(self.latest, new_date)
 
-        if (self.latest - self.oldest).days > self.trigger_days:
+        if truncate and (self.latest - self.oldest).days > self.trigger_days:
             self.remove_old(self.latest - timedelta(days=self.keep_days))
 
         def sim_insert(sim_list, target_tid, target_sim_val):
