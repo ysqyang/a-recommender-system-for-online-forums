@@ -107,9 +107,10 @@ class Topic_collection(object):
         self.check_correctness()
         logging.info('%d topics available', len(self.corpus_data))
         self.get_dictionary()
-        min_tid, max_tid = min(self.corpus_data.keys()), max(self.corpus_data.keys())
-        self.oldest = datetime.fromtimestamp(self.corpus_data[min_tid]['date'])
-        self.latest = datetime.fromtimestamp(self.corpus_data[max_tid]['date'])
+        int_ids = [int(tid) for tid in self.corpus_data]
+        min_tid, max_tid = min(int_tids), max(int_tids)
+        self.oldest = datetime.fromtimestamp(self.corpus_data[str(min_tid)]['date'])
+        self.latest = datetime.fromtimestamp(self.corpus_data[str(max_tid)]['date'])
 
     def get_topics_by_keywords(self, keyword_weight):
         recoms = defaultdict(int)
@@ -144,7 +145,8 @@ class Topic_collection(object):
         for tid, sim_list in self.sim_sorted.items():
             self.sim_sorted[tid] = [x for x in sim_list if x[0] not in delete_tids]
         
-        oldest_stmp = self.corpus_data[min(self.corpus_data.keys())]['date'] 
+        min_tid = min(int(tid) for tid in self.corpus_data)
+        oldest_stmp = self.corpus_data[str(min_tid)]['date'] 
         self.oldest = datetime.fromtimestamp(oldest_stmp)
         logging.info('%d topics available', len(self.corpus_data))
         logging.debug('sim_matrix_len=%d, sim_sorted_len=%d', 
@@ -225,11 +227,13 @@ class Topic_collection(object):
         if len(self.corpus_data) == 0:
             self.oldest, self.latest = datetime.max, datetime.min
         else:    
+            int_ids = [int(tid) for tid in self.corpus_data]
+            min_tid, max_tid = min(int_tids), max(int_tids)
             if delete_date == self.oldest:
-                oldest_stmp = self.corpus_data[min(self.corpus_data.keys())]['date']
+                oldest_stmp = self.corpus_data[str(min_tid)]['date']
                 self.oldest = datetime.fromtimestamp(oldest_stmp)
             if delete_date == self.latest:
-                latest_stmp = self.corpus_data[max(self.corpus_data.keys())]['date']
+                latest_stmp = self.corpus_data[str(max_tid)]['date']
                 self.latest = datetime.fromtimestamp(latest_stmp)
 
         logging.info('Topic %s has been deleted from the collection', topic_id)
