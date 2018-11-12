@@ -109,6 +109,7 @@ def main(args):
             collection.save(const._CORPUS_DATA, const._SIMILARITY_MATRIX, 
                             const._SIMILARITY_SORTED) 
 
+    '''
     def on_subject_update(ch, method, properties, body):
         while type(body) != dict:
             body = json.loads(body)
