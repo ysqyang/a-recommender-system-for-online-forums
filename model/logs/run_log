@@ -1,0 +1,1537 @@
+INFO:root:Stopwords loaded to memory
+INFO:gensim.corpora.dictionary:built Dictionary(0 unique tokens: []) from 0 documents (total 0 corpus positions)
+DEBUG:pika.adapters.select_connection:Using KQueuePoller
+DEBUG:pika.callback:Added: {'callback': <bound method Connection._on_connection_start of <SelectConnection CLOSED socket=None params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 1}
+DEBUG:pika.callback:Added: {'callback': <bound method Connection._on_connection_close of <SelectConnection CLOSED socket=None params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 1}
+DEBUG:pika.callback:Added: {'callback': <bound method _CallbackResult.set_value_once of <pika.adapters.blocking_connection._CallbackResult object at 0x117e53908>>, 'one_shot': False, 'only': None, 'arguments': None}
+DEBUG:pika.callback:Added: {'callback': <bound method _CallbackResult.set_value_once of <pika.adapters.blocking_connection._CallbackResult object at 0x117e536c8>>, 'one_shot': False, 'only': None, 'arguments': None}
+DEBUG:pika.callback:Added: {'callback': <bound method _CallbackResult.set_value_once of <pika.adapters.blocking_connection._CallbackResult object at 0x117f77988>>, 'one_shot': False, 'only': None, 'arguments': None}
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x117f85358> with deadline=1542011646.7411342 and callback=<bound method Connection._on_connect_timer of <SelectConnection INIT socket=None params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>>; now=1542011646.7411342; delay=0
+INFO:pika.adapters.base_connection:Pika version 0.12.0 connecting to 127.0.0.1:5672
+DEBUG:pika.callback:Processing 0:Connection.Start
+DEBUG:pika.callback:Processing use of oneshot callback
+DEBUG:pika.callback:0 registered uses left
+DEBUG:pika.callback:Removing callback #0: {'callback': <bound method Connection._on_connection_start of <SelectConnection PROTOCOL socket=('127.0.0.1', 64752)->('127.0.0.1', 5672) params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 0}
+DEBUG:pika.callback:Calling <bound method Connection._on_connection_start of <SelectConnection PROTOCOL socket=('127.0.0.1', 64752)->('127.0.0.1', 5672) params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>> for "0:Connection.Start"
+DEBUG:pika.callback:Added: {'callback': <bound method Connection._on_connection_tune of <SelectConnection START socket=('127.0.0.1', 64752)->('127.0.0.1', 5672) params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 1}
+DEBUG:pika.callback:Processing 0:Connection.Tune
+DEBUG:pika.callback:Processing use of oneshot callback
+DEBUG:pika.callback:0 registered uses left
+DEBUG:pika.callback:Removing callback #0: {'callback': <bound method Connection._on_connection_tune of <SelectConnection START socket=('127.0.0.1', 64752)->('127.0.0.1', 5672) params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 0}
+DEBUG:pika.callback:Calling <bound method Connection._on_connection_tune of <SelectConnection START socket=('127.0.0.1', 64752)->('127.0.0.1', 5672) params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>> for "0:Connection.Tune"
+DEBUG:pika.connection:Creating a HeartbeatChecker: 60
+DEBUG:pika.heartbeat:timeout: 60.000000 send_interval: 30.000000 check_interval: 65.000000
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x117f85cf8> with deadline=1542011677.753483 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x117f858d0>>; now=1542011647.753483; delay=30.0
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x117f85d30> with deadline=1542011712.753556 and callback=<bound method HeartbeatChecker._check_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x117f858d0>>; now=1542011647.753556; delay=65
+DEBUG:pika.callback:Added: {'callback': <bound method Connection._on_connection_open of <SelectConnection TUNE socket=('127.0.0.1', 64752)->('127.0.0.1', 5672) params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 1}
+DEBUG:pika.callback:Processing 0:Connection.OpenOk
+DEBUG:pika.callback:Processing use of oneshot callback
+DEBUG:pika.callback:0 registered uses left
+DEBUG:pika.callback:Removing callback #0: {'callback': <bound method Connection._on_connection_open of <SelectConnection TUNE socket=('127.0.0.1', 64752)->('127.0.0.1', 5672) params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 0}
+DEBUG:pika.callback:Calling <bound method Connection._on_connection_open of <SelectConnection TUNE socket=('127.0.0.1', 64752)->('127.0.0.1', 5672) params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>> for "0:Connection.OpenOk"
+DEBUG:pika.callback:Processing 0:_on_connection_open
+DEBUG:pika.callback:Calling <bound method _CallbackResult.set_value_once of <pika.adapters.blocking_connection._CallbackResult object at 0x117e536c8>> for "0:_on_connection_open"
+DEBUG:pika.connection:Creating channel 1
+DEBUG:pika.callback:Added: {'callback': <bound method Connection._on_channel_cleanup of <SelectConnection OPEN socket=('127.0.0.1', 64752)->('127.0.0.1', 5672) params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>>, 'one_shot': True, 'only': <Channel number=1 CLOSED conn=<SelectConnection OPEN socket=('127.0.0.1', 64752)->('127.0.0.1', 5672) params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>>, 'arguments': None, 'calls': 1}
+DEBUG:pika.callback:Added: {'callback': <bound method Channel._on_getempty of <Channel number=1 OPENING conn=<SelectConnection OPEN socket=('127.0.0.1', 64752)->('127.0.0.1', 5672) params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': False, 'only': None, 'arguments': None}
+DEBUG:pika.callback:Added: {'callback': <bound method Channel._on_cancel of <Channel number=1 OPENING conn=<SelectConnection OPEN socket=('127.0.0.1', 64752)->('127.0.0.1', 5672) params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': False, 'only': None, 'arguments': None}
+DEBUG:pika.callback:Added: {'callback': <bound method Channel._on_flow of <Channel number=1 OPENING conn=<SelectConnection OPEN socket=('127.0.0.1', 64752)->('127.0.0.1', 5672) params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': False, 'only': None, 'arguments': None}
+DEBUG:pika.callback:Added: {'callback': <bound method Channel._on_close of <Channel number=1 OPENING conn=<SelectConnection OPEN socket=('127.0.0.1', 64752)->('127.0.0.1', 5672) params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 1}
+DEBUG:pika.channel:Entering blocking state on frame <Channel.Open(['out_of_band='])>; acceptable_replies=[<class 'pika.spec.Channel.OpenOk'>]
+DEBUG:pika.channel:Adding on_synchronous_complete callback
+DEBUG:pika.callback:Added: {'callback': <bound method Channel._on_synchronous_complete of <Channel number=1 OPENING conn=<SelectConnection OPEN socket=('127.0.0.1', 64752)->('127.0.0.1', 5672) params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 1}
+DEBUG:pika.channel:Adding passed-in callback
+DEBUG:pika.callback:Added: {'callback': <bound method Channel._on_openok of <Channel number=1 OPENING conn=<SelectConnection OPEN socket=('127.0.0.1', 64752)->('127.0.0.1', 5672) params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 1}
+DEBUG:pika.callback:Added: {'callback': <bound method BlockingChannel._on_consumer_cancelled_by_broker of <BlockingChannel impl=<Channel number=1 OPENING conn=<SelectConnection OPEN socket=('127.0.0.1', 64752)->('127.0.0.1', 5672) params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>>>>, 'one_shot': False, 'only': None, 'arguments': None}
+DEBUG:pika.callback:Added: {'callback': <bound method _CallbackResult.signal_once of <pika.adapters.blocking_connection._CallbackResult object at 0x117f82a08>>, 'one_shot': False, 'only': None, 'arguments': None}
+DEBUG:pika.callback:Added: {'callback': <bound method BlockingChannel._on_channel_closed of <BlockingChannel impl=<Channel number=1 OPENING conn=<SelectConnection OPEN socket=('127.0.0.1', 64752)->('127.0.0.1', 5672) params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>>>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 1}
+DEBUG:pika.callback:Added: {'callback': <bound method _CallbackResult.set_value_once of <pika.adapters.blocking_connection._CallbackResult object at 0x117f82b48>>, 'one_shot': False, 'only': None, 'arguments': None}
+INFO:pika.adapters.blocking_connection:Created channel=1
+DEBUG:pika.callback:Processing 1:Channel.OpenOk
+DEBUG:pika.callback:Processing use of oneshot callback
+DEBUG:pika.callback:0 registered uses left
+DEBUG:pika.callback:Removing callback #0: {'callback': <bound method Channel._on_synchronous_complete of <Channel number=1 OPENING conn=<SelectConnection OPEN socket=('127.0.0.1', 64752)->('127.0.0.1', 5672) params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 0}
+DEBUG:pika.callback:Processing use of oneshot callback
+DEBUG:pika.callback:0 registered uses left
+DEBUG:pika.callback:Removing callback #0: {'callback': <bound method Channel._on_openok of <Channel number=1 OPENING conn=<SelectConnection OPEN socket=('127.0.0.1', 64752)->('127.0.0.1', 5672) params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 0}
+DEBUG:pika.callback:Calling <bound method Channel._on_synchronous_complete of <Channel number=1 OPENING conn=<SelectConnection OPEN socket=('127.0.0.1', 64752)->('127.0.0.1', 5672) params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>>> for "1:Channel.OpenOk"
+DEBUG:pika.channel:0 blocked frames
+DEBUG:pika.callback:Calling <bound method Channel._on_openok of <Channel number=1 OPENING conn=<SelectConnection OPEN socket=('127.0.0.1', 64752)->('127.0.0.1', 5672) params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>>> for "1:Channel.OpenOk"
+DEBUG:pika.channel:Entering blocking state on frame <Exchange.Declare(['arguments={}', 'auto_delete=False', 'durable=False', 'exchange=recommender', 'internal=False', 'nowait=False', 'passive=False', 'ticket=0', 'type=direct'])>; acceptable_replies=[<class 'pika.spec.Exchange.DeclareOk'>]
+DEBUG:pika.channel:Adding on_synchronous_complete callback
+DEBUG:pika.callback:Added: {'callback': <bound method Channel._on_synchronous_complete of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('127.0.0.1', 64752)->('127.0.0.1', 5672) params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 1}
+DEBUG:pika.channel:Adding passed-in callback
+DEBUG:pika.callback:Added: {'callback': <bound method _CallbackResult.set_value_once of <pika.adapters.blocking_connection._CallbackResult object at 0x117f82e48>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 1}
+DEBUG:pika.callback:Processing 1:Exchange.DeclareOk
+DEBUG:pika.callback:Processing use of oneshot callback
+DEBUG:pika.callback:0 registered uses left
+DEBUG:pika.callback:Removing callback #0: {'callback': <bound method Channel._on_synchronous_complete of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('127.0.0.1', 64752)->('127.0.0.1', 5672) params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 0}
+DEBUG:pika.callback:Processing use of oneshot callback
+DEBUG:pika.callback:0 registered uses left
+DEBUG:pika.callback:Removing callback #0: {'callback': <bound method _CallbackResult.set_value_once of <pika.adapters.blocking_connection._CallbackResult object at 0x117f82e48>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 0}
+DEBUG:pika.callback:Calling <bound method Channel._on_synchronous_complete of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('127.0.0.1', 64752)->('127.0.0.1', 5672) params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>>> for "1:Exchange.DeclareOk"
+DEBUG:pika.channel:0 blocked frames
+DEBUG:pika.callback:Calling <bound method _CallbackResult.set_value_once of <pika.adapters.blocking_connection._CallbackResult object at 0x117f82e48>> for "1:Exchange.DeclareOk"
+DEBUG:pika.channel:Entering blocking state on frame <Queue.Declare(['arguments={}', 'auto_delete=False', 'durable=False', 'exclusive=False', 'nowait=False', 'passive=False', 'queue=new_topics', 'ticket=0'])>; acceptable_replies=[(<class 'pika.spec.Queue.DeclareOk'>, {'queue': 'new_topics'})]
+DEBUG:pika.channel:Adding on_synchronous_complete callback
+DEBUG:pika.callback:Added: {'callback': <bound method Channel._on_synchronous_complete of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('127.0.0.1', 64752)->('127.0.0.1', 5672) params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': True, 'only': None, 'arguments': {'queue': 'new_topics'}, 'calls': 1}
+DEBUG:pika.channel:Adding passed-in callback
+DEBUG:pika.callback:Added: {'callback': <bound method _CallbackResult.set_value_once of <pika.adapters.blocking_connection._CallbackResult object at 0x117f82e48>>, 'one_shot': True, 'only': None, 'arguments': {'queue': 'new_topics'}, 'calls': 1}
+DEBUG:pika.callback:Processing 1:Queue.DeclareOk
+DEBUG:pika.callback:Processing use of oneshot callback
+DEBUG:pika.callback:0 registered uses left
+DEBUG:pika.callback:Comparing {'queue': 'new_topics'} to {'queue': 'new_topics'}
+DEBUG:pika.callback:Removing callback #0: {'callback': <bound method Channel._on_synchronous_complete of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('127.0.0.1', 64752)->('127.0.0.1', 5672) params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': True, 'only': None, 'arguments': {'queue': 'new_topics'}, 'calls': 0}
+DEBUG:pika.callback:Processing use of oneshot callback
+DEBUG:pika.callback:0 registered uses left
+DEBUG:pika.callback:Comparing {'queue': 'new_topics'} to {'queue': 'new_topics'}
+DEBUG:pika.callback:Removing callback #0: {'callback': <bound method _CallbackResult.set_value_once of <pika.adapters.blocking_connection._CallbackResult object at 0x117f82e48>>, 'one_shot': True, 'only': None, 'arguments': {'queue': 'new_topics'}, 'calls': 0}
+DEBUG:pika.callback:Calling <bound method Channel._on_synchronous_complete of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('127.0.0.1', 64752)->('127.0.0.1', 5672) params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>>> for "1:Queue.DeclareOk"
+DEBUG:pika.channel:0 blocked frames
+DEBUG:pika.callback:Calling <bound method _CallbackResult.set_value_once of <pika.adapters.blocking_connection._CallbackResult object at 0x117f82e48>> for "1:Queue.DeclareOk"
+DEBUG:pika.channel:Entering blocking state on frame <Queue.Declare(['arguments={}', 'auto_delete=False', 'durable=False', 'exclusive=False', 'nowait=False', 'passive=False', 'queue=delete_topics', 'ticket=0'])>; acceptable_replies=[(<class 'pika.spec.Queue.DeclareOk'>, {'queue': 'delete_topics'})]
+DEBUG:pika.channel:Adding on_synchronous_complete callback
+DEBUG:pika.callback:Added: {'callback': <bound method Channel._on_synchronous_complete of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('127.0.0.1', 64752)->('127.0.0.1', 5672) params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': True, 'only': None, 'arguments': {'queue': 'delete_topics'}, 'calls': 1}
+DEBUG:pika.channel:Adding passed-in callback
+DEBUG:pika.callback:Added: {'callback': <bound method _CallbackResult.set_value_once of <pika.adapters.blocking_connection._CallbackResult object at 0x117f82208>>, 'one_shot': True, 'only': None, 'arguments': {'queue': 'delete_topics'}, 'calls': 1}
+DEBUG:pika.callback:Processing 1:Queue.DeclareOk
+DEBUG:pika.callback:Processing use of oneshot callback
+DEBUG:pika.callback:0 registered uses left
+DEBUG:pika.callback:Comparing {'queue': 'delete_topics'} to {'queue': 'delete_topics'}
+DEBUG:pika.callback:Removing callback #0: {'callback': <bound method Channel._on_synchronous_complete of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('127.0.0.1', 64752)->('127.0.0.1', 5672) params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': True, 'only': None, 'arguments': {'queue': 'delete_topics'}, 'calls': 0}
+DEBUG:pika.callback:Processing use of oneshot callback
+DEBUG:pika.callback:0 registered uses left
+DEBUG:pika.callback:Comparing {'queue': 'delete_topics'} to {'queue': 'delete_topics'}
+DEBUG:pika.callback:Removing callback #0: {'callback': <bound method _CallbackResult.set_value_once of <pika.adapters.blocking_connection._CallbackResult object at 0x117f82208>>, 'one_shot': True, 'only': None, 'arguments': {'queue': 'delete_topics'}, 'calls': 0}
+DEBUG:pika.callback:Calling <bound method Channel._on_synchronous_complete of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('127.0.0.1', 64752)->('127.0.0.1', 5672) params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>>> for "1:Queue.DeclareOk"
+DEBUG:pika.channel:0 blocked frames
+DEBUG:pika.callback:Calling <bound method _CallbackResult.set_value_once of <pika.adapters.blocking_connection._CallbackResult object at 0x117f82208>> for "1:Queue.DeclareOk"
+DEBUG:pika.channel:Entering blocking state on frame <Queue.Bind(['arguments={}', 'exchange=recommender', 'nowait=False', 'queue=new_topics', 'routing_key=new', 'ticket=0'])>; acceptable_replies=[<class 'pika.spec.Queue.BindOk'>]
+DEBUG:pika.channel:Adding on_synchronous_complete callback
+DEBUG:pika.callback:Added: {'callback': <bound method Channel._on_synchronous_complete of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('127.0.0.1', 64752)->('127.0.0.1', 5672) params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 1}
+DEBUG:pika.channel:Adding passed-in callback
+DEBUG:pika.callback:Added: {'callback': <bound method _CallbackResult.set_value_once of <pika.adapters.blocking_connection._CallbackResult object at 0x117f82cc8>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 1}
+DEBUG:pika.callback:Processing 1:Queue.BindOk
+DEBUG:pika.callback:Processing use of oneshot callback
+DEBUG:pika.callback:0 registered uses left
+DEBUG:pika.callback:Removing callback #0: {'callback': <bound method Channel._on_synchronous_complete of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('127.0.0.1', 64752)->('127.0.0.1', 5672) params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 0}
+DEBUG:pika.callback:Processing use of oneshot callback
+DEBUG:pika.callback:0 registered uses left
+DEBUG:pika.callback:Removing callback #0: {'callback': <bound method _CallbackResult.set_value_once of <pika.adapters.blocking_connection._CallbackResult object at 0x117f82cc8>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 0}
+DEBUG:pika.callback:Calling <bound method Channel._on_synchronous_complete of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('127.0.0.1', 64752)->('127.0.0.1', 5672) params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>>> for "1:Queue.BindOk"
+DEBUG:pika.channel:0 blocked frames
+DEBUG:pika.callback:Calling <bound method _CallbackResult.set_value_once of <pika.adapters.blocking_connection._CallbackResult object at 0x117f82cc8>> for "1:Queue.BindOk"
+DEBUG:pika.channel:Entering blocking state on frame <Queue.Bind(['arguments={}', 'exchange=recommender', 'nowait=False', 'queue=delete_topics', 'routing_key=delete', 'ticket=0'])>; acceptable_replies=[<class 'pika.spec.Queue.BindOk'>]
+DEBUG:pika.channel:Adding on_synchronous_complete callback
+DEBUG:pika.callback:Added: {'callback': <bound method Channel._on_synchronous_complete of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('127.0.0.1', 64752)->('127.0.0.1', 5672) params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 1}
+DEBUG:pika.channel:Adding passed-in callback
+DEBUG:pika.callback:Added: {'callback': <bound method _CallbackResult.set_value_once of <pika.adapters.blocking_connection._CallbackResult object at 0x117f82cc8>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 1}
+DEBUG:pika.callback:Processing 1:Queue.BindOk
+DEBUG:pika.callback:Processing use of oneshot callback
+DEBUG:pika.callback:0 registered uses left
+DEBUG:pika.callback:Removing callback #0: {'callback': <bound method Channel._on_synchronous_complete of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('127.0.0.1', 64752)->('127.0.0.1', 5672) params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 0}
+DEBUG:pika.callback:Processing use of oneshot callback
+DEBUG:pika.callback:0 registered uses left
+DEBUG:pika.callback:Removing callback #0: {'callback': <bound method _CallbackResult.set_value_once of <pika.adapters.blocking_connection._CallbackResult object at 0x117f82cc8>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 0}
+DEBUG:pika.callback:Calling <bound method Channel._on_synchronous_complete of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('127.0.0.1', 64752)->('127.0.0.1', 5672) params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>>> for "1:Queue.BindOk"
+DEBUG:pika.channel:0 blocked frames
+DEBUG:pika.callback:Calling <bound method _CallbackResult.set_value_once of <pika.adapters.blocking_connection._CallbackResult object at 0x117f82cc8>> for "1:Queue.BindOk"
+DEBUG:pika.channel:Entering blocking state on frame <Basic.Consume(['arguments={}', 'consumer_tag=ctag1.4734608347a9467288bdfa6b6a23b4ea', 'exclusive=False', 'no_ack=True', 'no_local=False', 'nowait=False', 'queue=new_topics', 'ticket=0'])>; acceptable_replies=[(<class 'pika.spec.Basic.ConsumeOk'>, {'consumer_tag': 'ctag1.4734608347a9467288bdfa6b6a23b4ea'})]
+DEBUG:pika.channel:Adding on_synchronous_complete callback
+DEBUG:pika.callback:Added: {'callback': <bound method Channel._on_synchronous_complete of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('127.0.0.1', 64752)->('127.0.0.1', 5672) params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': True, 'only': None, 'arguments': {'consumer_tag': 'ctag1.4734608347a9467288bdfa6b6a23b4ea'}, 'calls': 1}
+DEBUG:pika.channel:Adding passed-in callback
+DEBUG:pika.callback:Added: {'callback': <bound method Channel._on_eventok of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('127.0.0.1', 64752)->('127.0.0.1', 5672) params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': True, 'only': None, 'arguments': {'consumer_tag': 'ctag1.4734608347a9467288bdfa6b6a23b4ea'}, 'calls': 1}
+DEBUG:pika.callback:Processing 1:Basic.ConsumeOk
+DEBUG:pika.callback:Processing use of oneshot callback
+DEBUG:pika.callback:0 registered uses left
+DEBUG:pika.callback:Comparing {'consumer_tag': 'ctag1.4734608347a9467288bdfa6b6a23b4ea'} to {'consumer_tag': 'ctag1.4734608347a9467288bdfa6b6a23b4ea'}
+DEBUG:pika.callback:Removing callback #1: {'callback': <bound method Channel._on_synchronous_complete of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('127.0.0.1', 64752)->('127.0.0.1', 5672) params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': True, 'only': None, 'arguments': {'consumer_tag': 'ctag1.4734608347a9467288bdfa6b6a23b4ea'}, 'calls': 0}
+DEBUG:pika.callback:Processing use of oneshot callback
+DEBUG:pika.callback:0 registered uses left
+DEBUG:pika.callback:Comparing {'consumer_tag': 'ctag1.4734608347a9467288bdfa6b6a23b4ea'} to {'consumer_tag': 'ctag1.4734608347a9467288bdfa6b6a23b4ea'}
+DEBUG:pika.callback:Removing callback #1: {'callback': <bound method Channel._on_eventok of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('127.0.0.1', 64752)->('127.0.0.1', 5672) params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': True, 'only': None, 'arguments': {'consumer_tag': 'ctag1.4734608347a9467288bdfa6b6a23b4ea'}, 'calls': 0}
+DEBUG:pika.callback:Calling <bound method _CallbackResult.signal_once of <pika.adapters.blocking_connection._CallbackResult object at 0x117f82a08>> for "1:Basic.ConsumeOk"
+DEBUG:pika.callback:Calling <bound method Channel._on_synchronous_complete of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('127.0.0.1', 64752)->('127.0.0.1', 5672) params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>>> for "1:Basic.ConsumeOk"
+DEBUG:pika.channel:0 blocked frames
+DEBUG:pika.callback:Calling <bound method Channel._on_eventok of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('127.0.0.1', 64752)->('127.0.0.1', 5672) params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>>> for "1:Basic.ConsumeOk"
+DEBUG:pika.channel:Discarding frame <METHOD(['channel_number=1', 'frame_type=1', "method=<Basic.ConsumeOk(['consumer_tag=ctag1.4734608347a9467288bdfa6b6a23b4ea'])>"])>
+DEBUG:pika.channel:Entering blocking state on frame <Basic.Consume(['arguments={}', 'consumer_tag=ctag1.f9ebb5b2459045ffa38069575274b357', 'exclusive=False', 'no_ack=True', 'no_local=False', 'nowait=False', 'queue=delete_topics', 'ticket=0'])>; acceptable_replies=[(<class 'pika.spec.Basic.ConsumeOk'>, {'consumer_tag': 'ctag1.f9ebb5b2459045ffa38069575274b357'})]
+DEBUG:pika.channel:Adding on_synchronous_complete callback
+DEBUG:pika.callback:Added: {'callback': <bound method Channel._on_synchronous_complete of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('127.0.0.1', 64752)->('127.0.0.1', 5672) params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': True, 'only': None, 'arguments': {'consumer_tag': 'ctag1.f9ebb5b2459045ffa38069575274b357'}, 'calls': 1}
+DEBUG:pika.channel:Adding passed-in callback
+DEBUG:pika.callback:Added: {'callback': <bound method Channel._on_eventok of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('127.0.0.1', 64752)->('127.0.0.1', 5672) params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': True, 'only': None, 'arguments': {'consumer_tag': 'ctag1.f9ebb5b2459045ffa38069575274b357'}, 'calls': 1}
+DEBUG:pika.callback:Processing 1:Basic.ConsumeOk
+DEBUG:pika.callback:Processing use of oneshot callback
+DEBUG:pika.callback:0 registered uses left
+DEBUG:pika.callback:Comparing {'consumer_tag': 'ctag1.f9ebb5b2459045ffa38069575274b357'} to {'consumer_tag': 'ctag1.f9ebb5b2459045ffa38069575274b357'}
+DEBUG:pika.callback:Removing callback #1: {'callback': <bound method Channel._on_synchronous_complete of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('127.0.0.1', 64752)->('127.0.0.1', 5672) params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': True, 'only': None, 'arguments': {'consumer_tag': 'ctag1.f9ebb5b2459045ffa38069575274b357'}, 'calls': 0}
+DEBUG:pika.callback:Processing use of oneshot callback
+DEBUG:pika.callback:0 registered uses left
+DEBUG:pika.callback:Comparing {'consumer_tag': 'ctag1.f9ebb5b2459045ffa38069575274b357'} to {'consumer_tag': 'ctag1.f9ebb5b2459045ffa38069575274b357'}
+DEBUG:pika.callback:Removing callback #1: {'callback': <bound method Channel._on_eventok of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('127.0.0.1', 64752)->('127.0.0.1', 5672) params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>>>, 'one_shot': True, 'only': None, 'arguments': {'consumer_tag': 'ctag1.f9ebb5b2459045ffa38069575274b357'}, 'calls': 0}
+DEBUG:pika.callback:Calling <bound method _CallbackResult.signal_once of <pika.adapters.blocking_connection._CallbackResult object at 0x117f82a08>> for "1:Basic.ConsumeOk"
+DEBUG:pika.callback:Calling <bound method Channel._on_synchronous_complete of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('127.0.0.1', 64752)->('127.0.0.1', 5672) params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>>> for "1:Basic.ConsumeOk"
+DEBUG:pika.channel:0 blocked frames
+DEBUG:pika.callback:Calling <bound method Channel._on_eventok of <Channel number=1 OPEN conn=<SelectConnection OPEN socket=('127.0.0.1', 64752)->('127.0.0.1', 5672) params=<ConnectionParameters host=localhost port=5672 virtual_host=/ ssl=False>>>> for "1:Basic.ConsumeOk"
+DEBUG:pika.channel:Discarding frame <METHOD(['channel_number=1', 'frame_type=1', "method=<Basic.ConsumeOk(['consumer_tag=ctag1.f9ebb5b2459045ffa38069575274b357'])>"])>
+INFO:root: [*] Waiting for messages. To exit press CTRL+C
+INFO:root:Received new topic, id=1505365
+INFO:root:Topic is not recommendable
+INFO:root:Received new topic, id=1505368
+INFO:root:Topic is not recommendable
+INFO:root:Received new topic, id=1505400
+DEBUG:jieba:Building prefix dict from the default dictionary ...
+DEBUG:jieba:Loading model from cache /var/folders/t2/mmgpfj4s12b7qtm523hwvphw0000gn/T/jieba.cache
+DEBUG:jieba:Loading model cost 1.150 seconds.
+DEBUG:jieba:Prefix dict has been built succesfully.
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(0 unique tokens: [])
+INFO:gensim.corpora.dictionary:built Dictionary(94 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 1 documents (total 245 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:1 topics available
+DEBUG:root:sim_matrix_len=1, sim_sorted_len=1
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1505559
+INFO:root:Topic is not recommendable
+INFO:root:Received new topic, id=1506217
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(94 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(572 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 2 documents (total 975 corpus positions)
+INFO:root:Removing old topics from the collection...
+INFO:root:1 topics available
+DEBUG:root:sim_matrix_len=0, sim_sorted_len=0
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:1 topics available
+DEBUG:root:sim_matrix_len=1, sim_sorted_len=1
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506280
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(572 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(576 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 3 documents (total 1695 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:2 topics available
+DEBUG:root:sim_matrix_len=2, sim_sorted_len=2
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1505500
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505501
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505503
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505505
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505513
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505378
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1506561
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(576 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(623 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 4 documents (total 1763 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:3 topics available
+DEBUG:root:sim_matrix_len=3, sim_sorted_len=3
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506444
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(623 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(654 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 5 documents (total 1798 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:4 topics available
+DEBUG:root:sim_matrix_len=4, sim_sorted_len=4
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506445
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(654 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(654 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 6 documents (total 1833 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:5 topics available
+DEBUG:root:sim_matrix_len=5, sim_sorted_len=5
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506447
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(654 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(654 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 7 documents (total 1868 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:6 topics available
+DEBUG:root:sim_matrix_len=6, sim_sorted_len=6
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506450
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(654 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(654 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 8 documents (total 1903 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:7 topics available
+DEBUG:root:sim_matrix_len=7, sim_sorted_len=7
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1505211
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505213
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505214
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505382
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505421
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505538
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505557
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505901
+INFO:root:Topic is not recommendable
+INFO:root:Received new topic, id=1505905
+INFO:root:Topic is not recommendable
+INFO:root:Received new topic, id=1505974
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(654 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(773 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 9 documents (total 2093 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:8 topics available
+DEBUG:root:sim_matrix_len=8, sim_sorted_len=8
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506131
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(773 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(809 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 10 documents (total 2166 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:9 topics available
+DEBUG:root:sim_matrix_len=9, sim_sorted_len=9
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506484
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(809 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(835 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 11 documents (total 2209 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:10 topics available
+DEBUG:root:sim_matrix_len=10, sim_sorted_len=10
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506486
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(835 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(858 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 12 documents (total 2250 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:11 topics available
+DEBUG:root:sim_matrix_len=11, sim_sorted_len=11
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506487
+INFO:root:Topic is not recommendable
+INFO:root:Received new topic, id=1506529
+INFO:root:Topic is not recommendable
+INFO:root:Received new topic, id=1506530
+INFO:root:Topic is not recommendable
+INFO:root:Received new topic, id=1506541
+INFO:root:Topic is not recommendable
+INFO:root:Received new topic, id=1506428
+INFO:root:Topic is not recommendable
+INFO:root:Received new topic, id=1505363
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505367
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505825
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(858 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(923 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 13 documents (total 2528 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:12 topics available
+DEBUG:root:sim_matrix_len=12, sim_sorted_len=12
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1505940
+INFO:root:Topic is not recommendable
+INFO:root:Received new topic, id=1505955
+INFO:root:Topic is not recommendable
+INFO:root:Received new topic, id=1505960
+INFO:root:Topic is not recommendable
+INFO:root:Received new topic, id=1505964
+INFO:root:Topic is not recommendable
+INFO:root:Received new topic, id=1505992
+INFO:root:Topic is not recommendable
+INFO:root:Received new topic, id=1506229
+INFO:root:Topic is not recommendable
+INFO:root:Received new topic, id=1506315
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(923 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(1107 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 14 documents (total 2882 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:13 topics available
+DEBUG:root:sim_matrix_len=13, sim_sorted_len=13
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506346
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(1107 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(1172 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 15 documents (total 3002 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:14 topics available
+DEBUG:root:sim_matrix_len=14, sim_sorted_len=14
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506365
+INFO:root:Topic is not recommendable
+INFO:root:Received new topic, id=1506366
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(1172 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(1475 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 16 documents (total 3797 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:15 topics available
+DEBUG:root:sim_matrix_len=15, sim_sorted_len=15
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506371
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(1475 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(1542 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 17 documents (total 4773 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:16 topics available
+DEBUG:root:sim_matrix_len=16, sim_sorted_len=16
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506372
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(1542 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(1542 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 18 documents (total 5745 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:17 topics available
+DEBUG:root:sim_matrix_len=17, sim_sorted_len=17
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506381
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(1542 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(1547 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 19 documents (total 5877 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:18 topics available
+DEBUG:root:sim_matrix_len=18, sim_sorted_len=18
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506383
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(1547 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(1581 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 20 documents (total 5932 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:19 topics available
+DEBUG:root:sim_matrix_len=19, sim_sorted_len=19
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506384
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(1581 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(1603 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 21 documents (total 5967 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:20 topics available
+DEBUG:root:sim_matrix_len=20, sim_sorted_len=20
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506387
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(1603 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(1631 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 22 documents (total 6096 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:21 topics available
+DEBUG:root:sim_matrix_len=21, sim_sorted_len=21
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506389
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(1631 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(1635 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 23 documents (total 6800 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:22 topics available
+DEBUG:root:sim_matrix_len=22, sim_sorted_len=22
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506398
+INFO:root:Topic is not recommendable
+INFO:root:Received new topic, id=1506402
+INFO:root:Topic is not recommendable
+INFO:root:Received new topic, id=1506403
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(1635 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(1997 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 24 documents (total 7553 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:23 topics available
+DEBUG:root:sim_matrix_len=23, sim_sorted_len=23
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506404
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(1997 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(2128 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 25 documents (total 7841 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:24 topics available
+DEBUG:root:sim_matrix_len=24, sim_sorted_len=24
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506412
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(2128 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(2220 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 26 documents (total 8091 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:25 topics available
+DEBUG:root:sim_matrix_len=25, sim_sorted_len=25
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506413
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(2220 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(2267 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 27 documents (total 8241 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:26 topics available
+DEBUG:root:sim_matrix_len=26, sim_sorted_len=26
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506416
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(2267 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(2268 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 28 documents (total 8391 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:27 topics available
+DEBUG:root:sim_matrix_len=27, sim_sorted_len=27
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506417
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(2268 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(2286 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 29 documents (total 8423 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:28 topics available
+DEBUG:root:sim_matrix_len=28, sim_sorted_len=28
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506418
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(2286 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(2331 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 30 documents (total 8528 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:29 topics available
+DEBUG:root:sim_matrix_len=29, sim_sorted_len=29
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506456
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(2331 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(2429 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 31 documents (total 8881 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:30 topics available
+DEBUG:root:sim_matrix_len=30, sim_sorted_len=30
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1505532
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505560
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505207
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1506405
+INFO:root:Topic is not recommendable
+INFO:root:Received new topic, id=1505198
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505846
+INFO:root:Topic is not recommendable
+INFO:root:Received new topic, id=1506144
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(2429 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(2495 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 32 documents (total 8982 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:31 topics available
+DEBUG:root:sim_matrix_len=31, sim_sorted_len=31
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506159
+INFO:root:Topic is not recommendable
+INFO:root:Received new topic, id=1506279
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(2495 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(2495 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 33 documents (total 9704 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:32 topics available
+DEBUG:root:sim_matrix_len=32, sim_sorted_len=32
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506423
+INFO:root:Topic is not recommendable
+INFO:root:Received new topic, id=1506427
+INFO:root:Topic is not recommendable
+INFO:root:Received new topic, id=1506466
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(2495 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(2497 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 34 documents (total 9765 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:33 topics available
+DEBUG:root:sim_matrix_len=33, sim_sorted_len=33
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506467
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(2497 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(2497 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 35 documents (total 9871 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:34 topics available
+DEBUG:root:sim_matrix_len=34, sim_sorted_len=34
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506468
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(2497 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(2498 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 36 documents (total 9979 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:35 topics available
+DEBUG:root:sim_matrix_len=35, sim_sorted_len=35
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506469
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(2498 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(2521 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 37 documents (total 10019 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:36 topics available
+DEBUG:root:sim_matrix_len=36, sim_sorted_len=36
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506470
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(2521 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(2526 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 38 documents (total 10030 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:37 topics available
+DEBUG:root:sim_matrix_len=37, sim_sorted_len=37
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506474
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(2526 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(2526 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 39 documents (total 10138 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:38 topics available
+DEBUG:root:sim_matrix_len=38, sim_sorted_len=38
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1505201
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505202
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505203
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505204
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505205
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505206
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505230
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505232
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505239
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505240
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505241
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505242
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505245
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505246
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505255
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505256
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505257
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505258
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505259
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505261
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505262
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505263
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505267
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505281
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505282
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505291
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505298
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505311
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505337
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505339
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505342
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505346
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505352
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505353
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505355
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505373
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505377
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505409
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505410
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505411
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505494
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505495
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505496
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1506473
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(2526 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(2526 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 40 documents (total 10220 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:39 topics available
+DEBUG:root:sim_matrix_len=39, sim_sorted_len=39
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506531
+INFO:root:Topic is not recommendable
+INFO:root:Received new topic, id=1506532
+INFO:root:Topic is not recommendable
+INFO:root:Received new topic, id=1506533
+INFO:root:Topic is not recommendable
+INFO:root:Received new topic, id=1506546
+INFO:root:Topic is not recommendable
+INFO:root:Received new topic, id=1505909
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(2526 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(2592 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 41 documents (total 10308 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:40 topics available
+DEBUG:root:sim_matrix_len=40, sim_sorted_len=40
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1505439
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505457
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505537
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505542
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505860
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(2592 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(2644 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 42 documents (total 10417 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:41 topics available
+DEBUG:root:sim_matrix_len=41, sim_sorted_len=41
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1505896
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(2644 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(2699 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 43 documents (total 10540 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:42 topics available
+DEBUG:root:sim_matrix_len=42, sim_sorted_len=42
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1505898
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(2699 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(2971 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 44 documents (total 11208 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:43 topics available
+DEBUG:root:sim_matrix_len=43, sim_sorted_len=43
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1505902
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(2971 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(3250 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 45 documents (total 11744 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:44 topics available
+DEBUG:root:sim_matrix_len=44, sim_sorted_len=44
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1505911
+INFO:root:Topic is not recommendable
+INFO:root:Received new topic, id=1505913
+INFO:root:Topic is not recommendable
+INFO:root:Received new topic, id=1506080
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(3250 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(3250 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 46 documents (total 11775 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:45 topics available
+DEBUG:root:sim_matrix_len=45, sim_sorted_len=45
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506251
+INFO:root:Topic is not recommendable
+INFO:root:Received new topic, id=1506373
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(3250 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(3293 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 47 documents (total 11846 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:46 topics available
+DEBUG:root:sim_matrix_len=46, sim_sorted_len=46
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506375
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(3293 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(3424 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 48 documents (total 12165 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:47 topics available
+DEBUG:root:sim_matrix_len=47, sim_sorted_len=47
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506377
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(3424 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(3469 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 49 documents (total 12299 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:48 topics available
+DEBUG:root:sim_matrix_len=48, sim_sorted_len=48
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506380
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(3469 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(3522 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 50 documents (total 12472 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:49 topics available
+DEBUG:root:sim_matrix_len=49, sim_sorted_len=49
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506414
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(3522 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(3580 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 51 documents (total 12574 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:50 topics available
+DEBUG:root:sim_matrix_len=50, sim_sorted_len=50
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506553
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(3580 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(3602 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 52 documents (total 12604 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:51 topics available
+DEBUG:root:sim_matrix_len=51, sim_sorted_len=51
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506408
+INFO:root:Topic is not recommendable
+INFO:root:Received new topic, id=1506388
+INFO:root:Topic is not recommendable
+INFO:root:Received new topic, id=1506566
+INFO:root:Topic is not recommendable
+INFO:root:Received new topic, id=1505260
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505459
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505460
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1506515
+INFO:root:Topic is not recommendable
+INFO:root:Received new topic, id=1506522
+INFO:root:Topic is not recommendable
+INFO:root:Received new topic, id=1506538
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(3602 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(3615 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 53 documents (total 12619 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:52 topics available
+DEBUG:root:sim_matrix_len=52, sim_sorted_len=52
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506548
+INFO:root:Topic is not recommendable
+INFO:root:Received new topic, id=1506472
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(3615 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(3615 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 54 documents (total 12677 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:53 topics available
+DEBUG:root:sim_matrix_len=53, sim_sorted_len=53
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506485
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(3615 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(3692 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 55 documents (total 12955 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:54 topics available
+DEBUG:root:sim_matrix_len=54, sim_sorted_len=54
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506562
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(3692 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(3777 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 56 documents (total 13179 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:55 topics available
+DEBUG:root:sim_matrix_len=55, sim_sorted_len=55
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506569
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(3777 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(3807 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 57 documents (total 13231 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:56 topics available
+DEBUG:root:sim_matrix_len=56, sim_sorted_len=56
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506544
+INFO:root:Topic is not recommendable
+INFO:root:Received new topic, id=1506545
+INFO:root:Topic is not recommendable
+INFO:root:Received new topic, id=1505957
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(3807 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(3807 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 58 documents (total 13254 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:57 topics available
+DEBUG:root:sim_matrix_len=57, sim_sorted_len=57
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1505979
+INFO:root:Topic is not recommendable
+INFO:root:Received new topic, id=1506125
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(3807 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(3828 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 59 documents (total 13299 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:58 topics available
+DEBUG:root:sim_matrix_len=58, sim_sorted_len=58
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506558
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(3828 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(3828 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 60 documents (total 13328 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:59 topics available
+DEBUG:root:sim_matrix_len=59, sim_sorted_len=59
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506559
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(3828 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(3828 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 61 documents (total 13365 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:60 topics available
+DEBUG:root:sim_matrix_len=60, sim_sorted_len=60
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506563
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(3828 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(3849 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 62 documents (total 13430 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:61 topics available
+DEBUG:root:sim_matrix_len=61, sim_sorted_len=61
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1505449
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505420
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505366
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505453
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505210
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505358
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505399
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505469
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505470
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505223
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505159
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505160
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505161
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505190
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505192
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505194
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505199
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505208
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505209
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505212
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505219
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505220
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505265
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505361
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505362
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505370
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505371
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505375
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505376
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505384
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505385
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505386
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505555
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505568
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505569
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505571
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1506061
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(3849 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(3880 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 63 documents (total 13512 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:62 topics available
+DEBUG:root:sim_matrix_len=62, sim_sorted_len=62
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506272
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(3880 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(3920 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 64 documents (total 13644 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:63 topics available
+DEBUG:root:sim_matrix_len=63, sim_sorted_len=63
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506317
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(3920 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(3947 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 65 documents (total 13706 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:64 topics available
+DEBUG:root:sim_matrix_len=64, sim_sorted_len=64
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506332
+INFO:root:Topic is not recommendable
+INFO:root:Received new topic, id=1506376
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(3947 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(3986 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 66 documents (total 13836 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:65 topics available
+DEBUG:root:sim_matrix_len=65, sim_sorted_len=65
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1505226
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505331
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505154
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505158
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505215
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505216
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505217
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505218
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505221
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505222
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505224
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505237
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505244
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505264
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505266
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505268
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505269
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505271
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505272
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505273
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505274
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505275
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505276
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505277
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505278
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505279
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505280
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505283
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505284
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505285
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505286
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505287
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505288
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505289
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505290
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505292
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505295
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505296
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505297
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505299
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505301
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505302
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505304
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505338
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505340
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505341
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505343
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505345
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505348
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505351
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505381
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505383
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505392
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505394
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505396
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505405
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505406
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505412
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505414
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505415
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505485
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505488
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505906
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(3986 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(4052 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 67 documents (total 14035 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:66 topics available
+DEBUG:root:sim_matrix_len=66, sim_sorted_len=66
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1505910
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(4052 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(4053 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 68 documents (total 14432 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:67 topics available
+DEBUG:root:sim_matrix_len=67, sim_sorted_len=67
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1505921
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(4053 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(4054 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 69 documents (total 14833 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:68 topics available
+DEBUG:root:sim_matrix_len=68, sim_sorted_len=68
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506206
+INFO:root:Topic is not recommendable
+INFO:root:Received new topic, id=1506432
+INFO:root:Topic is not recommendable
+INFO:root:Received new topic, id=1506461
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(4054 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(4066 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 70 documents (total 14853 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:69 topics available
+DEBUG:root:sim_matrix_len=69, sim_sorted_len=69
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506130
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(4066 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(4066 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 71 documents (total 14898 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:70 topics available
+DEBUG:root:sim_matrix_len=70, sim_sorted_len=70
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506182
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(4066 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(4071 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 72 documents (total 14912 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:71 topics available
+DEBUG:root:sim_matrix_len=71, sim_sorted_len=71
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506291
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(4071 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(4071 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 73 documents (total 15449 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:72 topics available
+DEBUG:root:sim_matrix_len=72, sim_sorted_len=72
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506421
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(4071 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(4072 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 74 documents (total 15582 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:73 topics available
+DEBUG:root:sim_matrix_len=73, sim_sorted_len=73
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506426
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(4072 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(4072 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 75 documents (total 15611 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:74 topics available
+DEBUG:root:sim_matrix_len=74, sim_sorted_len=74
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506433
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(4072 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(4072 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 76 documents (total 15634 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:75 topics available
+DEBUG:root:sim_matrix_len=75, sim_sorted_len=75
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506454
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(4072 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(4072 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 77 documents (total 15669 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:76 topics available
+DEBUG:root:sim_matrix_len=76, sim_sorted_len=76
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1505436
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505454
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1506455
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(4072 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(4072 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 78 documents (total 15704 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:77 topics available
+DEBUG:root:sim_matrix_len=77, sim_sorted_len=77
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506076
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(4072 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(4072 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 79 documents (total 15786 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:78 topics available
+DEBUG:root:sim_matrix_len=78, sim_sorted_len=78
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506129
+INFO:root:Topic is not recommendable
+INFO:root:Received new topic, id=1506172
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(4072 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(4072 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 80 documents (total 15830 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:79 topics available
+DEBUG:root:sim_matrix_len=79, sim_sorted_len=79
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506287
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(4072 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(4072 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 81 documents (total 15870 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:80 topics available
+DEBUG:root:sim_matrix_len=80, sim_sorted_len=80
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506292
+INFO:root:Topic is not recommendable
+INFO:root:Received new topic, id=1506453
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(4072 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(4072 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 82 documents (total 15905 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:81 topics available
+DEBUG:root:sim_matrix_len=81, sim_sorted_len=81
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506457
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(4072 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(4072 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 83 documents (total 16246 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:82 topics available
+DEBUG:root:sim_matrix_len=82, sim_sorted_len=82
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1505552
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1505556
+INFO:root:Topic is not in date range
+INFO:root:Received new topic, id=1506002
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(4072 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(4146 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 84 documents (total 16393 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:83 topics available
+DEBUG:root:sim_matrix_len=83, sim_sorted_len=83
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506074
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(4146 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(4146 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 85 documents (total 16433 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:84 topics available
+DEBUG:root:sim_matrix_len=84, sim_sorted_len=84
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506148
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(4146 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(4215 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 86 documents (total 16576 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:85 topics available
+DEBUG:root:sim_matrix_len=85, sim_sorted_len=85
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506325
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(4215 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(4227 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 87 documents (total 16615 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:86 topics available
+DEBUG:root:sim_matrix_len=86, sim_sorted_len=86
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506488
+INFO:root:Topic is not recommendable
+INFO:root:Received new topic, id=1506528
+INFO:root:Topic is not recommendable
+INFO:root:Received new topic, id=1506556
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(4227 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(4227 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 88 documents (total 16662 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:87 topics available
+DEBUG:root:sim_matrix_len=87, sim_sorted_len=87
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+INFO:root:Received new topic, id=1506557
+INFO:gensim.corpora.dictionary:adding document #0 to Dictionary(4227 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...)
+INFO:gensim.corpora.dictionary:built Dictionary(4227 unique tokens: ['东北', '中国', '中国青年报社', '主办单位', '主题']...) from 89 documents (total 16695 corpus positions)
+INFO:root:New topic has been added to the collection
+INFO:root:Collection and similarity data have been updated
+INFO:root:88 topics available
+DEBUG:root:sim_matrix_len=88, sim_sorted_len=88
+INFO:root:Corpus data saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/corpus_data
+INFO:root:Similarity matrix saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_matrix
+INFO:root:Similarity lists saved to /Users/ai/Projects/recommender-system-for-online-forums/computed_results/sim_sorted
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x117f6ba58> with deadline=1542011707.7554939 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x117f858d0>>; now=1542011677.7554939; delay=30.0
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x117f6bac8> with deadline=1542011737.761179 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x117f858d0>>; now=1542011707.761179; delay=30.0
+DEBUG:pika.heartbeat:Received heartbeat frame
+DEBUG:pika.heartbeat:Received 1 heartbeat frames, sent 2, idle intervals 0
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x117f85cf8> with deadline=1542011777.7542741 and callback=<bound method HeartbeatChecker._check_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x117f858d0>>; now=1542011712.7542741; delay=65
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x117f6ba58> with deadline=1542011767.766918 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x117f858d0>>; now=1542011737.766918; delay=30.0
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x117f85d30> with deadline=1542011797.7703161 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x117f858d0>>; now=1542011767.7703161; delay=30.0
+DEBUG:pika.heartbeat:Received heartbeat frame
+DEBUG:pika.heartbeat:Received 2 heartbeat frames, sent 4, idle intervals 0
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x117f6bac8> with deadline=1542011842.756793 and callback=<bound method HeartbeatChecker._check_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x117f858d0>>; now=1542011777.756793; delay=65
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x117f6ba58> with deadline=1542011827.773234 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x117f858d0>>; now=1542011797.773234; delay=30.0
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.heartbeat:Sending heartbeat frame
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x117f85cf8> with deadline=1542011857.775336 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x117f858d0>>; now=1542011827.775336; delay=30.0
+DEBUG:pika.heartbeat:Received heartbeat frame
+DEBUG:pika.heartbeat:Received 3 heartbeat frames, sent 6, idle intervals 0
+DEBUG:pika.adapters.select_connection:call_later: added timeout <pika.adapters.select_connection._Timeout object at 0x117f85d30> with deadline=1542011907.7605572 and callback=<bound method HeartbeatChecker._check_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x117f858d0>>; now=1542011842.7605572; delay=65

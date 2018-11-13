@@ -2,8 +2,8 @@
 import os
 
 #_ROOT              = '/home/ysqyang/Projects/recommender-system-for-online-forums'
-_ROOT              = '/usr/recommender/'
-#_ROOT              = '/Users/ai/Projects/recommender-system-for-online-forums'
+#_ROOT              = '/usr/recommender/'
+_ROOT              = '/Users/ai/Projects/recommender-system-for-online-forums'
 _COMPUTED_FOLDER   = os.path.join(_ROOT, 'computed_results')
 _LOG_FOLDER        = os.path.join(_ROOT, 'logs') 
 _SERVE_LOG_FILE    = os.path.join(_LOG_FOLDER, 'serve_log')

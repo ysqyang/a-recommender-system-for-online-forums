@@ -2,11 +2,10 @@
 
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
-import collections
+import constants as const
 import json
 import logging
 import os
-import constants as const
 
 def serve_recommendations(request):
     '''
@@ -50,3 +49,5 @@ def serve_recommendations(request):
 
     logging.info('Found %d recommendations', len(recoms))
     return JsonResponse(recoms, safe=False)
+
+print(const._ROOT)
