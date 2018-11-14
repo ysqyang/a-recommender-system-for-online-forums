@@ -2,12 +2,11 @@
 
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
-from model.source import constants as const
 import json
 import logging
 import os
 import sys
-
+from . import constants as const
 
 def serve_recommendations(request):
     '''
