@@ -37,13 +37,11 @@ def main(args):
 
     # load previously saved corpus and similarity data if possible
     if args.l:
-        if os.path.exists(const._CORPUS_DATA) \
-          and os.path.exists(const._SIMILARITY_MATRIX)  \
-          and os.path.exists(const._SIMILARITY_SORTED):
+        try:
             collection.load(const._CORPUS_DATA, const._SIMILARITY_MATRIX, 
                             const._SIMILARITY_SORTED)
-        else:
-            logging.error('Data file not found')
+        except:
+            logging.error('Data file not found or corrupted')
             sys.exit()
     
     # establish rabbitmq connection and declare queues
