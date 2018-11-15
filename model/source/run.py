@@ -17,7 +17,7 @@ from datetime import datetime
 
 def main(args):   
     logging.basicConfig(filename=const._RUN_LOG_FILE, filemode='w', 
-                        level=logging.DEBUG)
+                        level=logging.INFO)
     
     # load stopwords
     stopwords = utils.load_stopwords(const._STOPWORD_FILE)
