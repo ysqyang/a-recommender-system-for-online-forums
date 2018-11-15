@@ -12,12 +12,11 @@ import sys
 import os
 import logging
 import topics
-import argparse
 from datetime import datetime
 
-def main(args):   
+def update(load_data, read_config):   
     logging.basicConfig(filename=const._RUN_LOG_FILE, filemode='w', 
-                        level=logging.INFO)
+                        level=const._LOG_LEVEL)
     
     # load stopwords
     stopwords = utils.load_stopwords(const._STOPWORD_FILE)
@@ -36,7 +35,7 @@ def main(args):
     collection.get_dictionary()
 
     # load previously saved corpus and similarity data if possible
-    if args.l:
+    if load_data:
         try:
             collection.load(const._CORPUS_DATA, const._SIMILARITY_MATRIX, 
                             const._SIMILARITY_SORTED)
@@ -45,7 +44,7 @@ def main(args):
             sys.exit()
     
     # establish rabbitmq connection and declare queues
-    if args.c:
+    if read_config:
         if os.path.exists(const._CONFIG_FILE):
             config = utils.get_config(const._CONFIG_FILE)
             sections = config.sections()
@@ -100,7 +99,6 @@ def main(args):
         delete_topic = body
         logging.info('Deleting topic %s', delete_topic['topicID'])
         delete_id = str(delete_topic['topicID'])
-        delete_date = datetime.fromtimestamp(collection.corpus_data[delete_id]['date'])
         status = collection.delete_one(delete_id)
         if status:
             #print('after deleting: ', collection.oldest, collection.latest, delete_date)
@@ -168,24 +166,12 @@ def main(args):
                                             T=const._T,
                                             update=True, 
                                             path=const._SIMILARITIES)
-
-    '''
+    
 
 if __name__ == '__main__': 
     parser = argparse.ArgumentParser()
-    
-    #parser.add_argument('--alpha', type=float, default=0.7, 
-    #                     help='''contribution coefficient for topic content 
-    #                            in computing word weights''')
-    #parser.add_argument('--k', type=int, default=60, 
-    #                    help='number of words to represent a discussion thread')
-    #parser.add_argument('--beta', type=float, default=0.5,
-    #                    help='''contribution coefficient for in-document frequency
-    #                            in computing word probabilities''')
-    #parser.add_argument('--T', type=float, default=365, help='time attenuation factor')
-    #parser.add_argument('--smartirs', type=str, default='atn', help='type of tf-idf variants')
-
     parser.add_argument('-l', action='store_true', help='load previously saved corpus and similarity data')
     parser.add_argument('-c', action='store_true', help='load message queue connection configurations from file')   
     args = parser.parse_args()
     main(args)
+'''

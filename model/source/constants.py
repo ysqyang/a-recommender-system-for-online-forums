@@ -18,6 +18,7 @@ _PROFILE_WORDS     = os.path.join(_COMPUTED_FOLDER, 'profile_words')
 _CORPUS_DATA       = os.path.join(_COMPUTED_FOLDER, 'corpus_data')
 _SIMILARITY_MATRIX = os.path.join(_COMPUTED_FOLDER, 'sim_matrix')
 _SIMILARITY_SORTED = os.path.join(_COMPUTED_FOLDER, 'sim_sorted')
+_LOG_LEVEL         = 10
 _DB_INFO           = ('192.168.1.102','tgbweb','tgb123321','taoguba', 3307, 'utf8mb4')
 _EXCHANGE_NAME     = 'recommender'
 _DATETIME_FORMAT   = '%Y-%m-%d %H:%M:%S' 

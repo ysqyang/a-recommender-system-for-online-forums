@@ -8,3 +8,4 @@ _COMPUTED_FOLDER   = os.path.join(_ROOT, 'computed_results')
 _SIMILARITY_MATRIX = os.path.join(_COMPUTED_FOLDER, 'sim_matrix')
 _SIMILARITY_SORTED = os.path.join(_COMPUTED_FOLDER, 'sim_sorted') 
 _DUPLICATE_THRESH  = 0.5
+_LOG_LEVEL         = 40

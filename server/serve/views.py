@@ -14,7 +14,7 @@ def serve_recommendations(request):
     Given the similarity matrix, generate top_num recommendations for
     target_tid
     '''
-    logging.basicConfig(filename='log', level=logging.INFO)
+    logging.basicConfig(filename='log', level=const._LOG_LEVEL)
     
     if request.method == 'POST':
         logging.error('Method not allowed!')
