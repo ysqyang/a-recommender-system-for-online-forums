@@ -1,22 +1,24 @@
 # -*- coding: utf-8 -*-
 import os
+import sys
 
 #_ROOT              = '/home/ysqyang/Projects/recommender-system-for-online-forums/model'
-_ROOT              = os.getcwd()
+_ROOT              = os.path.dirname(sys.path[0])
 #_ROOT              = '/Users/ai/Projects/recommender-system-for-online-forums/model'
-_COMPUTED_FOLDER   = os.path.join(_ROOT, 'computed_results')
+_RESULTS_FOLDER    = os.path.join(_ROOT, 'results')
 _DATA_FOLDER       = os.path.join(_ROOT, 'data')
-_MQ_CONFIG_FILE    = os.path.join(_ROOT, 'mq.conf')
-_LOG_CONFIG_FILE   = os.path.join(_ROOT, 'logging.conf')
+_CONFIG_FOLDER     = os.path.join(_ROOT, 'config')
 _STOPWORD_FILE     = os.path.join(_ROOT, 'stopwords.txt')
+_MQ_CONFIG_FILE    = os.path.join(_CONFIG_FOLDER, 'mq.conf')
+_LOG_CONFIG_FILE   = os.path.join(_CONFIG_FOLDER, 'logging.conf')
 _TOPIC_FILE        = os.path.join(_DATA_FOLDER, 'topics')
 _REPLY_FILE        = os.path.join(_DATA_FOLDER, 'replies')
 _TMP               = os.path.join(_DATA_FOLDER, 'topics_tmp') 
-_PROFILES          = os.path.join(_COMPUTED_FOLDER, 'profiles')
-_PROFILE_WORDS     = os.path.join(_COMPUTED_FOLDER, 'profile_words')
-_CORPUS_DATA       = os.path.join(_COMPUTED_FOLDER, 'corpus_data')
-_SIMILARITY_MATRIX = os.path.join(_COMPUTED_FOLDER, 'sim_matrix')
-_SIMILARITY_SORTED = os.path.join(_COMPUTED_FOLDER, 'sim_sorted')
+#_PROFILES          = os.path.join(_RESULTS_FOLDER, 'profiles')
+#_PROFILE_WORDS     = os.path.join(_RESULTS_FOLDER, 'profile_words')
+_CORPUS_DATA       = os.path.join(_RESULTS_FOLDER, 'corpus_data')
+_SIMILARITY_MATRIX = os.path.join(_RESULTS_FOLDER, 'sim_matrix')
+_SIMILARITY_SORTED = os.path.join(_RESULTS_FOLDER, 'sim_sorted')
 _LOG_LEVEL         = 10
 _SLEEP_TIME        = 10
 _DB_INFO           = ('192.168.1.102','tgbweb','tgb123321','taoguba', 3307, 'utf8mb4')
@@ -48,3 +50,5 @@ _SINGLES           = {'一', '二', '三', '四', '五',
                       '是', '只', '就', '你', '我', 
                       '他', '她', '它', '啊', '呵',
                       '哈', '哦'}
+
+print(_ROOT)
