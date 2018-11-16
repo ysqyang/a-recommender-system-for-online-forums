@@ -2,7 +2,7 @@
 import os
 
 #_ROOT              = '/home/ysqyang/Projects/recommender-system-for-online-forums/model'
-_ROOT              = '/app/recommender/model'
+_ROOT              = os.getcwd()
 #_ROOT              = '/Users/ai/Projects/recommender-system-for-online-forums/model'
 _COMPUTED_FOLDER   = os.path.join(_ROOT, 'computed_results')
 _DATA_FOLDER       = os.path.join(_ROOT, 'data')

@@ -22,11 +22,10 @@ def main(args):
             logging.config.fileConfig(const._LOG_CONFIG_FILE)
             logger = logging.getLogger('run')
             break
-        except:
-            except FileNotFoundError:
-                logger.error('Logging configuration file not found')
-            except Exception as e:
-                logger.error(e)
+        except FileNotFoundError:
+            logger.error('Logging configuration file not found')
+        except Exception as e:
+            logger.error(e)
 
     # load stopwords
     stopwords = utils.load_stopwords(const._STOPWORD_FILE)
