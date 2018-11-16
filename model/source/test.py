@@ -37,10 +37,12 @@ with open(const._TOPIC_FILE, 'r') as f:
 
 for tid, info in topics.items():
     t = datetime.strptime(info['POSTDATE'], const._DATETIME_FORMAT)
-    topics[tid] = {'postDate': time.mktime(t.timetuple()),
+    topics[tid] = {'postDate': time.mktime(t.timetuple())*1000,
                    'body': info['body']}
 
-for tid in topics:
+tids = sorted(list(topics.keys()), reverse=True)
+
+for tid in tids:
     rec = topics[tid]
     rec['topicID'] = tid
     msg = json.dumps(rec)

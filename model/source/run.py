@@ -11,79 +11,80 @@ import constants as const
 import sys
 import os
 import logging
-import topics
+import classes
 from datetime import datetime
+import time
+import argparse
 
-def update(load_data, read_config):   
-    logging.basicConfig(filename=const._RUN_LOG_FILE, filemode='w', 
-                        level=const._LOG_LEVEL)
-    
+def main(args):  
+    while True:
+        try:
+            logging.config.fileConfig(const._LOG_CONFIG_FILE)
+            logger = logging.getLogger('run')
+            break
+        except:
+            except FileNotFoundError:
+                logger.error('Logging configuration file not found')
+            except Exception as e:
+                logger.error(e)
+
     # load stopwords
     stopwords = utils.load_stopwords(const._STOPWORD_FILE)
-    collection = topics.Topics(puncs             = const._PUNCS, 
-                               singles           = const._SINGLES, 
-                               stopwords         = stopwords, 
-                               punc_frac_low     = const._PUNC_FRAC_LOW,
-                               punc_frac_high    = const._PUNC_FRAC_HIGH, 
-                               valid_count       = const._VALID_COUNT, 
-                               valid_ratio       = const._VALID_RATIO,
-                               trigger_days      = const._TRIGGER_DAYS,
-                               keep_days         = const._KEEP_DAYS, 
-                               T                 = const._T,
-                               irrelevant_thresh = const._IRRELEVANT_THRESH)
+    collection = classes.Topics(puncs             = const._PUNCS, 
+                                singles           = const._SINGLES, 
+                                stopwords         = stopwords, 
+                                punc_frac_low     = const._PUNC_FRAC_LOW,
+                                punc_frac_high    = const._PUNC_FRAC_HIGH, 
+                                valid_count       = const._VALID_COUNT, 
+                                valid_ratio       = const._VALID_RATIO,
+                                trigger_days      = const._TRIGGER_DAYS,
+                                keep_days         = const._KEEP_DAYS, 
+                                T                 = const._T,
+                                irrelevant_thresh = const._IRRELEVANT_THRESH, 
+                                logger            = logging.getLogger('run.topics'))
 
     collection.get_dictionary()
 
     # load previously saved corpus and similarity data if possible
-    if load_data:
+    if args.l:
         try:
             collection.load(const._CORPUS_DATA, const._SIMILARITY_MATRIX, 
                             const._SIMILARITY_SORTED)
         except:
-            logging.error('Data file not found or corrupted')
-            sys.exit()
+            logger.error('Data files not found or corrupted. New files will be created')
     
     # establish rabbitmq connection and declare queues
-    if read_config:
-        if os.path.exists(const._CONFIG_FILE):
-            config = utils.get_config(const._CONFIG_FILE)
-            sections = config.sections()
-            if len(sections) == 0:
-                logging.error('Configuration file is empty')
-                sys.exit()
+    if args.c:
+        while True:
+            try:
+                config = utils.get_config(const._MQ_CONFIG_FILE)
+                sections = config.sections()
+                sec = sections[0]
+                
+                credentials = pika.PlainCredentials(username=config[sec]['username'],
+                                                    password=config[sec]['password'])
+                
+                params = pika.ConnectionParameters(host=config[sec]['host'], 
+                                                   credentials=credentials)
+                break
+            except FileNotFoundError:
+                logger.error('Rabbitmq configuration file not found')
+            except IndexError:
+                logger.error('Rabbitmq configuration file is empty')
+            except KeyError:
+                logger.error('''Rabbitmq configuration file must use 'username', 
+                                'password' and 'host' as keys''')
 
-            sec = sections[0]
-            
-            credentials = pika.PlainCredentials(username=config[sec]['username'],
-                                                password=config[sec]['password'])
-            
-            params = pika.ConnectionParameters(host=config[sec]['host'], 
-                                               credentials=credentials)
-        else:
-            logging.error('Configuration file not found')
-            sys.exit()
-    
     else:
         params = pika.ConnectionParameters(host='localhost')
-    
-    connection = pika.BlockingConnection(params)
-    channel = connection.channel()
-    channel.exchange_declare(exchange=const._EXCHANGE_NAME, exchange_type='direct')
-  
-    channel.queue_declare(queue='new_topics')
-    channel.queue_declare(queue='delete_topics')
-    #channel.queue_declare(queue='update_topics')   
-    channel.queue_bind(exchange=const._EXCHANGE_NAME, queue='new_topics', routing_key='new')
-    channel.queue_bind(exchange=const._EXCHANGE_NAME, queue='delete_topics', routing_key='delete')
-    #channel.queue_bind(exchange=const._EXCHANGE_NAME, queue='update_topics', routing_key='update')
-    
+            
     def on_new_topic(ch, method, properties, body):
         while type(body) != dict:
             body = json.loads(body)
         
         new_topic = body
         new_topic['postDate'] /= const._TIMESTAMP_FACTOR
-        logging.info('Received new topic, id=%s', new_topic['topicID'])
+        logger.info('Received new topic, id=%s', new_topic['topicID'])
 
         status = collection.add_one(new_topic)
 
@@ -97,7 +98,7 @@ def update(load_data, read_config):
             body = json.loads(body)
 
         delete_topic = body
-        logging.info('Deleting topic %s', delete_topic['topicID'])
+        logger.info('Deleting topic %s', delete_topic['topicID'])
         delete_id = str(delete_topic['topicID'])
         status = collection.delete_one(delete_id)
         if status:
@@ -111,7 +112,7 @@ def update(load_data, read_config):
             body = json.loads(body)
 
         subject_dict = body
-        logging.info('Updating recommendations for subject %s', subject_dict['subID'])
+        logger.info('Updating recommendations for subject %s', subject_dict['subID'])
         keyword_weight
         recoms = collection.get_topics_by_keywords(keyword_weight)
     
@@ -123,20 +124,30 @@ def update(load_data, read_config):
                 topic_dict[topic_id][attr] = update_topic[attr]
         utils.save_topics(topic_dict, const._TOPIC_FILE)
     '''   
-    channel.basic_consume(on_new_topic,
-                          queue='new_topics',
-                          no_ack=True)
-    channel.basic_consume(on_delete, 
-                          queue='delete_topics',
-                          no_ack=True)
+    while True:       
+        try:
+            connection = pika.BlockingConnection(params)
+            channel = connection.channel()
+            channel.exchange_declare(exchange=const._EXCHANGE_NAME, exchange_type='direct')
+          
+            channel.queue_declare(queue='new_topics')
+            channel.queue_declare(queue='delete_topics')
+            #channel.queue_declare(queue='update_topics')   
+            channel.queue_bind(exchange=const._EXCHANGE_NAME, queue='new_topics', routing_key='new')
+            channel.queue_bind(exchange=const._EXCHANGE_NAME, queue='delete_topics', routing_key='delete')
+            #channel.queue_bind(exchange=const._EXCHANGE_NAME, queue='update_topics', routing_key='update')
+            channel.basic_consume(on_new_topic, queue='new_topics')
+            channel.basic_consume(on_delete, queue='delete_topics')
 
-    '''
-    channel.basic_consume(on_update_topic, 
-                          queue='update_topics',
-                          no_ack=True)
-    '''    
-    logging.info(' [*] Waiting for messages. To exit press CTRL+C')
-    channel.start_consuming()
+            '''
+            channel.basic_consume(on_update_topic, queue='update_topics')                                  
+            '''    
+            logger.info(' [*] Waiting for messages. To exit press CTRL+C')
+            channel.start_consuming()
+        
+        except Exception as e:
+            logger.error(e)
+            time.sleep(const._SLEEP_TIME)
 
     '''
     word_weights = tp.compute_profiles(topic_ids=topic_ids,  
@@ -167,11 +178,10 @@ def update(load_data, read_config):
                                             update=True, 
                                             path=const._SIMILARITIES)
     
-
+'''
 if __name__ == '__main__': 
     parser = argparse.ArgumentParser()
     parser.add_argument('-l', action='store_true', help='load previously saved corpus and similarity data')
     parser.add_argument('-c', action='store_true', help='load message queue connection configurations from file')   
     args = parser.parse_args()
     main(args)
-'''

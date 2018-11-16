@@ -10,7 +10,6 @@ from collections import defaultdict
 import math
 import json
 import jieba
-import logging
 from scipy import stats
 import re
 from datetime import datetime, timedelta
@@ -19,9 +18,9 @@ class Topics(object):
     '''
     Corpus collection
     '''
-    def __init__(self, puncs, singles, stopwords, punc_frac_low, 
-                 punc_frac_high, valid_count, valid_ratio, 
-                 trigger_days, keep_days, T, irrelevant_thresh):
+    def __init__(self, puncs, singles, stopwords, punc_frac_low, punc_frac_high,  
+                 valid_count, valid_ratio, trigger_days, keep_days, T, 
+                 irrelevant_thresh, logger):
         self.corpus_data = {}
         self.sim_matrix = defaultdict(dict)
         self.sim_sorted = defaultdict(list)
@@ -38,6 +37,7 @@ class Topics(object):
         self.keep_days = keep_days
         self.T = T
         self.irrelevant_thresh = irrelevant_thresh
+        self.logger = logger
 
     def preprocess(self, text):
         '''
@@ -94,14 +94,14 @@ class Topics(object):
              open(sim_sorted_path, 'r') as f3:  
             
             self.corpus_data = json.load(f1)
-            logging.info('Corpus data loaded to memory')      
+            self.logger.info('Corpus data loaded to memory')      
             self.sim_matrix = json.load(f2)
-            logging.info('Similarity matrix loaded to memory') 
+            self.logger.info('Similarity matrix loaded to memory') 
             self.sim_sorted = json.load(f3)
-            logging.info('Similarity lists loaded to memory')
+            self.logger.info('Similarity lists loaded to memory')
 
         self.check_correctness()
-        logging.info('%d topics available', len(self.corpus_data))
+        self.logger.info('%d topics available', len(self.corpus_data))
         self.get_dictionary()
         int_tids = [int(tid) for tid in self.corpus_data]
         min_tid, max_tid = min(int_tids), max(int_tids)
@@ -125,7 +125,7 @@ class Topics(object):
         '''
         Removes all topics posted before date specified by cut_off 
         '''
-        logging.info('Removing old topics from the collection...')
+        self.logger.info('Removing old topics from the collection...')
         delete_tids = []
         for tid, info in self.corpus_data.items():
             if datetime.fromtimestamp(info['date']) < cut_off:
@@ -147,17 +147,17 @@ class Topics(object):
         min_tid = min(int(tid) for tid in self.corpus_data)
         oldest_stmp = self.corpus_data[str(min_tid)]['date'] 
         self.oldest = datetime.fromtimestamp(oldest_stmp)
-        logging.info('%d topics available', len(self.corpus_data))
+        self.logger.info('%d topics available', len(self.corpus_data))
   
     def add_one(self, topic, truncate=True):
         new_date = datetime.fromtimestamp(topic['postDate'])
         if (self.latest - new_date).days > self.trigger_days:
-            logging.info('Topic is not in date range')
+            self.logger.info('Topic is not in date range')
             return False
 
         word_list = self.preprocess(' '.join(topic['body'].split()))
         if word_list is None: # ignore invalid topics
-            logging.info('Topic is not recommendable')
+            self.logger.info('Topic is not recommendable')
             return False
 
         self.dictionary.add_documents([word_list])
@@ -194,10 +194,10 @@ class Topics(object):
                                           key=lambda x:x[1], reverse=True)
                      
         assert (self.latest - self.oldest).days <= self.trigger_days
-        logging.info('New topic has been added to the collection')
-        logging.info('Collection and similarity data have been updated')
-        logging.info('%d topics available', len(self.corpus_data))
-        logging.debug('sim_matrix_len=%d, sim_sorted_len=%d', 
+        self.logger.info('New topic has been added to the collection')
+        self.logger.info('Collection and similarity data have been updated')
+        self.logger.info('%d topics available', len(self.corpus_data))
+        self.logger.debug('sim_matrix_len=%d, sim_sorted_len=%d', 
                       len(self.sim_matrix), len(self.sim_sorted))
 
         return True
@@ -205,7 +205,7 @@ class Topics(object):
     def delete_one(self, topic_id):       
         topic_id = str(topic_id)
         if topic_id not in self.corpus_data:
-            logging.warning('Topic not found in collection')
+            self.logger.warning('Topic not found in collection')
             return False 
 
         delete_date = datetime.fromtimestamp(self.corpus_data[topic_id]['date'])
@@ -233,11 +233,11 @@ class Topics(object):
                 latest_stmp = self.corpus_data[str(max_tid)]['date']
                 self.latest = datetime.fromtimestamp(latest_stmp)
 
-        logging.info('Topic %s has been deleted from the collection', topic_id)
-        logging.info('Collection and similarity data have been updated')
-        logging.info('%d topics remaining', len(self.corpus_data))
-        logging.debug('corpus_size=%d', len(self.corpus_data))
-        logging.debug('sim_matrix_len=%d, sim_sorted_len=%d', 
+        self.logger.info('Topic %s has been deleted from the collection', topic_id)
+        self.logger.info('Collection and similarity data have been updated')
+        self.logger.info('%d topics remaining', len(self.corpus_data))
+        self.logger.debug('corpus_size=%d', len(self.corpus_data))
+        self.logger.debug('sim_matrix_len=%d, sim_sorted_len=%d', 
                       len(self.sim_matrix), len(self.sim_sorted))
 
         return True
@@ -255,11 +255,11 @@ class Topics(object):
              open(sim_matrix_path, 'w') as f2,  \
              open(sim_sorted_path, 'w') as f3:
             json.dump(self.corpus_data, f1)
-            logging.info('Corpus data saved to %s', corpus_data_path)
+            self.logger.info('Corpus data saved to %s', corpus_data_path)
             json.dump(self.sim_matrix, f2)
-            logging.info('Similarity matrix saved to %s', sim_matrix_path)
+            self.logger.info('Similarity matrix saved to %s', sim_matrix_path)
             json.dump(self.sim_sorted, f3)
-            logging.info('Similarity lists saved to %s', sim_sorted_path)
+            self.logger.info('Similarity lists saved to %s', sim_sorted_path)
 
 class Subjects(object):
     '''
@@ -290,14 +290,14 @@ class Subjects(object):
              open(sim_sorted_path, 'r') as f3:  
             
             self.corpus_data = json.load(f1)
-            logging.info('Corpus data loaded to memory')      
+            self.logger.info('Corpus data loaded to memory')      
             self.sim_matrix = json.load(f2)
-            logging.info('Similarity matrix loaded to memory') 
+            self.logger.info('Similarity matrix loaded to memory') 
             self.sim_sorted = json.load(f3)
-            logging.info('Similarity lists loaded to memory')
+            self.logger.info('Similarity lists loaded to memory')
 
         self.check_correctness()
-        logging.info('%d topics available', len(self.corpus_data))
+        self.logger.info('%d topics available', len(self.corpus_data))
         self.get_dictionary()
         int_tids = [int(tid) for tid in self.corpus_data]
         min_tid, max_tid = min(int_tids), max(int_tids)
@@ -313,7 +313,7 @@ class Subjects(object):
         '''
         Removes all topics posted before date specified by cut_off 
         '''
-        logging.info('Removing old topics from the collection...')
+        self.logger.info('Removing old topics from the collection...')
         delete_tids = []
         for tid, info in self.corpus_data.items():
             if datetime.fromtimestamp(info['date']) < cut_off:
@@ -335,17 +335,17 @@ class Subjects(object):
         min_tid = min(int(tid) for tid in self.corpus_data)
         oldest_stmp = self.corpus_data[str(min_tid)]['date'] 
         self.oldest = datetime.fromtimestamp(oldest_stmp)
-        logging.info('%d topics available', len(self.corpus_data))
+        self.logger.info('%d topics available', len(self.corpus_data))
   
     def add_one(self, topic, truncate=True):
         new_date = datetime.fromtimestamp(topic['postDate'])
         if (self.latest - new_date).days > self.trigger_days:
-            logging.info('Topic is not in date range')
+            self.logger.info('Topic is not in date range')
             return False
 
         word_list = self.preprocess(' '.join(topic['body'].split()))
         if word_list is None: # ignore invalid topics
-            logging.info('Topic is not recommendable')
+            self.logger.info('Topic is not recommendable')
             return False
 
         self.dictionary.add_documents([word_list])
@@ -382,10 +382,10 @@ class Subjects(object):
                                           key=lambda x:x[1], reverse=True)
                      
         assert (self.latest - self.oldest).days <= self.trigger_days
-        logging.info('New topic has been added to the collection')
-        logging.info('Collection and similarity data have been updated')
-        logging.info('%d topics available', len(self.corpus_data))
-        logging.debug('sim_matrix_len=%d, sim_sorted_len=%d', 
+        self.logger.info('New topic has been added to the collection')
+        self.logger.info('Collection and similarity data have been updated')
+        self.logger.info('%d topics available', len(self.corpus_data))
+        self.logger.debug('sim_matrix_len=%d, sim_sorted_len=%d', 
                       len(self.sim_matrix), len(self.sim_sorted))
 
         return True
@@ -393,7 +393,7 @@ class Subjects(object):
     def delete_one(self, topic_id):       
         topic_id = str(topic_id)
         if topic_id not in self.corpus_data:
-            logging.warning('Topic not found in collection')
+            self.logger.warning('Topic not found in collection')
             return False 
 
         delete_date = datetime.fromtimestamp(self.corpus_data[topic_id]['date'])
@@ -421,11 +421,11 @@ class Subjects(object):
                 latest_stmp = self.corpus_data[str(max_tid)]['date']
                 self.latest = datetime.fromtimestamp(latest_stmp)
 
-        logging.info('Topic %s has been deleted from the collection', topic_id)
-        logging.info('Collection and similarity data have been updated')
-        logging.info('%d topics remaining', len(self.corpus_data))
-        logging.debug('corpus_size=%d', len(self.corpus_data))
-        logging.debug('sim_matrix_len=%d, sim_sorted_len=%d', 
+        self.logger.info('Topic %s has been deleted from the collection', topic_id)
+        self.logger.info('Collection and similarity data have been updated')
+        self.logger.info('%d topics remaining', len(self.corpus_data))
+        self.logger.debug('corpus_size=%d', len(self.corpus_data))
+        self.logger.debug('sim_matrix_len=%d, sim_sorted_len=%d', 
                       len(self.sim_matrix), len(self.sim_sorted))
 
         return True
@@ -443,8 +443,8 @@ class Subjects(object):
              open(sim_matrix_path, 'w') as f2,  \
              open(sim_sorted_path, 'w') as f3:
             json.dump(self.corpus_data, f1)
-            logging.info('Corpus data saved to %s', corpus_data_path)
+            self.logger.info('Corpus data saved to %s', corpus_data_path)
             json.dump(self.sim_matrix, f2)
-            logging.info('Similarity matrix saved to %s', sim_matrix_path)
+            self.logger.info('Similarity matrix saved to %s', sim_matrix_path)
             json.dump(self.sim_sorted, f3)
-            logging.info('Similarity lists saved to %s', sim_sorted_path)
+            self.logger.info('Similarity lists saved to %s', sim_sorted_path)

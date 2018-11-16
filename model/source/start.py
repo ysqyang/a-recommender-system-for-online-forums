@@ -5,7 +5,10 @@ import sys
 import logging
 
 def main(args):
-    run.update(args.l, args.c)
+    try:
+        run.update(args.l, args.c)
+    except:
+        
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
