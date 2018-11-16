@@ -3,7 +3,6 @@
 from django.shortcuts import render
 from django.http import JsonResponse
 import json
-import logging
 import os
 import sys
 from datetime import datetime
@@ -14,17 +13,14 @@ def serve_recommendations(request):
     Given the similarity matrix, generate top_num recommendations for
     target_tid
     '''
-    logging.basicConfig(filename='log', level=const._LOG_LEVEL)
-    
     if request.method == 'POST':
-        logging.error('Method not allowed!')
         return JsonResponse({'status': True,
                              'errorCode': 1,
                              'errorMessage': 'Method not allowed!',
                              'dto': {'list':[]},
                              '_t': datetime.now().timestamp()})
 
-    print(request.GET)
+    #print(request.GET)
 
     try:               
         with open(const._SIMILARITY_MATRIX, 'r') as f1,  \
@@ -41,7 +37,6 @@ def serve_recommendations(request):
     target_tid = str(request.GET['topicID'])
   
     if target_tid not in sim_sorted:
-        logging.info('Nothing to recommend')
         return JsonResponse({'status': True,
                              'errorCode': 0,
                              'errorMessage': '',
@@ -60,7 +55,6 @@ def serve_recommendations(request):
             if len(recoms) == const._TOP_NUM:
                 break
 
-    logging.info('Found %d recommendations', len(recoms))
     return JsonResponse({'status': True,
                          'errorCode': 0,
                          'errorMessage': '',
