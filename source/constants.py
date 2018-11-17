@@ -2,9 +2,7 @@
 import os
 import sys
 
-#_ROOT              = '/home/ysqyang/Projects/recommender-system-for-online-forums/model'
 _ROOT              = os.path.dirname(sys.path[0])
-#_ROOT              = '/Users/ai/Projects/recommender-system-for-online-forums/model'
 _RESULTS_FOLDER    = os.path.join(_ROOT, 'results')
 _DATA_FOLDER       = os.path.join(_ROOT, 'data')
 _CONFIG_FOLDER     = os.path.join(_ROOT, 'config')
@@ -12,8 +10,7 @@ _STOPWORD_FILE     = os.path.join(_ROOT, 'stopwords.txt')
 _MQ_CONFIG_FILE    = os.path.join(_CONFIG_FOLDER, 'mq.conf')
 _LOG_CONFIG_FILE   = os.path.join(_CONFIG_FOLDER, 'logging.conf')
 _TOPIC_FILE        = os.path.join(_DATA_FOLDER, 'topics')
-_REPLY_FILE        = os.path.join(_DATA_FOLDER, 'replies')
-_TMP               = os.path.join(_DATA_FOLDER, 'topics_tmp') 
+_REPLY_FILE        = os.path.join(_DATA_FOLDER, 'replies') 
 #_PROFILES          = os.path.join(_RESULTS_FOLDER, 'profiles')
 #_PROFILE_WORDS     = os.path.join(_RESULTS_FOLDER, 'profile_words')
 _CORPUS_DATA       = os.path.join(_RESULTS_FOLDER, 'corpus_data')
@@ -50,5 +47,3 @@ _SINGLES           = {'一', '二', '三', '四', '五',
                       '是', '只', '就', '你', '我', 
                       '他', '她', '它', '啊', '呵',
                       '哈', '哦'}
-
-print(_ROOT)
