@@ -36,7 +36,7 @@ def main(args):
                                 punc_frac_high    = const._PUNC_FRAC_HIGH, 
                                 valid_count       = const._VALID_COUNT, 
                                 valid_ratio       = const._VALID_RATIO,
-                                trigger_days      = const._TRIGGER_DAYS,
+                                #trigger_days      = const._TRIGGER_DAYS,
                                 keep_days         = const._KEEP_DAYS, 
                                 T                 = const._T,
                                 irrelevant_thresh = const._IRRELEVANT_THRESH, 

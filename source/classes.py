@@ -18,9 +18,9 @@ class Topics(object):
     '''
     Corpus collection
     '''
-    def __init__(self, puncs, singles, stopwords, punc_frac_low, punc_frac_high,  
-                 valid_count, valid_ratio, trigger_days, keep_days, T, 
-                 irrelevant_thresh, logger):
+    def __init__(self, puncs, singles, stopwords, punc_frac_low, 
+                 punc_frac_high, valid_count, valid_ratio, keep_days, 
+                 T, irrelevant_thresh, logger):
         self.corpus_data = {}
         self.sim_matrix = defaultdict(dict)
         self.sim_sorted = defaultdict(list)
@@ -33,7 +33,7 @@ class Topics(object):
         self.punc_frac_high = punc_frac_high
         self.valid_count = valid_count
         self.valid_ratio = valid_ratio
-        self.trigger_days = trigger_days
+        #self.trigger_days = trigger_days
         self.keep_days = keep_days
         self.T = T
         self.irrelevant_thresh = irrelevant_thresh
@@ -151,7 +151,7 @@ class Topics(object):
   
     def add_one(self, topic, truncate=True):
         new_date = datetime.fromtimestamp(topic['postDate'])
-        if (self.latest - new_date).days > self.trigger_days:
+        if (self.latest - new_date).days > self.keep_days:
             self.logger.info('Topic is not in date range')
             return False
 
@@ -171,7 +171,7 @@ class Topics(object):
         self.oldest = min(self.oldest, new_date)
         self.latest = max(self.latest, new_date)
 
-        if truncate and (self.latest - self.oldest).days > self.trigger_days:
+        if truncate and (self.latest - self.oldest).days > self.keep_days:
             self.remove_old(self.latest - timedelta(days=self.keep_days))
 
         def sim_insert(sim_list, target_tid, target_sim_val):
@@ -193,12 +193,12 @@ class Topics(object):
         self.sim_sorted[new_tid] = sorted(self.sim_matrix[new_tid].items(), 
                                           key=lambda x:x[1], reverse=True)
                      
-        assert (self.latest - self.oldest).days <= self.trigger_days
+        assert (self.latest - self.oldest).days <= self.keep_days
         self.logger.info('New topic has been added to the collection')
         self.logger.info('Collection and similarity data have been updated')
         self.logger.info('%d topics available', len(self.corpus_data))
         self.logger.debug('sim_matrix_len=%d, sim_sorted_len=%d', 
-                      len(self.sim_matrix), len(self.sim_sorted))
+                          len(self.sim_matrix), len(self.sim_sorted))
 
         return True
 
@@ -266,7 +266,7 @@ class Subjects(object):
     '''
     def __init__(self, puncs, singles, stopwords, punc_frac_low, 
                  punc_frac_high, valid_count, valid_ratio, 
-                 trigger_days, keep_days, T, irrelevant_thresh):
+                 keep_days, T, irrelevant_thresh):
         self.corpus_data = {}
         self.recom_topics = defaultdict(list)
         self.oldest = datetime.max
@@ -321,13 +321,41 @@ class Subjects(object):
         self.oldest = datetime.fromtimestamp(self.corpus_data[str(min_tid)]['date'])
         self.latest = datetime.fromtimestamp(self.corpus_data[str(max_tid)]['date'])
   
-    def get_model(self):
+    def get_tfidf(self):
         corpus_bow = [info['bow'] for info in self.corpus_data.values()]
         model = models.TfidfModel(corpus_bow, smartirs=self.scheme)
+        return [model[bow] for bow in corpus_bow]
+
+    def remove_old(self, cut_off):
+        '''
+        Removes all topics posted before date specified by cut_off 
+        '''
+        self.logger.info('Removing old subjects from the collection...')
+        delete_tids = []
+        for tid, info in self.corpus_data.items():
+            if datetime.fromtimestamp(info['date']) < cut_off:
+                delete_tids.append(tid)
+
+        for delete_tid in delete_tids:
+            del self.corpus_data[delete_tid]
+            del self.recom_list[delete_tid]
+        
+        for sim_dict in self.sim_matrix.values():
+            for delete_tid in delete_tids:
+                if delete_tid in sim_dict:
+                    del sim_dict[delete_tid]
+
+        for tid, sim_list in self.sim_sorted.items():
+            self.sim_sorted[tid] = [x for x in sim_list if x[0] not in delete_tids]
+        
+        min_tid = min(int(tid) for tid in self.corpus_data)
+        oldest_stmp = self.corpus_data[str(min_tid)]['date'] 
+        self.oldest = datetime.fromtimestamp(oldest_stmp)
+        self.logger.info('%d topics available', len(self.corpus_data))
 
     def add_one(self, subject, truncate=True):
         new_date = datetime.fromtimestamp(subject['postDate'])
-        if (self.latest - new_date).days > self.trigger_days:
+        if (self.latest - new_date).days > self.keep_days:
             self.logger.info('Subject is not in date range')
             return False
 
@@ -347,7 +375,7 @@ class Subjects(object):
         if truncate and (self.latest - self.oldest).days > self.keep_days:
             self.remove_old(self.latest - timedelta(days=self.keep_days))
                      
-        assert (self.latest - self.oldest).days <= self.trigger_days
+        assert (self.latest - self.oldest).days <= self.keep_days
         self.logger.info('New subject has been added to the collection')
         self.logger.info('Collection and recommendation data have been updated')
         self.logger.info('%d subjects available', len(self.corpus_data))
