@@ -38,19 +38,36 @@ for tid, info in topics.items():
     topics[tid] = {'postDate': time.mktime(t.timetuple())*1000,
                    'body': info['body']}
 
-tids = sorted(list(topics.keys()), reverse=True)
+tids = sorted(list(topics.keys()))
+#print(tids)
 
 for tid in tids:
-    rec = topics[tid]
-    rec['topicID'] = tid
-    msg = json.dumps(rec)
-    channel.basic_publish(exchange=const._EXCHANGE_NAME,
-                          routing_key='new',
-                          body=msg)
+    if int(tid) < 1506080:
+      rec = topics[tid]
+      rec['topicID'] = tid
+      msg = json.dumps(rec)
+      #print(msg)
+      channel.basic_publish(exchange=const._EXCHANGE_NAME,
+                            routing_key='new',
+                            body=msg)
 
-#channel.basic_publish(exchange=const._EXCHANGE_NAME,
-#                      routing_key='delete',
-#                      body=msg2)
+
+delete = {'topicID': 1506279}
+msg = json.dumps(delete)
+channel.basic_publish(exchange=const._EXCHANGE_NAME,
+                      routing_key='delete',
+                      body=msg)
+
+for tid in tids:
+    if int(tid) >= 1506080:
+      rec = topics[tid]
+      rec['topicID'] = tid
+      msg = json.dumps(rec)
+      #print(msg)
+      channel.basic_publish(exchange=const._EXCHANGE_NAME,
+                            routing_key='new',
+                            body=msg)
+
 
 connection.close()
 '''

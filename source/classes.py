@@ -155,13 +155,17 @@ class Topics(object):
             self.logger.info('Topic is not in date range')
             return False
 
+        new_tid = str(topic['topicID'])
+        if new_tid in self.corpus_data:
+            self.logger.warning('Topic already exists in the collection')
+            return False
+
         word_list = self.preprocess(' '.join(topic['body'].split()))
         if word_list is None: # ignore invalid topics
             self.logger.info('Topic is not recommendable')
             return False
 
         self.dictionary.add_documents([word_list])
-        new_tid = str(topic['topicID'])
         bow = self.dictionary.doc2bow(word_list)
 
         self.corpus_data[new_tid] = {'date': topic['postDate'],

@@ -10,25 +10,29 @@ import pika
 import constants as const
 import sys
 import os
-import logging
 import classes
 from datetime import datetime
 import time
 import argparse
+import log_config
+import mq_config
 
 def main(args):  
     while True:
         try:
-            logging.config.fileConfig(const._LOG_CONFIG_FILE)
-            logger = logging.getLogger('run')
+            logger = utils.get_logger(name           = log_config._NAME, 
+                                      logger_level   = log_config._LOGGER_LEVEL, 
+                                      handler_levels = log_config._LEVELS,
+                                      log_dir        = log_config._LOG_DIR, 
+                                      mode           = log_config._MODE, 
+                                      log_format     = log_config._LOG_FORMAT)
             break
-        except FileNotFoundError:
-            logger.error('Logging configuration file not found')
         except Exception as e:
             logger.error(e)
 
     # load stopwords
     stopwords = utils.load_stopwords(const._STOPWORD_FILE)
+
     collection = classes.Topics(puncs             = const._PUNCS, 
                                 singles           = const._SINGLES, 
                                 stopwords         = stopwords, 
@@ -36,11 +40,11 @@ def main(args):
                                 punc_frac_high    = const._PUNC_FRAC_HIGH, 
                                 valid_count       = const._VALID_COUNT, 
                                 valid_ratio       = const._VALID_RATIO,
-                                #trigger_days      = const._TRIGGER_DAYS,
+                                trigger_days      = const._TRIGGER_DAYS,
                                 keep_days         = const._KEEP_DAYS, 
                                 T                 = const._T,
                                 irrelevant_thresh = const._IRRELEVANT_THRESH, 
-                                logger            = logging.getLogger('run.topics'))
+                                logger            = logger)
 
     collection.get_dictionary()
 
@@ -56,24 +60,14 @@ def main(args):
     if args.c:
         while True:
             try:
-                config = utils.get_config(const._MQ_CONFIG_FILE)
-                sections = config.sections()
-                sec = sections[0]
+                credentials = pika.PlainCredentials(username=mq_config._USERNAME,
+                                                    password=mq_config._PASSWORD)
                 
-                credentials = pika.PlainCredentials(username=config[sec]['username'],
-                                                    password=config[sec]['password'])
-                
-                params = pika.ConnectionParameters(host=config[sec]['host'], 
+                params = pika.ConnectionParameters(host       =mq_config._HOST, 
                                                    credentials=credentials)
                 break
-            except FileNotFoundError:
-                logger.error('Rabbitmq configuration file not found')
-            except IndexError:
-                logger.error('Rabbitmq configuration file is empty')
-            except KeyError:
-                logger.error('''Rabbitmq configuration file must use 'username', 
-                                'password' and 'host' as keys''')
-
+            except Exception as e:
+                logger.error(e)
     else:
         params = pika.ConnectionParameters(host='localhost')
             
@@ -85,12 +79,11 @@ def main(args):
         new_topic['postDate'] /= const._TIMESTAMP_FACTOR
         logger.info('Received new topic, id=%s', new_topic['topicID'])
 
-        status = collection.add_one(new_topic)
-
-        if status:
+        if collection.add_one(new_topic):
             #print('after adding: ', collection.oldest, collection.latest, datetime.fromtimestamp(new_topic['postDate']))
             collection.save(const._CORPUS_DATA, const._SIMILARITY_MATRIX, 
-                            const._SIMILARITY_SORTED)      
+                            const._SIMILARITY_SORTED)
+        ch.basic_ack(delivery_tag=method.delivery_tag)      
 
     def on_delete(ch, method, properties, body):
         while type(body) != dict:
@@ -98,12 +91,13 @@ def main(args):
 
         delete_topic = body
         logger.info('Deleting topic %s', delete_topic['topicID'])
-        delete_id = str(delete_topic['topicID'])
-        status = collection.delete_one(delete_id)
-        if status:
+        if collection.delete_one(delete_topic['topicID']):
             #print('after deleting: ', collection.oldest, collection.latest, delete_date)
             collection.save(const._CORPUS_DATA, const._SIMILARITY_MATRIX, 
-                            const._SIMILARITY_SORTED) 
+                            const._SIMILARITY_SORTED)
+            ch.basic_ack(delivery_tag=method.delivery_tag)
+        else:
+            ch.basic_reject(delivery_tag=method.delivery_tag, requeue=True)
 
     '''
     def on_subject_update(ch, method, properties, body):
@@ -137,7 +131,6 @@ def main(args):
             #channel.queue_bind(exchange=const._EXCHANGE_NAME, queue='update_topics', routing_key='update')
             channel.basic_consume(on_new_topic, queue='new_topics')
             channel.basic_consume(on_delete, queue='delete_topics')
-
             '''
             channel.basic_consume(on_update_topic, queue='update_topics')                                  
             '''    
