@@ -26,22 +26,22 @@ def get_mq_config(config_file_path):
     logging.info('Configuration loaded')
     return config
 
-def get_logger(name, logger_level, handler_levels, 
-               log_dir, mode, log_format):
+def get_logger_with_config(name, logger_level, handler_levels, 
+                           log_dir, mode, log_format):
     logger = logging.getLogger(name)
+    
     logger.setLevel(logger_level)
 
     formatter = logging.Formatter(log_format)
-
     for level in handler_levels:
         filename = os.path.join(log_dir, '{}.{}'.format(name, level))
-        print(filename)
         handler = logging.FileHandler(filename=filename, mode=mode)
-        print(handler_levels[level])
         handler.setLevel(handler_levels[level])
         handler.setFormatter(formatter)
         logger.addHandler(handler)
 
     return logger
 
+def get_logger(name):
+    return logging.getLogger(name)
   

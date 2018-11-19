@@ -14,18 +14,18 @@ import classes
 from datetime import datetime
 import time
 import argparse
-import log_config
-import mq_config
+import log_config as lc
+import mq_config as mc
 
 def main(args):  
     while True:
         try:
-            logger = utils.get_logger(name           = log_config._NAME, 
-                                      logger_level   = log_config._LOGGER_LEVEL, 
-                                      handler_levels = log_config._LEVELS,
-                                      log_dir        = log_config._LOG_DIR, 
-                                      mode           = log_config._MODE, 
-                                      log_format     = log_config._LOG_FORMAT)
+            logger = utils.get_logger_with_config(name           = lc._NAME, 
+                                                  logger_level   = lc._LOGGER_LEVEL, 
+                                                  handler_levels = lc._LEVELS,
+                                                  log_dir        = lc._LOG_DIR, 
+                                                  mode           = lc._MODE, 
+                                                  log_format     = lc._LOG_FORMAT)
             break
         except Exception as e:
             logger.error(e)
@@ -44,7 +44,7 @@ def main(args):
                                 keep_days         = const._KEEP_DAYS, 
                                 T                 = const._T,
                                 irrelevant_thresh = const._IRRELEVANT_THRESH, 
-                                logger            = logger)
+                                logger            = utils.get_logger(lc._NAME+'.topics'))
 
     collection.get_dictionary()
 
@@ -60,11 +60,11 @@ def main(args):
     if args.c:
         while True:
             try:
-                credentials = pika.PlainCredentials(username=mq_config._USERNAME,
-                                                    password=mq_config._PASSWORD)
+                credentials = pika.PlainCredentials(username = mc._USERNAME,
+                                                    password = mc._PASSWORD)
                 
-                params = pika.ConnectionParameters(host       =mq_config._HOST, 
-                                                   credentials=credentials)
+                params = pika.ConnectionParameters(host        = mc._HOST, 
+                                                   credentials = credentials)
                 break
             except Exception as e:
                 logger.error(e)
