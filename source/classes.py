@@ -18,9 +18,9 @@ class Topics(object):
     '''
     Corpus collection
     '''
-    def __init__(self, puncs, singles, stopwords, punc_frac_low, 
-                 punc_frac_high, valid_count, valid_ratio, keep_days, 
-                 T, irrelevant_thresh, logger):
+    def __init__(self, puncs, singles, stopwords, punc_frac_low, punc_frac_high, 
+                 valid_count, valid_ratio, trigger_days, keep_days, T, 
+                 irrelevant_thresh, logger):
         self.corpus_data = {}
         self.sim_matrix = defaultdict(dict)
         self.sim_sorted = defaultdict(list)
@@ -33,7 +33,7 @@ class Topics(object):
         self.punc_frac_high = punc_frac_high
         self.valid_count = valid_count
         self.valid_ratio = valid_ratio
-        #self.trigger_days = trigger_days
+        self.trigger_days = trigger_days
         self.keep_days = keep_days
         self.T = T
         self.irrelevant_thresh = irrelevant_thresh
@@ -151,7 +151,7 @@ class Topics(object):
   
     def add_one(self, topic, truncate=True):
         new_date = datetime.fromtimestamp(topic['postDate'])
-        if (self.latest - new_date).days > self.keep_days:
+        if (self.latest - new_date).days > self.trigger_days:
             self.logger.info('Topic is not in date range')
             return False
 
@@ -171,7 +171,7 @@ class Topics(object):
         self.oldest = min(self.oldest, new_date)
         self.latest = max(self.latest, new_date)
 
-        if truncate and (self.latest - self.oldest).days > self.keep_days:
+        if truncate and (self.latest - self.oldest).days > self.trigger_days:
             self.remove_old(self.latest - timedelta(days=self.keep_days))
 
         def sim_insert(sim_list, target_tid, target_sim_val):
@@ -193,7 +193,7 @@ class Topics(object):
         self.sim_sorted[new_tid] = sorted(self.sim_matrix[new_tid].items(), 
                                           key=lambda x:x[1], reverse=True)
                      
-        assert (self.latest - self.oldest).days <= self.keep_days
+        assert (self.latest - self.oldest).days <= self.trigger_days
         self.logger.info('New topic has been added to the collection')
         self.logger.info('Collection and similarity data have been updated')
         self.logger.info('%d topics available', len(self.corpus_data))
@@ -264,8 +264,7 @@ class Subjects(object):
     '''
     Corpus collection
     '''
-    def __init__(self, puncs, singles, stopwords, punc_frac_low, 
-                 punc_frac_high, valid_count, valid_ratio, 
+    def __init__(self, puncs, singles, stopwords, trigger_days, 
                  keep_days, T, irrelevant_thresh):
         self.corpus_data = {}
         self.recom_topics = defaultdict(list)
@@ -273,6 +272,7 @@ class Subjects(object):
         self.latest = datetime.min
         self.singles = singles
         self.stopwords = stopwords
+        self.trigger_days = trigger_days
         self.keep_days = keep_days
         self.T = T
 
