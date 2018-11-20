@@ -3,10 +3,25 @@
 from django.shortcuts import render
 from django.http import JsonResponse
 import json
-import os
-import sys
+import os, sys
 from datetime import datetime
-from . import constants as const
+print(sys.path[0])
+root_dir = os.path.dirname(sys.path[0])
+print('root: ', root_dir)
+config_path = os.path.abspath(os.path.join(root_dir, 'config'))
+source_path = os.path.abspath(os.path.join(root_dir, 'source'))
+sys.path.insert(0, config_path)
+sys.path.insert(1, source_path)
+import constants as const
+import log_config as lc
+import utils
+
+logger = utils.get_logger_with_config(name           = lc._SERVE_LOG_NAME, 
+                                      logger_level   = lc._LOGGER_LEVEL, 
+                                      handler_levels = lc._LEVELS,
+                                      log_dir        = lc._LOG_DIR, 
+                                      mode           = lc._MODE, 
+                                      log_format     = lc._LOG_FORMAT)
 
 def serve_recommendations(request):
     '''
@@ -27,10 +42,11 @@ def serve_recommendations(request):
              open(const._SIMILARITY_SORTED, 'r') as f2:
             sim_matrix = json.load(f1)
             sim_sorted = json.load(f2)
-    except:
+    except Exception as e:
+        logger.exception('Data file unavailable or corrupted')
         return JsonResponse({'status': True,
                              'errorCode': 2,
-                             'errorMessage': 'Data unavailable or corrupted',
+                             'errorMessage': 'Data file unavailable or corrupted',
                              'dto': {'list':[]},
                              '_t': datetime.now().timestamp()})
 

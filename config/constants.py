@@ -13,7 +13,6 @@ _REPLY_FILE        = os.path.join(_DATA_FOLDER, 'replies')
 _CORPUS_DATA       = os.path.join(_RESULTS_FOLDER, 'corpus_data')
 _SIMILARITY_MATRIX = os.path.join(_RESULTS_FOLDER, 'sim_matrix')
 _SIMILARITY_SORTED = os.path.join(_RESULTS_FOLDER, 'sim_sorted')
-_LOG_LEVEL         = 10
 _SLEEP_TIME        = 10
 _DB_INFO           = ('192.168.1.102','tgbweb','tgb123321','taoguba', 3307, 'utf8mb4')
 _EXCHANGE_NAME     = 'recommender'
@@ -44,5 +43,3 @@ _SINGLES           = {'一', '二', '三', '四', '五',
                       '是', '只', '就', '你', '我', 
                       '他', '她', '它', '啊', '呵',
                       '哈', '哦'}
-
-print(_ROOT)

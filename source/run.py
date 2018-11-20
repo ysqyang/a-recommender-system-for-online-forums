@@ -21,7 +21,7 @@ import mq_config as mc
 def main(args):  
     while True:
         try:
-            logger = utils.get_logger_with_config(name           = lc._NAME, 
+            logger = utils.get_logger_with_config(name           = lc._RUN_LOG_NAME, 
                                                   logger_level   = lc._LOGGER_LEVEL, 
                                                   handler_levels = lc._LEVELS,
                                                   log_dir        = lc._LOG_DIR, 
@@ -29,7 +29,7 @@ def main(args):
                                                   log_format     = lc._LOG_FORMAT)
             break
         except Exception as e:
-            logging.error(e)
+            logging.exception(e)
 
     # load stopwords
     stopwords = utils.load_stopwords(const._STOPWORD_FILE)
@@ -54,8 +54,8 @@ def main(args):
         try:
             collection.load(const._CORPUS_DATA, const._SIMILARITY_MATRIX, 
                             const._SIMILARITY_SORTED)
-        except:
-            logger.error('Data files not found or corrupted. New files will be created')
+        except Exception as e:
+            logger.exception('Data files not found or corrupted. New files will be created')
     
     # establish rabbitmq connection and declare queues
     if args.c:
@@ -68,7 +68,7 @@ def main(args):
                                                    credentials = credentials)
                 break
             except Exception as e:
-                logger.error(e)
+                logger.exception(e)
     else:
         params = pika.ConnectionParameters(host='localhost')
             
@@ -139,7 +139,7 @@ def main(args):
             channel.start_consuming()
         
         except Exception as e:
-            logger.error(e)
+            logger.exception(e)
             time.sleep(const._SLEEP_TIME)
 
     '''
