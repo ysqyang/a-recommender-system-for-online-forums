@@ -3,17 +3,18 @@
 import utils
 #import topic_profiling as tp
 #import similarity as sim
-#import argparse
 #from gensim import models
 import json
 import pika
-import constants as const
-import sys
-import os
+import os, sys
 import classes
 from datetime import datetime
 import time
 import argparse
+root_dir = os.path.dirname(sys.path[0])
+config_path = os.path.abspath(os.path.join(root_dir, 'config'))
+sys.path.insert(1, config_path)
+import constants as const
 import log_config as lc
 import mq_config as mc
 
@@ -28,7 +29,7 @@ def main(args):
                                                   log_format     = lc._LOG_FORMAT)
             break
         except Exception as e:
-            logger.error(e)
+            logging.error(e)
 
     # load stopwords
     stopwords = utils.load_stopwords(const._STOPWORD_FILE)
