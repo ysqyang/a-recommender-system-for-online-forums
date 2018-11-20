@@ -71,34 +71,6 @@ def main(args):
                 logger.exception(e)
     else:
         params = pika.ConnectionParameters(host='localhost')
-            
-    def on_new_topic(ch, method, properties, body):
-        while type(body) != dict:
-            body = json.loads(body)
-        
-        new_topic = body
-        new_topic['postDate'] /= const._TIMESTAMP_FACTOR
-        logger.info('Received new topic, id=%s', new_topic['topicID'])
-
-        if collection.add_one(new_topic):
-            #print('after adding: ', collection.oldest, collection.latest, datetime.fromtimestamp(new_topic['postDate']))
-            collection.save(const._CORPUS_DATA, const._SIMILARITY_MATRIX, 
-                            const._SIMILARITY_SORTED)
-        ch.basic_ack(delivery_tag=method.delivery_tag)      
-
-    def on_delete(ch, method, properties, body):
-        while type(body) != dict:
-            body = json.loads(body)
-
-        delete_topic = body
-        logger.info('Deleting topic %s', delete_topic['topicID'])
-        if collection.delete_one(delete_topic['topicID']):
-            #print('after deleting: ', collection.oldest, collection.latest, delete_date)
-            collection.save(const._CORPUS_DATA, const._SIMILARITY_MATRIX, 
-                            const._SIMILARITY_SORTED)
-            ch.basic_ack(delivery_tag=method.delivery_tag)
-        else:
-            ch.basic_reject(delivery_tag=method.delivery_tag, requeue=True)
 
     '''
     def on_subject_update(ch, method, properties, body):
@@ -130,6 +102,34 @@ def main(args):
             channel.queue_bind(exchange=const._EXCHANGE_NAME, queue='new_topics', routing_key='new')
             channel.queue_bind(exchange=const._EXCHANGE_NAME, queue='delete_topics', routing_key='delete')
             #channel.queue_bind(exchange=const._EXCHANGE_NAME, queue='update_topics', routing_key='update')
+            def on_new_topic(ch, method, properties, body):
+                while type(body) != dict:
+                    body = json.loads(body)
+                
+                new_topic = body
+                new_topic['postDate'] /= const._TIMESTAMP_FACTOR
+                logger.info('Received new topic, id=%s', new_topic['topicID'])
+
+                if collection.add_one(new_topic):
+                    #print('after adding: ', collection.oldest, collection.latest, datetime.fromtimestamp(new_topic['postDate']))
+                    collection.save(const._CORPUS_DATA, const._SIMILARITY_MATRIX, 
+                                    const._SIMILARITY_SORTED)
+                channel.basic_ack(delivery_tag=method.delivery_tag)      
+
+            def on_delete(ch, method, properties, body):
+                while type(body) != dict:
+                    body = json.loads(body)
+
+                delete_topic = body
+                logger.info('Deleting topic %s', delete_topic['topicID'])
+                if collection.delete_one(delete_topic['topicID']):
+                    #print('after deleting: ', collection.oldest, collection.latest, delete_date)
+                    collection.save(const._CORPUS_DATA, const._SIMILARITY_MATRIX, 
+                                    const._SIMILARITY_SORTED)
+                    channel.basic_ack(delivery_tag=method.delivery_tag)
+                else:
+                    channel.basic_reject(delivery_tag=method.delivery_tag, requeue=True)
+
             channel.basic_consume(on_new_topic, queue='new_topics')
             channel.basic_consume(on_delete, queue='delete_topics')
             '''
