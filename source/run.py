@@ -45,7 +45,7 @@ def main(args):
                                 keep_days         = const._KEEP_DAYS, 
                                 T                 = const._T,
                                 irrelevant_thresh = const._IRRELEVANT_THRESH, 
-                                logger            = utils.get_logger(lc._NAME+'.topics'))
+                                logger            = utils.get_logger(lc._RUN_LOG_NAME+'.topics'))
 
     collection.get_dictionary()
 
