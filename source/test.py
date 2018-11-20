@@ -7,18 +7,20 @@ import collections
 from pprint import pprint
 import time
 from datetime import date, datetime, timedelta
-import database
 import pickle
-import constants as const
 import json
-import database
 import pika
 import bisect
 import collections
 import logging
-import os
+import os, sys
 import time
 import requests
+root_dir = os.path.dirname(sys.path[0])
+config_path = os.path.abspath(os.path.join(root_dir, 'config'))
+sys.path.insert(1, config_path)
+import constants as const
+
 
 connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
 channel = connection.channel()
@@ -83,12 +85,13 @@ r = requests.get('http://127.0.0.1:8000/serve/', params=query_dict)
 print('*'*80)
 print('您可能感兴趣的内容...')
 
-recoms = r.json()
+response = r.json()
+
+recoms = response['dto']['list']
 
 for tid in recoms:
     print('*'*80)
     print(topics[tid]['body'])
 
 '''
-
 

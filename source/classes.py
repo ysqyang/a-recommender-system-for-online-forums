@@ -13,6 +13,7 @@ import jieba
 from scipy import stats
 import re
 from datetime import datetime, timedelta
+import os
 
 class Topics(object):
     '''
@@ -196,14 +197,14 @@ class Topics(object):
 
         self.sim_sorted[new_tid] = sorted(self.sim_matrix[new_tid].items(), 
                                           key=lambda x:x[1], reverse=True)
-                     
+
         assert (self.latest - self.oldest).days <= self.trigger_days
         self.logger.info('New topic has been added to the collection')
         self.logger.info('Collection and similarity data have been updated')
         self.logger.info('%d topics available', len(self.corpus_data))
         self.logger.debug('sim_matrix_len=%d, sim_sorted_len=%d', 
                           len(self.sim_matrix), len(self.sim_sorted))
-
+        
         return True
 
     def delete_one(self, topic_id):       
@@ -241,28 +242,25 @@ class Topics(object):
         self.logger.info('Collection and similarity data have been updated')
         self.logger.info('%d topics remaining', len(self.corpus_data))
         self.logger.debug('sim_matrix_len=%d, sim_sorted_len=%d', 
-                      len(self.sim_matrix), len(self.sim_sorted))
+                          len(self.sim_matrix), len(self.sim_sorted))
 
         return True
 
-    def save(self, corpus_data_path, sim_matrix_path, sim_sorted_path):
+    def save_sim_record(self, topic_id, save_dir, mod_num):
         '''
         Saves the similarity matrix and sorted similarity lists
         to disk
         Args:
         sim_matrix_path: file path for similarity matrix
         sim_sorted_path: file path for sorted similarity lists
-        '''
-        self.check_correctness() # always check correctness before saving
-        with open(corpus_data_path, 'w') as f1, \
-             open(sim_matrix_path, 'w') as f2,  \
-             open(sim_sorted_path, 'w') as f3:
-            json.dump(self.corpus_data, f1)
-            self.logger.info('Corpus data saved to %s', corpus_data_path)
-            json.dump(self.sim_matrix, f2)
-            self.logger.info('Similarity matrix saved to %s', sim_matrix_path)
-            json.dump(self.sim_sorted, f3)
-            self.logger.info('Similarity lists saved to %s', sim_sorted_path)
+        ''' 
+        sim_record = {'sim_dict': self.sim_matrix[topic_id], 
+                      'sim_list': self.sim_sorted[topic_id]}
+        folder_name = str(int(topic_id) % mod_num)
+        filename = os.path.join(save_dir, folder_name, topic_id)
+        with open(filename, 'w') as f:
+            json.dump(self.sim_record, f)
+            self.logger.info('Similarity record saved for topic %s', topic_id)
 
 class Subjects(object):
     '''
