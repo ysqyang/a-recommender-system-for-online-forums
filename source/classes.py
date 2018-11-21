@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-# Class definitions for streaming data from file
+# class definitions
 from gensim import corpora, models, matutils
 #from gensim.similarities import Similarity
 from sklearn import preprocessing
@@ -25,6 +23,7 @@ class Topics(object):
         self.corpus_data = {}
         self.sim_matrix = defaultdict(dict)
         self.sim_sorted = defaultdict(list)
+        self.updated = defaultdict(bool)
         self.oldest = datetime.max
         self.latest = datetime.min
         self.puncs = puncs
@@ -136,15 +135,17 @@ class Topics(object):
             del self.corpus_data[delete_tid]
             del self.sim_matrix[delete_tid]
             del self.sim_sorted[delete_tid]
+            del self.updated[delete_tid]
         
-        for sim_dict in self.sim_matrix.values():
+        for tid, sim_dict in self.sim_matrix.items():
             for delete_tid in delete_tids:
                 if delete_tid in sim_dict:
                     del sim_dict[delete_tid]
+                    self.updated[tid] = True
 
         for tid, sim_list in self.sim_sorted.items():
             self.sim_sorted[tid] = [x for x in sim_list if x[0] not in delete_tids]
-        
+
         min_tid = min(int(tid) for tid in self.corpus_data)
         oldest_stmp = self.corpus_data[str(min_tid)]['date'] 
         self.oldest = datetime.fromtimestamp(oldest_stmp)
@@ -190,10 +191,15 @@ class Topics(object):
             time_factor = math.exp(-(new_date-date).days/self.T)
             if tid != new_tid:
                 sim_val = matutils.cossim(bow, info['bow'])
-                if sim_val >= self.irrelevant_thresh:
-                    self.sim_matrix[tid][new_tid] = sim_val*min(1, 1/time_factor)
-                    self.sim_matrix[new_tid][tid] = sim_val*min(1, time_factor)
-                    sim_insert(self.sim_sorted[tid], new_tid, self.sim_matrix[tid][new_tid])
+                sim_val_1 = sim_val * min(1, 1/time_factor)
+                sim_val_2 = sim_val * min(1, time_factor)
+                if sim_val_1 >= self.irrelevant_thresh:
+                    self.sim_matrix[tid][new_tid] = sim_val_1
+                    self.updated[tid] = True
+                    sim_insert(self.sim_sorted[tid], new_tid, sim_val_1)
+                if sim_val_2 >= self.irrelevant_thresh:
+                    self.sim_matrix[new_tid][tid] = sim_val_2
+                    self.updated[new_tid] = True
 
         self.sim_sorted[new_tid] = sorted(self.sim_matrix[new_tid].items(), 
                                           key=lambda x:x[1], reverse=True)
@@ -218,6 +224,7 @@ class Topics(object):
         del self.corpus_data[topic_id]
         del self.sim_matrix[topic_id]
         del self.sim_sorted[topic_id]
+        del self.updated[topic_id]
 
         for sim_dict in self.sim_matrix.values():
             if topic_id in sim_dict:
@@ -246,21 +253,23 @@ class Topics(object):
 
         return True
 
-    def save_sim_record(self, topic_id, save_dir, mod_num):
+    def save_sim_data(self, save_dir, mod_num):
         '''
         Saves the similarity matrix and sorted similarity lists
         to disk
         Args:
-        sim_matrix_path: file path for similarity matrix
-        sim_sorted_path: file path for sorted similarity lists
+        save_dir: directory under whch to save the data
+        mod_num:  number of data folders
         ''' 
-        sim_record = {'sim_dict': self.sim_matrix[topic_id], 
-                      'sim_list': self.sim_sorted[topic_id]}
-        folder_name = str(int(topic_id) % mod_num)
-        filename = os.path.join(save_dir, folder_name, topic_id)
-        with open(filename, 'w') as f:
-            json.dump(self.sim_record, f)
-            self.logger.info('Similarity record saved for topic %s', topic_id)
+        for tid in self.sim_matrix:
+            if self.updated[tid]:
+                sim_record = {'sim_dict': self.sim_matrix[tid], 
+                              'sim_list': self.sim_sorted[tid]}
+                folder_name = str(int(tid) % mod_num)
+                filename = os.path.join(save_dir, folder_name, tid)
+                with open(filename, 'w') as f:
+                    json.dump(self.sim_record, f)
+        self.logger.info('Similarity data saved under %s', save_dir)     
 
 class Subjects(object):
     '''

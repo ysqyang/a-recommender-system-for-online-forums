@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import utils
 #import topic_profiling as tp
 #import similarity as sim
@@ -11,12 +9,23 @@ import classes
 from datetime import datetime
 import time
 import argparse
+import threading
 root_dir = os.path.dirname(sys.path[0])
 config_path = os.path.abspath(os.path.join(root_dir, 'config'))
 sys.path.insert(1, config_path)
 import constants as const
 import log_config as lc
 import mq_config as mc
+
+class Save_thread(threading.Thread):
+	def __init__(self, thread_id, interval):
+		threading.Thread.__init__(self)
+		self.thread_id = thread_id
+		self.interval = interval
+	def run(self, collection, save_dir, mod_num):
+		while True:
+			time.sleep(self.interval)
+			collection.save_sim_data(save_dir, mod_num)
 
 def main(args):  
     while True:
@@ -90,17 +99,22 @@ def main(args):
                 topic_dict[topic_id][attr] = update_topic[attr]
         utils.save_topics(topic_dict, const._TOPIC_FILE)
     '''   
+    save_thread = Save_thread(1, const._SAVE_INTERVAL)
+    lock = threading.Lock()
     while True:       
         try:
             connection = pika.BlockingConnection(params)
             channel = connection.channel()
-            channel.exchange_declare(exchange=const._EXCHANGE_NAME, exchange_type='direct')
+            channel.exchange_declare(exchange=const._EXCHANGE_NAME, 
+            	                     exchange_type='direct')
           
             channel.queue_declare(queue='new_topics')
             channel.queue_declare(queue='delete_topics')
             #channel.queue_declare(queue='update_topics')   
-            channel.queue_bind(exchange=const._EXCHANGE_NAME, queue='new_topics', routing_key='new')
-            channel.queue_bind(exchange=const._EXCHANGE_NAME, queue='delete_topics', routing_key='delete')
+            channel.queue_bind(exchange=const._EXCHANGE_NAME, 
+            	               queue='new_topics', routing_key='new')
+            channel.queue_bind(exchange=const._EXCHANGE_NAME, 
+            	               queue='delete_topics', routing_key='delete')
             #channel.queue_bind(exchange=const._EXCHANGE_NAME, queue='update_topics', routing_key='update')
             def on_new_topic(ch, method, properties, body):
                 while type(body) != dict:
@@ -136,6 +150,7 @@ def main(args):
             channel.basic_consume(on_update_topic, queue='update_topics')                                  
             '''    
             logger.info(' [*] Waiting for messages. To exit press CTRL+C')
+            save_thread.start()
             channel.start_consuming()
         
         except Exception as e:
