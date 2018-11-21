@@ -155,17 +155,17 @@ class Topics(object):
         new_date = datetime.fromtimestamp(topic['postDate'])
         if (self.latest - new_date).days > self.trigger_days:
             self.logger.info('Topic is not in date range')
-            return False
+            return 
 
         new_tid = str(topic['topicID'])
         if new_tid in self.corpus_data:
             self.logger.warning('Topic already exists in the collection')
-            return False
+            return 
 
         word_list = self.preprocess(' '.join(topic['body'].split()))
         if word_list is None: # ignore invalid topics
             self.logger.info('Topic is not recommendable')
-            return False
+            return 
 
         self.dictionary.add_documents([word_list])
         bow = self.dictionary.doc2bow(word_list)
@@ -211,7 +211,7 @@ class Topics(object):
         self.logger.debug('sim_matrix_len=%d, sim_sorted_len=%d', 
                           len(self.sim_matrix), len(self.sim_sorted))
         
-        return True
+        return
 
     def delete_one(self, topic_id):       
         topic_id = str(topic_id)
@@ -266,7 +266,10 @@ class Topics(object):
                 sim_record = {'sim_dict': self.sim_matrix[tid], 
                               'sim_list': self.sim_sorted[tid]}
                 folder_name = str(int(tid) % mod_num)
-                filename = os.path.join(save_dir, folder_name, tid)
+                folder_path = os.path.join(save_dir, folder_name)
+                if not os.path.exists(folder_path):
+                    os.mkdir(folder_path)
+                filename = os.path.join(folder_path, tid)
                 with open(filename, 'w') as f:
                     json.dump(self.sim_record, f)
         self.logger.info('Similarity data saved under %s', save_dir)     

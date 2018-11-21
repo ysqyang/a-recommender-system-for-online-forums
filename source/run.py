@@ -10,6 +10,7 @@ from datetime import datetime
 import time
 import argparse
 import threading
+import logging
 root_dir = os.path.dirname(sys.path[0])
 config_path = os.path.abspath(os.path.join(root_dir, 'config'))
 sys.path.insert(1, config_path)
@@ -18,14 +19,15 @@ import log_config as lc
 import mq_config as mc
 
 class Save_thread(threading.Thread):
-	def __init__(self, thread_id, interval):
+	def __init__(self, interval, lock):
 		threading.Thread.__init__(self)
-		self.thread_id = thread_id
 		self.interval = interval
+		self.lock = lock
 	def run(self, collection, save_dir, mod_num):
 		while True:
 			time.sleep(self.interval)
-			collection.save_sim_data(save_dir, mod_num)
+			with self.lock:
+				collection.save_sim_data(save_dir, mod_num)
 
 def main(args):  
     while True:
@@ -99,8 +101,9 @@ def main(args):
                 topic_dict[topic_id][attr] = update_topic[attr]
         utils.save_topics(topic_dict, const._TOPIC_FILE)
     '''   
-    save_thread = Save_thread(1, const._SAVE_INTERVAL)
     lock = threading.Lock()
+    save_thread = Save_thread(const._SAVE_INTERVAL, lock)
+    
     while True:       
         try:
             connection = pika.BlockingConnection(params)
@@ -124,10 +127,8 @@ def main(args):
                 new_topic['postDate'] /= const._TIMESTAMP_FACTOR
                 logger.info('Received new topic, id=%s', new_topic['topicID'])
 
-                if collection.add_one(new_topic):
-                    #print('after adding: ', collection.oldest, collection.latest, datetime.fromtimestamp(new_topic['postDate']))
-                    collection.save(const._CORPUS_DATA, const._SIMILARITY_MATRIX, 
-                                    const._SIMILARITY_SORTED)
+                with lock:
+                	collection.add_one(new_topic)
                 channel.basic_ack(delivery_tag=method.delivery_tag)      
 
             def on_delete(ch, method, properties, body):
@@ -136,14 +137,12 @@ def main(args):
 
                 delete_topic = body
                 logger.info('Deleting topic %s', delete_topic['topicID'])
-                if collection.delete_one(delete_topic['topicID']):
-                    #print('after deleting: ', collection.oldest, collection.latest, delete_date)
-                    collection.save(const._CORPUS_DATA, const._SIMILARITY_MATRIX, 
-                                    const._SIMILARITY_SORTED)
-                    channel.basic_ack(delivery_tag=method.delivery_tag)
-                else:
-                    channel.basic_reject(delivery_tag=method.delivery_tag, requeue=True)
-
+                with lock:
+	                if collection.delete_one(delete_topic['topicID']):
+	                    channel.basic_ack(delivery_tag=method.delivery_tag)
+	                else:
+	                    channel.basic_reject(delivery_tag=method.delivery_tag, requeue=True)
+            
             channel.basic_consume(on_new_topic, queue='new_topics')
             channel.basic_consume(on_delete, queue='delete_topics')
             '''
