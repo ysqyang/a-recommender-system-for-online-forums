@@ -22,7 +22,7 @@ _TOPIC_FEATURES     = ['TOTALVIEWNUM', 'TOTALREPLYNUM', 'POSTDATE',
                       'TOPICPCPOINT']
 _REPLY_FEATURES     = ['USEFULNUM', 'GOLDUSEFULNUM', 'TOTALPCPOINT']
 _NUM_RESULT_FOLDERS = 1000
-_SAVE_INTERVAL      = 5     # number of seconds between successive saves
+_SAVE_INTERVAL      = 60     # number of seconds between successive saves
 _TIMESTAMP_FACTOR   = 1000
 _DAYS               = 90
 _T                  = 30    #time decay factor
