@@ -224,7 +224,7 @@ class Topics(object):
         topic_id = str(topic_id)
         if topic_id not in self.corpus_data:
             self.logger.warning('Topic not found in collection')
-            return False 
+            return 
 
         delete_date = datetime.fromtimestamp(self.corpus_data[topic_id]['date'])
 
@@ -258,7 +258,7 @@ class Topics(object):
         self.logger.debug('sim_matrix_len=%d, sim_sorted_len=%d', 
                           len(self.sim_matrix), len(self.sim_sorted))
 
-        return True
+        return
 
     def save(self, save_dir, mod_num):
         '''
@@ -393,7 +393,8 @@ class Subjects(object):
 
         self.corpus_data[new_tid] = {'date': subject['postDate'],
                                      'content': word_list,
-                                     'bow': bow}
+                                     'bow': bow,
+                                     'updated': True}
 
         self.oldest = min(self.oldest, new_date)
         self.latest = max(self.latest, new_date)
@@ -439,7 +440,7 @@ class Subjects(object):
 
         return True
 
-    def save(self, corpus_data_path, sim_matrix_path, sim_sorted_path):
+    def save(self, save_dir):
         '''
         Saves the similarity matrix and sorted similarity lists
         to disk
