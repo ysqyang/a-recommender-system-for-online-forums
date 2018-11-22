@@ -33,6 +33,20 @@ class Save(threading.Thread):
             with self.lock:
                 self.collection.save(self.save_dir, self.mod_num)
 
+class Delete(threading.Thread):
+    def __init__(self, collection, save_dir):
+        threading.Thread.__init__(self)
+        self.collection = collection
+        self.interval = interval
+        self.save_dir = save_dir
+
+    def run(self):
+        while True:
+            time.sleep(self.interval)
+            with self.lock:
+
+
+
 def main(args):  
     while True:
         try:
