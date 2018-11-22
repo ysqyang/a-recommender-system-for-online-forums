@@ -23,7 +23,6 @@ class Topics(object):
         self.corpus_data = {}
         self.sim_matrix = defaultdict(dict)
         self.sim_sorted = defaultdict(list)
-        self.updated = defaultdict(bool)
         self.oldest = datetime.max
         self.latest = datetime.min
         self.puncs = puncs
@@ -88,17 +87,26 @@ class Topics(object):
         corpus = [info['content'] for info in self.corpus_data.values()]
         self.dictionary = corpora.Dictionary(corpus)
 
-    def load(self, corpus_data_path, sim_matrix_path, sim_sorted_path):       
-        with open(corpus_data_path, 'r') as f1, \
-             open(sim_matrix_path, 'r') as f2,  \
-             open(sim_sorted_path, 'r') as f3:  
-            
-            self.corpus_data = json.load(f1)
-            self.logger.info('Corpus data loaded to memory')      
-            self.sim_matrix = json.load(f2)
-            self.logger.info('Similarity matrix loaded to memory') 
-            self.sim_sorted = json.load(f3)
-            self.logger.info('Similarity lists loaded to memory')
+    def load(self, save_dir):       
+        folders = os.listdir(save_dir)
+        for folder in folders:
+            if not folder.isnumeric():
+                continue
+            files = os.listdir(os.path.join(save_dir, folder))
+            for file in files:
+                if not file.isnumeric():
+                    continue
+                path = os.path.join(save_dir, folder, file)
+                with open(path, 'r') as f:
+                    rec = json.load(f)
+                self.collection[file] = {'date': rec['date'],
+                                         'content': rec['content'],
+                                         'bow': rec['bow'],
+                                         'updated': False
+                                        }
+                
+                self.sim_matrix[file] = rec['sim_dict']
+                self.sim_sorted[file] = rec['sim_list']
 
         self.check_correctness()
         self.logger.info('%d topics available', len(self.corpus_data))
@@ -135,13 +143,12 @@ class Topics(object):
             del self.corpus_data[delete_tid]
             del self.sim_matrix[delete_tid]
             del self.sim_sorted[delete_tid]
-            del self.updated[delete_tid]
         
         for tid, sim_dict in self.sim_matrix.items():
             for delete_tid in delete_tids:
                 if delete_tid in sim_dict:
                     del sim_dict[delete_tid]
-                    self.updated[tid] = True
+                    self.corpus_data[tid]['updated'] = True
 
         for tid, sim_list in self.sim_sorted.items():
             self.sim_sorted[tid] = [x for x in sim_list if x[0] not in delete_tids]
@@ -172,7 +179,8 @@ class Topics(object):
 
         self.corpus_data[new_tid] = {'date': topic['postDate'],
                                      'content': word_list,
-                                     'bow': bow}
+                                     'bow': bow,
+                                     'updated': True}
 
         self.oldest = min(self.oldest, new_date)
         self.latest = max(self.latest, new_date)
@@ -195,11 +203,10 @@ class Topics(object):
                 sim_val_2 = sim_val * min(1, time_factor)
                 if sim_val_1 >= self.irrelevant_thresh:
                     self.sim_matrix[tid][new_tid] = sim_val_1
-                    self.updated[tid] = True
+                    self.corpus_data[tid]['updated'] = True
                     sim_insert(self.sim_sorted[tid], new_tid, sim_val_1)
                 if sim_val_2 >= self.irrelevant_thresh:
                     self.sim_matrix[new_tid][tid] = sim_val_2
-                    self.updated[new_tid] = True
 
         self.sim_sorted[new_tid] = sorted(self.sim_matrix[new_tid].items(), 
                                           key=lambda x:x[1], reverse=True)
@@ -224,11 +231,11 @@ class Topics(object):
         del self.corpus_data[topic_id]
         del self.sim_matrix[topic_id]
         del self.sim_sorted[topic_id]
-        del self.updated[topic_id]
 
-        for sim_dict in self.sim_matrix.values():
+        for tid, sim_dict in self.sim_matrix.items():
             if topic_id in sim_dict:
                 del sim_dict[topic_id]
+                self.corpus_data[tid]['updated'] = True
 
         for tid, sim_list in self.sim_sorted.items():
             self.sim_sorted[tid] = [x for x in sim_list if x[0] != topic_id]
@@ -253,17 +260,19 @@ class Topics(object):
 
         return True
 
-    def save_sim_data(self, save_dir, mod_num):
+    def save(self, save_dir, mod_num):
         '''
-        Saves the similarity matrix and sorted similarity lists
-        to disk
+        Saves the corpus and similarity data to disk
         Args:
-        save_dir: directory under whch to save the data
+        save_dir: directory under which to save the data
         mod_num:  number of data folders
         ''' 
-        for tid in self.sim_matrix:
-            if self.updated[tid]:
-                sim_record = {'sim_dict': self.sim_matrix[tid], 
+        for tid, info in self.corpus_data.items():
+            if info['updated']:
+                sim_record = {'date': info['date'],
+                              'content': info['content'],
+                              'bow': info['bow'],
+                              'sim_dict': self.sim_matrix[tid], 
                               'sim_list': self.sim_sorted[tid]}
                 folder_name = str(int(tid) % mod_num)
                 folder_path = os.path.join(save_dir, folder_name)
@@ -271,9 +280,12 @@ class Topics(object):
                     os.mkdir(folder_path)
                 filename = os.path.join(folder_path, tid)
                 with open(filename, 'w') as f:
-                    json.dump(self.sim_record, f)
-        self.logger.info('Similarity data saved under %s', save_dir)     
-
+                    json.dump(sim_record, f)
+                info['updated'] = False
+                self.logger.info('similarity data for topic %s updated on disk', tid)
+            else:
+                self.logger.info('No updates for topic %s', tid)
+       
 class Subjects(object):
     '''
     Corpus collection

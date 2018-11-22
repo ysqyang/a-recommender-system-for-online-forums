@@ -18,16 +18,20 @@ import constants as const
 import log_config as lc
 import mq_config as mc
 
-class Save_thread(threading.Thread):
-	def __init__(self, interval, lock):
-		threading.Thread.__init__(self)
-		self.interval = interval
-		self.lock = lock
-	def run(self, collection, save_dir, mod_num):
-		while True:
-			time.sleep(self.interval)
-			with self.lock:
-				collection.save_sim_data(save_dir, mod_num)
+class Save(threading.Thread):
+    def __init__(self, collection, interval, lock, save_dir, mod_num, logger=None):
+        threading.Thread.__init__(self)
+        self.collection = collection
+        self.interval = interval
+        self.lock = lock
+        self.save_dir = save_dir
+        self.mod_num = mod_num
+
+    def run(self):
+        while True:
+            time.sleep(self.interval)
+            with self.lock:
+                self.collection.save(self.save_dir, self.mod_num)
 
 def main(args):  
     while True:
@@ -102,22 +106,28 @@ def main(args):
         utils.save_topics(topic_dict, const._TOPIC_FILE)
     '''   
     lock = threading.Lock()
-    save_thread = Save_thread(const._SAVE_INTERVAL, lock)
+    save_thread = Save(collection = collection, 
+                       interval   = const._SAVE_INTERVAL,
+                       lock       = lock, 
+                       save_dir   = const._RESULTS_FOLDER,
+                       mod_num    = const._NUM_RESULT_FOLDERS)
+    
+    save_thread.start()
     
     while True:       
         try:
             connection = pika.BlockingConnection(params)
             channel = connection.channel()
             channel.exchange_declare(exchange=const._EXCHANGE_NAME, 
-            	                     exchange_type='direct')
+                                     exchange_type='direct')
           
             channel.queue_declare(queue='new_topics')
             channel.queue_declare(queue='delete_topics')
             #channel.queue_declare(queue='update_topics')   
             channel.queue_bind(exchange=const._EXCHANGE_NAME, 
-            	               queue='new_topics', routing_key='new')
+                               queue='new_topics', routing_key='new')
             channel.queue_bind(exchange=const._EXCHANGE_NAME, 
-            	               queue='delete_topics', routing_key='delete')
+                               queue='delete_topics', routing_key='delete')
             #channel.queue_bind(exchange=const._EXCHANGE_NAME, queue='update_topics', routing_key='update')
             def on_new_topic(ch, method, properties, body):
                 while type(body) != dict:
@@ -128,7 +138,7 @@ def main(args):
                 logger.info('Received new topic, id=%s', new_topic['topicID'])
 
                 with lock:
-                	collection.add_one(new_topic)
+                    collection.add_one(new_topic)
                 channel.basic_ack(delivery_tag=method.delivery_tag)      
 
             def on_delete(ch, method, properties, body):
@@ -138,10 +148,10 @@ def main(args):
                 delete_topic = body
                 logger.info('Deleting topic %s', delete_topic['topicID'])
                 with lock:
-	                if collection.delete_one(delete_topic['topicID']):
-	                    channel.basic_ack(delivery_tag=method.delivery_tag)
-	                else:
-	                    channel.basic_reject(delivery_tag=method.delivery_tag, requeue=True)
+                    if collection.delete_one(delete_topic['topicID']):
+                        channel.basic_ack(delivery_tag=method.delivery_tag)
+                    else:
+                        channel.basic_reject(delivery_tag=method.delivery_tag, requeue=True)
             
             channel.basic_consume(on_new_topic, queue='new_topics')
             channel.basic_consume(on_delete, queue='delete_topics')
@@ -149,7 +159,6 @@ def main(args):
             channel.basic_consume(on_update_topic, queue='update_topics')                                  
             '''    
             logger.info(' [*] Waiting for messages. To exit press CTRL+C')
-            save_thread.start()
             channel.start_consuming()
         
         except Exception as e:

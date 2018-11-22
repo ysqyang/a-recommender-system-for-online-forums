@@ -3,11 +3,10 @@
 from django.shortcuts import render
 from django.http import JsonResponse
 import json
+from collections import defaultdict
 import os, sys
 from datetime import datetime
-print(sys.path[0])
 root_dir = os.path.dirname(sys.path[0])
-print('root: ', root_dir)
 config_path = os.path.abspath(os.path.join(root_dir, 'config'))
 source_path = os.path.abspath(os.path.join(root_dir, 'source'))
 sys.path.insert(0, config_path)
@@ -35,44 +34,46 @@ def serve_recommendations(request):
                              'dto': {'list':[]},
                              '_t': datetime.now().timestamp()})
 
-    #print(request.GET)
+    n_folders = const._NUM_RESULT_FOLDERS
+    result_dir = const._RESULTS_FOLDER
 
-    try:               
-        with open(const._SIMILARITY_MATRIX, 'r') as f1,  \
-             open(const._SIMILARITY_SORTED, 'r') as f2:
-            sim_matrix = json.load(f1)
-            sim_sorted = json.load(f2)
-    except Exception as e:
-        logger.exception('Data file unavailable or corrupted')
+    def retrieve_data(topic_id):
+        folder = str(int(topic_id) % n_folders)
+        file_name = os.path.join(result_dir, folder, topic_id)
+        print(file_name)
+        try:   
+            with open(file_name, 'r') as f:
+                sim_data = json.load(f)
+            return sim_data
+        except Exception as e:
+            logger.exception('Data file unavailable or corrupted')
+
+    sim_data = retrieve_data(str(request.GET['topicID']))
+    if sim_data is None:
         return JsonResponse({'status': True,
                              'errorCode': 2,
                              'errorMessage': 'Data file unavailable or corrupted',
                              'dto': {'list':[]},
                              '_t': datetime.now().timestamp()})
 
-    target_tid = str(request.GET['topicID'])
-  
-    if target_tid not in sim_sorted:
-        return JsonResponse({'status': True,
-                             'errorCode': 0,
-                             'errorMessage': '',
-                             'dto': {'list':[]},
-                             '_t': datetime.now().timestamp()})
-
+    print(sim_data)
     recoms = []
-    for tid, sim_val in sim_sorted[target_tid]: 
+    for tid, sim_val in sim_data['sim_list']: 
         if sim_val > const._DUPLICATE_THRESH:
             continue
         
-        if recoms == []  \
-           or recoms[-1] not in sim_matrix[tid]  \
-           or sim_matrix[tid][recoms[-1]] < const._DUPLICATE_THRESH:
+        if recoms == []                       \
+           or data is None                    \
+           or tid not in data['sim_dict']     \
+           or data['sim_dict'][tid] < const._DUPLICATE_THRESH: 
             recoms.append(tid)
+            data = retrieve_data(tid)
             if len(recoms) == const._TOP_NUM:
                 break
 
+    print(recoms)
     return JsonResponse({'status': True,
                          'errorCode': 0,
                          'errorMessage': '',
                          'dto': {'list':recoms},
-                         '_t': datetime.now().timestamp()})
+                         '_t': datetime.now().timestamp()}) 
