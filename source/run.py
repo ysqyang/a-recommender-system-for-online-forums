@@ -148,10 +148,8 @@ def main(args):
                 delete_topic = body
                 logger.info('Deleting topic %s', delete_topic['topicID'])
                 with lock:
-                    if collection.delete_one(delete_topic['topicID']):
-                        channel.basic_ack(delivery_tag=method.delivery_tag)
-                    else:
-                        channel.basic_reject(delivery_tag=method.delivery_tag, requeue=True)
+                    collection.delete_one(delete_topic['topicID']):
+                channel.basic_ack(delivery_tag=method.delivery_tag)
             
             channel.basic_consume(on_new_topic, queue='new_topics')
             channel.basic_consume(on_delete, queue='delete_topics')
