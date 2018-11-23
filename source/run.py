@@ -32,7 +32,7 @@ class Save(threading.Thread):
             time.sleep(self.interval)
             with self.lock:
                 self.collection.save(self.save_dir, self.mod_num)
-
+'''
 class Delete(threading.Thread):
     def __init__(self, collection, save_dir):
         threading.Thread.__init__(self)
@@ -44,7 +44,7 @@ class Delete(threading.Thread):
         while True:
             time.sleep(self.interval)
             with self.lock:
-
+'''
 
 
 def main(args):  
@@ -63,26 +63,27 @@ def main(args):
     # load stopwords
     stopwords = utils.load_stopwords(const._STOPWORD_FILE)
 
-    collection = classes.Topics(puncs             = const._PUNCS, 
-                                singles           = const._SINGLES, 
-                                stopwords         = stopwords, 
-                                punc_frac_low     = const._PUNC_FRAC_LOW,
-                                punc_frac_high    = const._PUNC_FRAC_HIGH, 
-                                valid_count       = const._VALID_COUNT, 
-                                valid_ratio       = const._VALID_RATIO,
-                                trigger_days      = const._TRIGGER_DAYS,
-                                keep_days         = const._KEEP_DAYS, 
-                                T                 = const._T,
-                                irrelevant_thresh = const._IRRELEVANT_THRESH, 
-                                logger            = utils.get_logger(lc._RUN_LOG_NAME+'.topics'))
+    collection = classes.Corpus_with_similarity_data( 
+                         puncs             = const._PUNCS,
+                         singles           = const._SINGLES, 
+                         stopwords         = stopwords, 
+                         punc_frac_low     = const._PUNC_FRAC_LOW,
+                         punc_frac_high    = const._PUNC_FRAC_HIGH, 
+                         valid_count       = const._VALID_COUNT, 
+                         valid_ratio       = const._VALID_RATIO,
+                         trigger_days      = const._TRIGGER_DAYS,
+                         keep_days         = const._KEEP_DAYS, 
+                         T                 = const._T,
+                         irrelevant_thresh = const._IRRELEVANT_THRESH, 
+                         logger            = utils.get_logger(lc._RUN_LOG_NAME+'.topics')
+                         )
 
     collection.get_dictionary()
 
     # load previously saved corpus and similarity data if possible
     if args.l:
         try:
-            collection.load(const._CORPUS_DATA, const._SIMILARITY_MATRIX, 
-                            const._SIMILARITY_SORTED)
+            collection.load(const._CORPUS_FOLDER)
         except Exception as e:
             logger.exception('Data files not found or corrupted. New files will be created')
     
@@ -123,7 +124,7 @@ def main(args):
     save_thread = Save(collection = collection, 
                        interval   = const._SAVE_INTERVAL,
                        lock       = lock, 
-                       save_dir   = const._RESULTS_FOLDER,
+                       save_dir   = const._CORPUS_FOLDER,
                        mod_num    = const._NUM_RESULT_FOLDERS)
     
     save_thread.start()
@@ -153,6 +154,7 @@ def main(args):
 
                 with lock:
                     collection.add_one(new_topic)
+                    collection.remove_old()
                 channel.basic_ack(delivery_tag=method.delivery_tag)      
 
             def on_delete(ch, method, properties, body):
@@ -162,7 +164,7 @@ def main(args):
                 delete_topic = body
                 logger.info('Deleting topic %s', delete_topic['topicID'])
                 with lock:
-                    collection.delete_one(delete_topic['topicID']):
+                    collection.delete_one(delete_topic['topicID'])
                 channel.basic_ack(delivery_tag=method.delivery_tag)
             
             channel.basic_consume(on_new_topic, queue='new_topics')

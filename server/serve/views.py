@@ -35,7 +35,7 @@ def serve_recommendations(request):
                              '_t': datetime.now().timestamp()})
 
     n_folders = const._NUM_RESULT_FOLDERS
-    result_dir = const._RESULTS_FOLDER
+    result_dir = const._CORPUS_FOLDER
 
     def retrieve_data(topic_id):
         folder = str(int(topic_id) % n_folders)
