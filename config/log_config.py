@@ -6,5 +6,5 @@ _RUN_LOG_NAME   = 'run'
 _SERVE_LOG_NAME = 'serve'
 _LOGGER_LEVEL   = logging.INFO
 _LEVELS         = {'info': logging.INFO}
-_LOG_FORMAT     = '[%(asctime)s] [%(name)-16s] [%(levelname)-8s] -- %(message)s'
+_LOG_FORMAT     = '[%(asctime)s] [%(name)-10s] [%(levelname)-8s] -- %(message)s'
 _MODE           = 'w'
