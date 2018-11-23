@@ -84,8 +84,8 @@ def main(args):
     if args.l:
         try:
             collection.load(const._CORPUS_FOLDER)
-        except Exception as e:
-            logger.exception('Data files not found or corrupted. New files will be created')
+        except FileNotFoundError as e:
+            logger.exception('Data files not found. New files will be created')
     
     # establish rabbitmq connection and declare queues
     if args.c:

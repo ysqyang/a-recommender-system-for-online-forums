@@ -78,15 +78,18 @@ class Corpus(object):
                 if not file.isnumeric():
                     continue
                 path = os.path.join(save_dir, folder, file)
-                with open(path, 'r') as f:
-                    rec = json.load(f)
-                self.corpus_data[file] = {'date': rec['date'],
-                                          'content': rec['content'],
-                                          'bow': rec['bow'],
-                                          'updated': False
-                                         }
+                try:
+                    with open(path, 'r') as f:
+                        rec = json.load(f)
+                        self.corpus_data[file] = {'date': rec['date'],
+                                                  'content': rec['content'],
+                                                  'bow': rec['bow'],
+                                                  'updated': False
+                                                 }
+                except json.JSONDecodeError as e:
+                    self.logger.error('Failed to load topic %s', file)
 
-        self.logger.info('%d topics available', len(self.corpus_data))
+        self.logger.info('%d topics loaded from disk', len(self.corpus_data))
         self.get_dictionary()
         int_tids = [int(tid) for tid in self.corpus_data]
         min_tid, max_tid = min(int_tids), max(int_tids)
@@ -211,6 +214,7 @@ class Corpus_with_similarity_data(Corpus):
 
     def load(self, save_dir):       
         super().load(save_dir)
+        
         folders = os.listdir(save_dir)
         for folder in folders:
             if not folder.isnumeric():
@@ -220,11 +224,13 @@ class Corpus_with_similarity_data(Corpus):
                 if not file.isnumeric():
                     continue
                 path = os.path.join(save_dir, folder, file)
-                with open(path, 'r') as f:
-                    rec = json.load(f)
-                
-                self.sim_matrix[file] = rec['sim_dict']
-                self.sim_sorted[file] = rec['sim_list']
+                try:
+                    with open(path, 'r') as f:
+                        rec = json.load(f)
+                        self.sim_matrix[file] = rec['sim_dict']
+                        self.sim_sorted[file] = rec['sim_list']
+                except json.JSONDecodeError as e:
+                    self.logger.error('Failed to load similarity data for topic %s', file)
 
     def get_topics_by_keywords(self, keyword_weight):
         now = datetime.now()
@@ -292,7 +298,7 @@ class Corpus_with_similarity_data(Corpus):
 
         self.sim_sorted[new_tid] = sorted(self.sim_matrix[new_tid].items(), 
                                           key=lambda x:x[1], reverse=True)
-        self.logger.info('Topic %s has been added to similarity results')
+        self.logger.info('Topic %s has been added to similarity results', new_tid)
         self.logger.debug('sim_matrix_len=%d, sim_sorted_len=%d', 
                           len(self.sim_matrix), len(self.sim_sorted))
 
@@ -313,7 +319,7 @@ class Corpus_with_similarity_data(Corpus):
         for tid, sim_list in self.sim_sorted.items():
             self.sim_sorted[tid] = [x for x in sim_list if x[0] != topic_id]
 
-        self.logger.info('Topic %s has been deleted from similarity results')
+        self.logger.info('Topic %s has been deleted from similarity results', topic_id)
         self.logger.debug('sim_matrix_len=%d, sim_sorted_len=%d', 
                           len(self.sim_matrix), len(self.sim_sorted))
 
