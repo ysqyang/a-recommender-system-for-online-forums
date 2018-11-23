@@ -90,11 +90,12 @@ class Corpus(object):
                     self.logger.error('Failed to load topic %s', file)
 
         self.logger.info('%d topics loaded from disk', len(self.corpus_data))
-        self.get_dictionary()
-        int_tids = [int(tid) for tid in self.corpus_data]
-        min_tid, max_tid = min(int_tids), max(int_tids)
-        self.oldest = datetime.fromtimestamp(self.corpus_data[str(min_tid)]['date'])
-        self.latest = datetime.fromtimestamp(self.corpus_data[str(max_tid)]['date'])
+        if len(self.corpus_data) > 0:            
+            self.get_dictionary()
+            int_tids = [int(tid) for tid in self.corpus_data]
+            min_tid, max_tid = min(int_tids), max(int_tids)
+            self.oldest = datetime.fromtimestamp(self.corpus_data[str(min_tid)]['date'])
+            self.latest = datetime.fromtimestamp(self.corpus_data[str(max_tid)]['date'])
   
     def get_tfidf(self):
         corpus_bow = [info['bow'] for info in self.corpus_data.values()]
