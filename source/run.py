@@ -74,7 +74,9 @@ def main(args):
                          trigger_days      = const._TRIGGER_DAYS,
                          keep_days         = const._KEEP_DAYS, 
                          T                 = const._T,
+                         duplicate_thresh  = const._DUPLICATE_THRESH, 
                          irrelevant_thresh = const._IRRELEVANT_THRESH, 
+                         max_size          = 2*const._TOP_NUM,
                          logger            = utils.get_logger(lc._RUN_LOG_NAME+'.topics')
                          )
 
