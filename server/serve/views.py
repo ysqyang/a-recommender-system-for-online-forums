@@ -34,11 +34,11 @@ def serve_recommendations(request):
                              'dto': {'list':[]},
                              '_t': datetime.now().timestamp()})
 
-    n_folders = const._NUM_RESULT_FOLDERS
-    result_dir = const._CORPUS_FOLDER
+    n_dirs = const._NUM_RESULT_DIRS
+    result_dir = const._CORPUS_DIR
 
     def retrieve_data(topic_id):
-        folder = str(int(topic_id) % n_folders)
+        folder = str(int(topic_id) % n_dirs)
         file_name = os.path.join(result_dir, folder, topic_id)
         try:   
             with open(file_name, 'r') as f:

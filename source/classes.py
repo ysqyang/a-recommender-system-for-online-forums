@@ -98,15 +98,15 @@ class Corpus(object):
             self.oldest = datetime.fromtimestamp(self.corpus_data[str(min_tid)]['date'])
             self.latest = datetime.fromtimestamp(self.corpus_data[str(max_tid)]['date'])
   
-    def get_tfidf(self):
+    def get_tfidf_model(self):
         corpus_bow = [info['bow'] for info in self.corpus_data.values()]
-        model = models.TfidfModel(corpus_bow, smartirs=self.scheme)
-        return [model[bow] for bow in corpus_bow]
+        return models.TfidfModel(corpus_bow, smartirs=self.scheme) 
 
     def remove_old(self):
         '''
         Removes all topics posted before date specified by cut_off 
         '''
+        print(self.oldest, self.latest)
         if (self.latest - self.oldest).days <= self.trigger_days:
             self.logger.info('No removal needed')
             return []
@@ -132,7 +132,7 @@ class Corpus(object):
     def add_one(self, topic):
         new_date = datetime.fromtimestamp(topic['postDate'])
         if (self.latest - new_date).days > self.trigger_days:
-            self.logger.info('Topic is not in date range')
+            self.logger.info('Topic not in date range')
             return False
 
         new_tid = str(topic['topicID'])
@@ -141,24 +141,25 @@ class Corpus(object):
             return False
 
         word_list = self.preprocess(' '.join(topic['body'].split()))
-        if len(word_list) > 0:           
-            self.dictionary.add_documents([word_list])
-            bow = self.dictionary.doc2bow(word_list)
+        if len(word_list) == 0:
+            self.logger.info('Topic not recommendable')
+            return False      
+        
+        self.dictionary.add_documents([word_list])
+        bow = self.dictionary.doc2bow(word_list)
 
-            self.corpus_data[new_tid] = {'date': topic['postDate'],
-                                         'content': word_list,
-                                         'bow': bow,
-                                         'updated': True}
+        self.corpus_data[new_tid] = {'date': topic['postDate'],
+                                     'content': word_list,
+                                     'bow': bow,
+                                     'updated': True}
 
-            self.oldest = min(self.oldest, new_date)
-            self.latest = max(self.latest, new_date)
-                         
-            self.logger.info('New topic has been added to the collection')
-            self.logger.info('Corpus data have been updated')
-            self.logger.info('%d topics available', len(self.corpus_data))
-            return True
-
-        return False
+        self.oldest = min(self.oldest, new_date)
+        self.latest = max(self.latest, new_date)
+                     
+        self.logger.info('New topic has been added to the collection')
+        self.logger.info('Corpus data have been updated')
+        self.logger.info('%d topics available', len(self.corpus_data))
+        return True
 
     def delete_one(self, topic_id):       
         topic_id = str(topic_id)
@@ -173,12 +174,12 @@ class Corpus(object):
         if len(self.corpus_data) == 0:
             self.oldest, self.latest = datetime.max, datetime.min
         else:    
-            int_tids = [int(tid) for tid in self.corpus_data]
-            min_tid, max_tid = min(int_tids), max(int_tids)
             if delete_date == self.oldest:
+                min_tid = min(int(tid) for tid in self.corpus_data)
                 oldest_stmp = self.corpus_data[str(min_tid)]['date']
                 self.oldest = datetime.fromtimestamp(oldest_stmp)
             if delete_date == self.latest:
+                max_tid = max(int(tid) for tid in self.corpus_data)
                 latest_stmp = self.corpus_data[str(max_tid)]['date']
                 self.latest = datetime.fromtimestamp(latest_stmp)
 
@@ -206,12 +207,6 @@ class Corpus_with_similarity_data(Corpus):
         self.irrelevant_thresh = irrelevant_thresh
         self.max_size = max_size
 
-    def check_correctness(self):
-        '''
-        Perform correctness and consistency checks
-        ''' 
-        assert len(self.sim_sorted)==len(self.corpus_data)
-
     def load(self, save_dir):       
         super().load(save_dir)
         
@@ -230,19 +225,6 @@ class Corpus_with_similarity_data(Corpus):
                         self.sim_sorted[file] = rec['sim_list']
                 except json.JSONDecodeError as e:
                     self.logger.error('Failed to load similarity data for topic %s', file)
-
-    def get_topics_by_keywords(self, keyword_weight):
-        now = datetime.now()
-        recoms = defaultdict(int)
-        for tid, info in self.corpus_data.items():
-            post_time = datetime.fromtimestamp(info['date'])
-            for word_id, freq in info['bow']:
-                word = self.dictionary[word_id]
-                if word in keyword_weight:
-                    recoms[tid] += freq*keyword_weight[word]
-            recoms[tid] *= math.exp(-(now-post_time).days/self.T)
-
-        return sorted(recoms.items(), key=lambda x:x[1], reverse=True)
             
     def remove_old(self):
         '''
@@ -320,7 +302,7 @@ class Corpus_with_similarity_data(Corpus):
         save_dir: directory under which to save the data
         mod_num:  number of data folders
         ''' 
-        self.check_correctness()
+        assert len(self.sim_sorted)==len(self.corpus_data)
         for tid, info in self.corpus_data.items():
             if info['updated']:
                 sim_record = {'date': info['date'],

@@ -1,7 +1,7 @@
 import utils
 #import topic_profiling as tp
 #import similarity as sim
-#from gensim import models
+from gensim.models import TfidfModel
 import json
 import pika
 import os, sys
@@ -19,9 +19,9 @@ import log_config as lc
 import mq_config as mc
 
 class Save(threading.Thread):
-    def __init__(self, collection, interval, lock, save_dir, mod_num, logger=None):
+    def __init__(self, topics, interval, lock, save_dir, mod_num, logger=None):
         threading.Thread.__init__(self)
-        self.collection = collection
+        self.topics = topics
         self.interval = interval
         self.lock = lock
         self.save_dir = save_dir
@@ -31,12 +31,12 @@ class Save(threading.Thread):
         while True:
             time.sleep(self.interval)
             with self.lock:
-                self.collection.save(self.save_dir, self.mod_num)
+                self.topics.save(self.save_dir, self.mod_num)
 '''
 class Delete(threading.Thread):
-    def __init__(self, collection, save_dir):
+    def __init__(self, topics, save_dir):
         threading.Thread.__init__(self)
-        self.collection = collection
+        self.topics = topics
         self.interval = interval
         self.save_dir = save_dir
 
@@ -63,7 +63,7 @@ def main(args):
     # load stopwords
     stopwords = utils.load_stopwords(const._STOPWORD_FILE)
 
-    collection = classes.Corpus_with_similarity_data( 
+    topics = classes.Corpus_with_similarity_data( 
                          puncs             = const._PUNCS,
                          singles           = const._SINGLES, 
                          stopwords         = stopwords, 
@@ -80,14 +80,37 @@ def main(args):
                          logger            = utils.get_logger(lc._RUN_LOG_NAME+'.topics')
                          )
 
-    collection.get_dictionary()
+    specials = classes.Corpus(singles      = const._SINGLES, 
+                              stopwords    = stopwords, 
+                              trigger_days = const._TRIGGER_DAYS,
+                              keep_days    = const._KEEP_DAYS, 
+                              T            = const._T,
+                              logger       = utils.get_logger(lc._RUN_LOG_NAME+'.special'))
+
+    topics.get_dictionary()
+    specials.get_dictionary()
+    tfidf = {}
 
     # load previously saved corpus and similarity data if possible
     if args.l:
         try:
-            collection.load(const._CORPUS_FOLDER)
-        except FileNotFoundError as e:
-            logger.exception('Data files not found. New files will be created')
+            topics.load(const._CORPUS_DIR)
+        except FileNotFoundError:
+            logger.exception('Topic data files not found. New files will be created')
+        try:
+            specials.load(const._SPECIAL_CORPUS_DIR)
+        except FileNotFoundError:
+            logger.exception('Special topic data files not found. New files will be created')
+        try:
+            recoms = json.load(const._RECOMS)
+        except FileNotFoundError:
+            logger.exception('Recommendation data file not found. New dict will be instantiated')
+            recoms = {}
+        except json.JSONDecodeError:
+            logger.exception('Failed to load recommendation data. New dict will be instantiated')
+            recoms = {}
+    else:
+        recoms = {}
     
     # establish rabbitmq connection and declare queues
     if args.c:
@@ -112,7 +135,7 @@ def main(args):
         subject_dict = body
         logger.info('Updating recommendations for subject %s', subject_dict['subID'])
         keyword_weight
-        recoms = collection.get_topics_by_keywords(keyword_weight)
+        recoms = topics.get_topics_by_keywords(keyword_weight)
     
     def on_update_topic(ch, method, properties, body):
         update_topic = json.loads(body)
@@ -123,13 +146,13 @@ def main(args):
         utils.save_topics(topic_dict, const._TOPIC_FILE)
     '''   
     lock = threading.Lock()
-    save_thread = Save(collection = collection, 
+    save_topics = Save(topics = topics, 
                        interval   = const._SAVE_INTERVAL,
                        lock       = lock, 
-                       save_dir   = const._CORPUS_FOLDER,
-                       mod_num    = const._NUM_RESULT_FOLDERS)
+                       save_dir   = const._CORPUS_DIR,
+                       mod_num    = const._NUM_RESULT_DIRS)
     
-    save_thread.start()
+    save_topics.start()
     
     while True:       
         try:
@@ -139,37 +162,76 @@ def main(args):
                                      exchange_type='direct')
           
             channel.queue_declare(queue='new_topics')
+            channel.queue_declare(queue='special_topics')
             channel.queue_declare(queue='delete_topics')
             #channel.queue_declare(queue='update_topics')   
             channel.queue_bind(exchange=const._EXCHANGE_NAME, 
                                queue='new_topics', routing_key='new')
+            channel.queue_bind(exchange=const._EXCHANGE_NAME,
+                               queue='special_topics', routing_key='special')
             channel.queue_bind(exchange=const._EXCHANGE_NAME, 
                                queue='delete_topics', routing_key='delete')
             #channel.queue_bind(exchange=const._EXCHANGE_NAME, queue='update_topics', routing_key='update')
-            def on_new_topic(ch, method, properties, body):
-                while type(body) != dict:
-                    body = json.loads(body)
+            def decode_to_dict(msg):
+                while type(msg) != dict:
+                    msg = json.loads(msg)
+                return msg
+
+            def get_relevance(stid, tid):
+                relevance = 0
+                ts = datetime.fromtimestamp(specials.corpus_data[stid]['date'])
+                t = datetime.fromtimestamp(topics.corpus_data[tid]['date'])
+
+                bow = topics.corpus_data[topic_id]['bow']
+                keyword_weight = 
+
+                for word_id, freq in bow:
+                    word = dictionary[word_id]
+                    if word in keyword_weight:
+                        relevance += freq*keyword_weight[word]
                 
-                new_topic = body
+                relevance *= math.min(1, exp(-(ts-t).days/self.T))
+
+                return relevance
+
+            def on_new_topic(ch, method, properties, body):
+                new_topic = decode_to_dict(body)
                 new_topic['postDate'] /= const._TIMESTAMP_FACTOR
-                logger.info('Received new topic, id=%s', new_topic['topicID'])
+                logger.info('Received new topic %s', new_topic['topicID'])
 
                 with lock:
-                    collection.add_one(new_topic)
-                    collection.remove_old()
+                    if topics.add_one(new_topic):
+                        topics.remove_old()
+                        for stid in specials.corpus_data:
+                            recoms[stid] = get_relevance(stid, new_topic['topicID'])
                 channel.basic_ack(delivery_tag=method.delivery_tag)      
 
-            def on_delete(ch, method, properties, body):
-                while type(body) != dict:
-                    body = json.loads(body)
+            def on_special_topic(ch, method, properties, body):
+                special_topic = decode_to_dict(body)
+                special_topic['postDate'] /= const._TIMESTAMP_FACTOR
+                logger.info('Received special topic %s', special_topic['topicID'])
 
-                delete_topic = body
-                logger.info('Deleting topic %s', delete_topic['topicID'])
                 with lock:
-                    collection.delete_one(delete_topic['topicID'])
+                    if specials.add_one(special_topic):
+                        specials.remove_old()
+                        model = specials.get_tfidf_model()
+                        tfidf{special_topic['topicID']} = 
+
+                    specials.get_tfidf()
+                    keyword_weight = specials.corpus_data['']
+                
+                channel.basic_ack(delivery_tag=method.delivery_tag) 
+
+            def on_delete(ch, method, properties, body):
+                delete_topic = decode_to_dict(body)
+                logger.info('Deleting topic %s', delete_topic['topicID'])
+                
+                with lock:
+                    topics.delete_one(delete_topic['topicID'])
                 channel.basic_ack(delivery_tag=method.delivery_tag)
             
             channel.basic_consume(on_new_topic, queue='new_topics')
+            channel.basic_consume(on_special_topic, queue='special_topics')
             channel.basic_consume(on_delete, queue='delete_topics')
             '''
             channel.basic_consume(on_update_topic, queue='update_topics')                                  
