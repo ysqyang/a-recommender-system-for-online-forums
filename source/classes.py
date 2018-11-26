@@ -285,7 +285,8 @@ class Corpus_with_similarity_data(Corpus):
         if not super().delete_one(topic_id):
             return False
 
-        del self.sim_sorted[topic_id]
+        if topic_id in self.sim_sorted:
+            del self.sim_sorted[topic_id]
 
         for tid, sim_list in self.sim_sorted.items():
             self.sim_sorted[tid] = [x for x in sim_list if x[0] != topic_id]

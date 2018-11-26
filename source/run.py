@@ -21,9 +21,11 @@ import log_config as lc
 import mq_config as mc
 
 class Save(threading.Thread):
-    def __init__(self, topics, interval, lock, save_dir, mod_num, logger=None):
+    def __init__(self, topics, recoms, interval, lock, save_dir, 
+                 mod_num, logger=None):
         threading.Thread.__init__(self)
         self.topics = topics
+        self.recoms = recoms
         self.interval = interval
         self.lock = lock
         self.save_dir = save_dir
@@ -34,6 +36,11 @@ class Save(threading.Thread):
             time.sleep(self.interval)
             with self.lock:
                 self.topics.save(self.save_dir, self.mod_num)
+                path = os.path.join(self.save_dir, 'recoms')
+                if not os.path.exists(path):
+                    os.mkdir(path)
+                with open(path, 'w') as f:
+                    json.dump(recoms, f)
 '''
 class Delete(threading.Thread):
     def __init__(self, topics, save_dir):
@@ -99,9 +106,8 @@ def main(args):
             topics.load(const._CORPUS_DIR)
         except FileNotFoundError:
             logger.exception('Topic data files not found. New files will be created')
-        '''
         try:
-            specials.load(const._SPECIAL_CORPUS_DIR)
+            specials.load(const._SPECIALS_DIR)
         except FileNotFoundError:
             logger.exception('Special topic data files not found. New files will be created')
         try:
@@ -110,7 +116,6 @@ def main(args):
             logger.exception('Recommendation data file not found. New dict will be instantiated')
         except json.JSONDecodeError:
             logger.exception('Failed to load recommendation data. New dict will be instantiated')
-        '''
     
     # establish rabbitmq connection and declare queues
     if args.c:
@@ -127,11 +132,11 @@ def main(args):
         params = pika.ConnectionParameters(host='localhost')
     
     lock = threading.Lock()
-    save_topics = Save(topics = topics, 
-                       interval   = const._SAVE_INTERVAL,
-                       lock       = lock, 
-                       save_dir   = const._CORPUS_DIR,
-                       mod_num    = const._NUM_RESULT_DIRS)
+    save_topics = Save(topics   = topics, 
+                       interval = const._SAVE_INTERVAL,
+                       lock     = lock, 
+                       save_dir = const._CORPUS_DIR,
+                       mod_num  = const._NUM_RESULT_DIRS)
     
     save_topics.start()
     
@@ -158,24 +163,24 @@ def main(args):
                     msg = json.loads(msg)
                 return msg
 
-            '''
             def get_relevance(stid, tid):
                 relevance = 0
                 ts = datetime.fromtimestamp(specials.corpus_data[stid]['date'])
                 t = datetime.fromtimestamp(topics.corpus_data[tid]['date'])
 
-                bow = topics.corpus_data[topic_id]['bow']
-                tfidf_weight = keyword_weight[stid]  
+                bow = topics.corpus_data[tid]['bow']
+                tfidf_weight = {wid:weight for wid, weight in keyword_weight[stid]}  
 
                 for word_id, freq in bow:
-                    word = dictionary[word_id]
-                    if word in keyword_weight:
-                        relevance += freq*keyword_weight[word]
+                    word = topics.dictionary[word_id]
+                    if word in specials.dictionary.token2id:
+                        word_id_in_specials = specials.dictionary.token2id[word]
+                        if word_id_in_specials in tfidf_weight:
+                            relevance += freq*tfidf_weight[word_id_in_specials]
                 
                 relevance *= math.min(1, math.exp(-(ts-t).days/self.T))
 
                 return relevance
-            '''
 
             def on_new_topic(ch, method, properties, body):
                 new_topic = decode_to_dict(body)
@@ -192,11 +197,10 @@ def main(args):
                 with lock:
                     if topics.add_one(new_topic):
                         topics.remove_old()
-                        '''
                         for stid in specials.corpus_data:
                             match_val = get_relevance(stid, new_tid)
                             recom_insert(recoms[stid], new_tid, match_val)
-                        '''
+
                 channel.basic_ack(delivery_tag=method.delivery_tag)      
 
             def on_special_topic(ch, method, properties, body):
@@ -212,6 +216,7 @@ def main(args):
                         for stid in specials.corpus_data:
                             keyword_weight[stid] = model[specials.corpus_data[stid]['bow']]
                             keyword_weight[stid].sort(key=lambda x:x[1], reverse=True)
+                            del keyword_weight[stid][const._KEYWORD_NUM:]
                             recom_list = [[tid, get_relevance(stid, tid)] for tid in topics]
                             recom_list.sort(key=lambda x:x[1], reverse=True)
                             recoms[stid] = recom_list
@@ -278,7 +283,7 @@ def main(args):
                                             update=True, 
                                             path=const._SIMILARITIES)
     
-'''
+    '''
 if __name__ == '__main__': 
     parser = argparse.ArgumentParser()
     parser.add_argument('-l', action='store_true', help='load previously saved corpus and similarity data')
