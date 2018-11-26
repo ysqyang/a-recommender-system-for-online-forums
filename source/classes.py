@@ -50,7 +50,8 @@ class Corpus(object):
         words = jieba.cut(text, cut_all=False)
         
         for word in words:
-            if re.match(alphanum, word, flags=re.ASCII)       \
+            if len(word) == 1                                 \
+               or re.match(alphanum, word, flags=re.ASCII)    \
                or re.match(whitespace, word, flags=re.ASCII)  \
                or word in self.stopwords                      \
                or any(c in self.singles for c in word)        \
@@ -97,15 +98,15 @@ class Corpus(object):
             self.oldest = datetime.fromtimestamp(self.corpus_data[str(min_tid)]['date'])
             self.latest = datetime.fromtimestamp(self.corpus_data[str(max_tid)]['date'])
   
-    def get_tfidf(self):
+    def get_tfidf_model(self):
         corpus_bow = [info['bow'] for info in self.corpus_data.values()]
-        model = models.TfidfModel(corpus_bow, smartirs=self.scheme)
-        return [model[bow] for bow in corpus_bow]
+        return models.TfidfModel(corpus_bow, smartirs=self.scheme) 
 
     def remove_old(self):
         '''
         Removes all topics posted before date specified by cut_off 
         '''
+        print(self.oldest, self.latest)
         if (self.latest - self.oldest).days <= self.trigger_days:
             self.logger.info('No removal needed')
             return []
@@ -130,8 +131,8 @@ class Corpus(object):
 
     def add_one(self, topic):
         new_date = datetime.fromtimestamp(topic['postDate'])
-        if (self.latest - new_date).days > self.keep_days:
-            self.logger.info('Topic is not in date range')
+        if (self.latest - new_date).days > self.trigger_days:
+            self.logger.info('Topic not in date range')
             return False
 
         new_tid = str(topic['topicID'])
@@ -140,24 +141,25 @@ class Corpus(object):
             return False
 
         word_list = self.preprocess(' '.join(topic['body'].split()))
-        if len(word_list) > 0:           
-            self.dictionary.add_documents([word_list])
-            bow = self.dictionary.doc2bow(word_list)
+        if len(word_list) == 0:
+            self.logger.info('Topic not recommendable')
+            return False      
+        
+        self.dictionary.add_documents([word_list])
+        bow = self.dictionary.doc2bow(word_list)
 
-            self.corpus_data[new_tid] = {'date': topic['postDate'],
-                                         'content': word_list,
-                                         'bow': bow,
-                                         'updated': True}
+        self.corpus_data[new_tid] = {'date': topic['postDate'],
+                                     'content': word_list,
+                                     'bow': bow,
+                                     'updated': True}
 
-            self.oldest = min(self.oldest, new_date)
-            self.latest = max(self.latest, new_date)
-                         
-            self.logger.info('New topic has been added to the collection')
-            self.logger.info('Corpus data have been updated')
-            self.logger.info('%d topics available', len(self.corpus_data))
-            return True
-
-        return False
+        self.oldest = min(self.oldest, new_date)
+        self.latest = max(self.latest, new_date)
+                     
+        self.logger.info('New topic has been added to the collection')
+        self.logger.info('Corpus data have been updated')
+        self.logger.info('%d topics available', len(self.corpus_data))
+        return True
 
     def delete_one(self, topic_id):       
         topic_id = str(topic_id)
@@ -172,12 +174,12 @@ class Corpus(object):
         if len(self.corpus_data) == 0:
             self.oldest, self.latest = datetime.max, datetime.min
         else:    
-            int_tids = [int(tid) for tid in self.corpus_data]
-            min_tid, max_tid = min(int_tids), max(int_tids)
             if delete_date == self.oldest:
+                min_tid = min(int(tid) for tid in self.corpus_data)
                 oldest_stmp = self.corpus_data[str(min_tid)]['date']
                 self.oldest = datetime.fromtimestamp(oldest_stmp)
             if delete_date == self.latest:
+                max_tid = max(int(tid) for tid in self.corpus_data)
                 latest_stmp = self.corpus_data[str(max_tid)]['date']
                 self.latest = datetime.fromtimestamp(latest_stmp)
 
@@ -193,25 +195,17 @@ class Corpus_with_similarity_data(Corpus):
     '''
     def __init__(self, puncs, singles, stopwords, punc_frac_low, punc_frac_high, 
                  valid_count, valid_ratio, trigger_days, keep_days, T, 
-                 irrelevant_thresh, logger):
+                 duplicate_thresh, irrelevant_thresh, max_size, logger):
         super().__init__(singles, stopwords, trigger_days, keep_days, T, logger)
-        self.sim_matrix = defaultdict(dict)
         self.sim_sorted = defaultdict(list)
         self.puncs = puncs
         self.punc_frac_low = punc_frac_low
         self.punc_frac_high = punc_frac_high
         self.valid_count = valid_count
         self.valid_ratio = valid_ratio
+        self.duplicate_thresh = duplicate_thresh
         self.irrelevant_thresh = irrelevant_thresh
-
-    def check_correctness(self):
-        '''
-        Perform correctness and consistency checks
-        ''' 
-        assert len(self.sim_matrix)==len(self.sim_sorted)==len(self.corpus_data)
-        assert all(tid in self.sim_sorted for tid in self.sim_matrix)
-        assert all(tid in self.sim_matrix for tid in self.sim_sorted)
-        assert all(len(self.sim_matrix[tid])==len(self.sim_sorted[tid]) for tid in self.sim_matrix)
+        self.max_size = max_size
 
     def load(self, save_dir):       
         super().load(save_dir)
@@ -228,23 +222,9 @@ class Corpus_with_similarity_data(Corpus):
                 try:
                     with open(path, 'r') as f:
                         rec = json.load(f)
-                        self.sim_matrix[file] = rec['sim_dict']
                         self.sim_sorted[file] = rec['sim_list']
                 except json.JSONDecodeError as e:
                     self.logger.error('Failed to load similarity data for topic %s', file)
-
-    def get_topics_by_keywords(self, keyword_weight):
-        now = datetime.now()
-        recoms = defaultdict(int)
-        for tid, info in self.corpus_data.items():
-            post_time = datetime.fromtimestamp(info['date'])
-            for word_id, freq in info['bow']:
-                word = self.dictionary[word_id]
-                if word in keyword_weight:
-                    recoms[tid] += freq*keyword_weight[word]
-            recoms[tid] *= math.exp(-(now-post_time).days/self.T)
-
-        return sorted(recoms.items(), key=lambda x:x[1], reverse=True)
             
     def remove_old(self):
         '''
@@ -255,14 +235,8 @@ class Corpus_with_similarity_data(Corpus):
             return delete_tids
         
         for delete_tid in delete_tids:
-            del self.sim_matrix[delete_tid]
-            del self.sim_sorted[delete_tid]
-        
-        for tid, sim_dict in self.sim_matrix.items():
-            for delete_tid in delete_tids:
-                if delete_tid in sim_dict:
-                    del sim_dict[delete_tid]
-                    self.corpus_data[tid]['updated'] = True
+            if delete_tid in self.sim_sorted:
+                del self.sim_sorted[delete_tid]
 
         for tid, sim_list in self.sim_sorted.items():
             self.sim_sorted[tid] = [x for x in sim_list if x[0] not in delete_tids]
@@ -277,11 +251,17 @@ class Corpus_with_similarity_data(Corpus):
             i = 0
             while i < len(sim_list) and sim_list[i][1] > target_sim_val:
                 i += 1
-            sim_list.insert(i, (target_tid, target_sim_val))           
+            if i == len(sim_list) == self.max_size:
+                return False
+            sim_list.insert(i, [target_tid, target_sim_val])
+            if len(sim_list) > self.max_size:
+                del sim_list[self.max_size:]  
+            return True       
 
         new_tid = str(topic['topicID'])
         new_date = datetime.fromtimestamp(self.corpus_data[new_tid]['date'])
         bow = self.corpus_data[new_tid]['bow']
+        self.sim_sorted[new_tid] = []
 
         for tid, info in self.corpus_data.items():
             date = datetime.fromtimestamp(info['date'])
@@ -290,18 +270,14 @@ class Corpus_with_similarity_data(Corpus):
                 sim_val = matutils.cossim(bow, info['bow'])
                 sim_val_1 = sim_val * min(1, 1/time_factor)
                 sim_val_2 = sim_val * min(1, time_factor)
-                if sim_val_1 >= self.irrelevant_thresh:
-                    self.sim_matrix[tid][new_tid] = sim_val_1
-                    self.corpus_data[tid]['updated'] = True
-                    sim_insert(self.sim_sorted[tid], new_tid, sim_val_1)
-                if sim_val_2 >= self.irrelevant_thresh:
-                    self.sim_matrix[new_tid][tid] = sim_val_2
+                if self.irrelevant_thresh <= sim_val_1 <= self.duplicate_thresh:
+                    if sim_insert(self.sim_sorted[tid], new_tid, sim_val_1):
+                        self.corpus_data[tid]['updated'] = True
+                if self.irrelevant_thresh <= sim_val_2 <= self.duplicate_thresh:   
+                    sim_insert(self.sim_sorted[new_tid], tid, sim_val_2)
 
-        self.sim_sorted[new_tid] = sorted(self.sim_matrix[new_tid].items(), 
-                                          key=lambda x:x[1], reverse=True)
         self.logger.info('Topic %s has been added to similarity results', new_tid)
-        self.logger.debug('sim_matrix_len=%d, sim_sorted_len=%d', 
-                          len(self.sim_matrix), len(self.sim_sorted))
+        self.logger.debug('sim_sorted_len=%d', len(self.sim_sorted))
 
         return True
 
@@ -309,20 +285,13 @@ class Corpus_with_similarity_data(Corpus):
         if not super().delete_one(topic_id):
             return False
 
-        del self.sim_matrix[topic_id]
         del self.sim_sorted[topic_id]
-
-        for tid, sim_dict in self.sim_matrix.items():
-            if topic_id in sim_dict:
-                del sim_dict[topic_id]
-                self.corpus_data[tid]['updated'] = True
 
         for tid, sim_list in self.sim_sorted.items():
             self.sim_sorted[tid] = [x for x in sim_list if x[0] != topic_id]
 
         self.logger.info('Topic %s has been deleted from similarity results', topic_id)
-        self.logger.debug('sim_matrix_len=%d, sim_sorted_len=%d', 
-                          len(self.sim_matrix), len(self.sim_sorted))
+        self.logger.debug('sim_sorted_len=%d', len(self.sim_sorted))
 
         return True
 
@@ -333,13 +302,12 @@ class Corpus_with_similarity_data(Corpus):
         save_dir: directory under which to save the data
         mod_num:  number of data folders
         ''' 
-        self.check_correctness()
+        assert len(self.sim_sorted)==len(self.corpus_data)
         for tid, info in self.corpus_data.items():
             if info['updated']:
                 sim_record = {'date': info['date'],
                               'content': info['content'],
-                              'bow': info['bow'],
-                              'sim_dict': self.sim_matrix[tid], 
+                              'bow': info['bow'], 
                               'sim_list': self.sim_sorted[tid]}
                 folder_name = str(int(tid) % mod_num)
                 folder_path = os.path.join(save_dir, folder_name)

@@ -34,13 +34,12 @@ def serve_recommendations(request):
                              'dto': {'list':[]},
                              '_t': datetime.now().timestamp()})
 
-    n_folders = const._NUM_RESULT_FOLDERS
-    result_dir = const._CORPUS_FOLDER
+    n_dirs = const._NUM_RESULT_DIRS
+    result_dir = const._CORPUS_DIR
 
     def retrieve_data(topic_id):
-        folder = str(int(topic_id) % n_folders)
+        folder = str(int(topic_id) % n_dirs)
         file_name = os.path.join(result_dir, folder, topic_id)
-        print(file_name)
         try:   
             with open(file_name, 'r') as f:
                 sim_data = json.load(f)
@@ -48,7 +47,7 @@ def serve_recommendations(request):
         except Exception as e:
             logger.exception('Data file unavailable or corrupted')
 
-    sim_data = retrieve_data(str(request.GET['topicID']))
+    sim_data = retrieve_data(str(request.GET['topicID']))['sim_list']
     if sim_data is None:
         return JsonResponse({'status': True,
                              'errorCode': 2,
@@ -56,24 +55,9 @@ def serve_recommendations(request):
                              'dto': {'list':[]},
                              '_t': datetime.now().timestamp()})
 
-    print(sim_data)
-    recoms = []
-    for tid, sim_val in sim_data['sim_list']: 
-        if sim_val > const._DUPLICATE_THRESH:
-            continue
-        
-        if recoms == []                       \
-           or data is None                    \
-           or tid not in data['sim_dict']     \
-           or data['sim_dict'][tid] < const._DUPLICATE_THRESH: 
-            recoms.append(tid)
-            data = retrieve_data(tid)
-            if len(recoms) == const._TOP_NUM:
-                break
-
-    print(recoms)
+    recoms = [x[0] for x in sim_data[:const._TOP_NUM]]
     return JsonResponse({'status': True,
                          'errorCode': 0,
                          'errorMessage': '',
-                         'dto': {'list':recoms},
+                         'dto': {'list': recoms},
                          '_t': datetime.now().timestamp()}) 
