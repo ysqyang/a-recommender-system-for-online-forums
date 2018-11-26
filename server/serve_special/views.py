@@ -32,24 +32,22 @@ def serve_recommendations(request):
                              'dto': {'list':[]},
                              '_t': datetime.now().timestamp()})
 
-    n_dirs = const._NUM_RESULT_DIRS
-    result_dir = const._TOPIC_DIR
+    result_dir = const._RECOM_DIR
 
     def retrieve_data(topic_id):
-        folder = str(int(topic_id) % n_dirs)
-        file_name = os.path.join(result_dir, folder, topic_id)
+        file_name = os.path.join(result_dir, topic_id)
         with open(file_name, 'r') as f:
-            sim_data = json.load(f)
-        return sim_data 
-            
+            recom_data = json.load(f)
+        return recom_data
+
     try:
-        sim_data = retrieve_data(str(request.GET['topicID']))['sim_list']
-        recoms = [x[0] for x in sim_data[:const._TOP_NUM]]
+        recoms = retrieve_data(str(request.GET['topicID']))
+        #recoms = [x[0] for x in recoms[:5]]
         return JsonResponse({'status': True,
                              'errorCode': 0,
                              'errorMessage': '',
                              'dto': {'list': recoms},
-                             '_t': datetime.now().timestamp()}) 
+                             '_t': datetime.now().timestamp()})
     except:
         logger.exception('Data file unavailable or corrupted')
         return JsonResponse({'status': True,

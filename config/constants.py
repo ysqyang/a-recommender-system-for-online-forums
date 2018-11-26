@@ -3,22 +3,23 @@ import os
 import sys
 
 _ROOT               = os.path.dirname(sys.path[0])
-_RESULTS_DIR        = os.path.join(_ROOT, 'results')
+_RESULT_DIR         = os.path.join(_ROOT, 'results')
 _DATA_DIR           = os.path.join(_ROOT, 'data')
 _STOPWORD_FILE      = os.path.join(_ROOT, 'stopwords.txt')
 _TOPIC_FILE         = os.path.join(_DATA_DIR, 'topics')
 _REPLY_FILE         = os.path.join(_DATA_DIR, 'replies') 
 #_PROFILES          = os.path.join(_RESULTS_DIR, 'profiles')
 #_PROFILE_WORDS     = os.path.join(_RESULTS_DIR, 'profile_words')
-_SPECIALS_DIR       = os.path.join(_RESULTS_DIR, 'special_topics')
-_CORPUS_DIR         = os.path.join(_RESULTS_DIR, 'topics')
-_RECOMS             = os.path.join(_RESULTS_DIR, 'recoms')
+_SPECIAL_DIR        = os.path.join(_RESULT_DIR, 'special_topics')
+_TOPIC_DIR          = os.path.join(_RESULT_DIR, 'topics')
+_RECOM_DIR          = os.path.join(_RESULT_DIR, 'recoms')
+_SMARTIRS_SCHEME    = 'ntn'
 _SLEEP_TIME         = 10
 _DB_INFO            = ('192.168.1.102','tgbweb','tgb123321','taoguba', 3307, 'utf8mb4')
 _EXCHANGE_NAME      = 'recommender'
 _DATETIME_FORMAT    = '%Y-%m-%d %H:%M:%S'
 _NUM_RESULT_DIRS    = 1000
-_SAVE_INTERVAL      = 60     # number of seconds between successive saves
+_SAVE_INTERVAL      = 30     # number of seconds between successive saves
 _TIMESTAMP_FACTOR   = 1000
 _DAYS               = 90
 _T                  = 30     #time decay factor

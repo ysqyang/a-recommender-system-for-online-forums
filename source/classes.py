@@ -17,12 +17,18 @@ class Corpus(object):
     '''
     Corpus object
     '''
-    def __init__(self, singles, stopwords, trigger_days, 
+    def __init__(self, singles, puncs, punc_frac_low, punc_frac_high,
+                 valid_count, valid_ratio, stopwords, trigger_days, 
                  keep_days, T, logger):
         self.corpus_data = {}
         self.oldest = datetime.max
         self.latest = datetime.min
         self.singles = singles
+        self.puncs = puncs
+        self.punc_frac_low = punc_frac_low
+        self.punc_frac_high = punc_frac_high
+        self.valid_count = valid_count
+        self.valid_ratio = valid_ratio
         self.stopwords = stopwords
         self.trigger_days = trigger_days
         self.keep_days = keep_days
@@ -98,9 +104,9 @@ class Corpus(object):
             self.oldest = datetime.fromtimestamp(self.corpus_data[str(min_tid)]['date'])
             self.latest = datetime.fromtimestamp(self.corpus_data[str(max_tid)]['date'])
   
-    def get_tfidf_model(self):
+    def get_tfidf_model(self, scheme):
         corpus_bow = [info['bow'] for info in self.corpus_data.values()]
-        return models.TfidfModel(corpus_bow, smartirs=self.scheme) 
+        return models.TfidfModel(corpus_bow, smartirs=scheme) 
 
     def remove_old(self):
         '''
@@ -193,16 +199,21 @@ class Corpus_with_similarity_data(Corpus):
     '''
     Corpus collection
     '''
-    def __init__(self, puncs, singles, stopwords, punc_frac_low, punc_frac_high, 
-                 valid_count, valid_ratio, trigger_days, keep_days, T, 
-                 duplicate_thresh, irrelevant_thresh, max_size, logger):
-        super().__init__(singles, stopwords, trigger_days, keep_days, T, logger)
+    def __init__(self, singles, puncs, punc_frac_low, punc_frac_high, 
+                 valid_count, valid_ratio, stopwords, trigger_days, keep_days, 
+                 T, duplicate_thresh, irrelevant_thresh, max_size, logger):
+        super().__init__(singles        = singles, 
+                         puncs          = puncs, 
+                         punc_frac_low  = punc_frac_low, 
+                         punc_frac_high = punc_frac_high,
+                         valid_count    = valid_count, 
+                         valid_ratio    = valid_ratio, 
+                         stopwords      = stopwords, 
+                         trigger_days   = trigger_days, 
+                         keep_days      = keep_days, 
+                         T              = T, 
+                         logger         = logger)
         self.sim_sorted = defaultdict(list)
-        self.puncs = puncs
-        self.punc_frac_low = punc_frac_low
-        self.punc_frac_high = punc_frac_high
-        self.valid_count = valid_count
-        self.valid_ratio = valid_ratio
         self.duplicate_thresh = duplicate_thresh
         self.irrelevant_thresh = irrelevant_thresh
         self.max_size = max_size

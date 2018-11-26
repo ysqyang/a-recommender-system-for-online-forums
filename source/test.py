@@ -22,14 +22,13 @@ config_path = os.path.abspath(os.path.join(root_dir, 'config'))
 sys.path.insert(1, config_path)
 import constants as const
 
-
 def main(args):
     if args.p:
         connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
         channel = connection.channel()
-        channel.exchange_declare(exchange=const._EXCHANGE_NAME,
-                                 exchange_type='direct')
+        channel.exchange_declare(exchange=const._EXCHANGE_NAME, exchange_type='direct')
         channel.queue_declare(queue='new_topics')
+        channel.queue_declare(queue='special_topics')
         channel.queue_declare(queue='delete_topics')
         #channel.queue_declare(queue='active_topics')
         with open(const._TOPIC_FILE, 'r') as f:
@@ -43,10 +42,14 @@ def main(args):
             rec = topics[tid]
             rec['topicID'] = tid
             msg = json.dumps(rec)
-            #print(msg)
-            channel.basic_publish(exchange=const._EXCHANGE_NAME,
-                                  routing_key='new',
-                                  body=msg)
+            if tid in {}:
+                channel.basic_publish(exchange=const._EXCHANGE_NAME,
+                                      routing_key='special',
+                                      body=msg)            
+            else:
+                channel.basic_publish(exchange=const._EXCHANGE_NAME,
+                                      routing_key='new',
+                                      body=msg)
         connection.close()
     else:       
         with open(const._TOPIC_FILE, 'r') as f:
@@ -54,11 +57,15 @@ def main(args):
         tid = 1506380
         print(topics[str(tid)]['body'])
         query_dict = {'topicID': str(tid)}
-        r = requests.get('http://127.0.0.1:8000/serve/', params=query_dict)
+        if args.s:
+            r = requests.get('http://127.0.0.1:8000/serve/', params=query_dict)
+        else:
+            r = requests.get('http://127.0.0.1:8000/serve_special/', params=query_dict)
         print('*'*80)
         print('您可能感兴趣的内容...')
         response = r.json()
         recoms = response['dto']['list']
+        print(recoms)
         for tid in recoms:
             print('*'*80)
             print(topics[tid]['body'])
@@ -66,5 +73,6 @@ def main(args):
 if __name__ == '__main__': 
     parser = argparse.ArgumentParser()
     parser.add_argument('-p', action='store_true', help='producing messages')
+    parser.add_argument('-s', action='store_true', help='serve recommendations')   
     args = parser.parse_args()
     main(args)

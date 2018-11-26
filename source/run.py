@@ -35,12 +35,17 @@ class Save(threading.Thread):
         while True:
             time.sleep(self.interval)
             with self.lock:
-                self.topics.save(self.save_dir, self.mod_num)
-                path = os.path.join(self.save_dir, 'recoms')
-                if not os.path.exists(path):
-                    os.mkdir(path)
-                with open(path, 'w') as f:
-                    json.dump(recoms, f)
+                topic_path = os.path.join(self.save_dir, 'topics')
+                if not os.path.exists(topic_path):
+                    os.mkdir(topic_path)
+                self.topics.save(topic_path, self.mod_num)
+                
+                recom_path = os.path.join(self.save_dir, 'recoms')
+                if not os.path.exists(recom_path):
+                    os.mkdir(recom_path)
+                for stid in self.recoms:
+                    with open(os.path.join(recom_path, stid), 'w') as f:
+                        json.dump(self.recoms[stid], f)
 '''
 class Delete(threading.Thread):
     def __init__(self, topics, save_dir):
@@ -72,13 +77,13 @@ def main(args):
     stopwords = utils.load_stopwords(const._STOPWORD_FILE)
 
     topics = classes.Corpus_with_similarity_data( 
-                         puncs             = const._PUNCS,
-                         singles           = const._SINGLES, 
-                         stopwords         = stopwords, 
+                         singles           = const._SINGLES,
+                         puncs             = const._PUNCS,  
                          punc_frac_low     = const._PUNC_FRAC_LOW,
                          punc_frac_high    = const._PUNC_FRAC_HIGH, 
                          valid_count       = const._VALID_COUNT, 
                          valid_ratio       = const._VALID_RATIO,
+                         stopwords         = stopwords,
                          trigger_days      = const._TRIGGER_DAYS,
                          keep_days         = const._KEEP_DAYS, 
                          T                 = const._T,
@@ -88,54 +93,65 @@ def main(args):
                          logger            = utils.get_logger(lc._RUN_LOG_NAME+'.topics')
                          )
 
-    specials = classes.Corpus(singles      = const._SINGLES, 
-                              stopwords    = stopwords, 
-                              trigger_days = const._TRIGGER_DAYS,
-                              keep_days    = const._KEEP_DAYS, 
-                              T            = const._T,
-                              logger       = utils.get_logger(lc._RUN_LOG_NAME+'.specials'))
+    specials = classes.Corpus(singles        = const._SINGLES,
+                              puncs          = const._PUNCS,                                                            
+                              punc_frac_low  = const._PUNC_FRAC_LOW,
+                              punc_frac_high = const._PUNC_FRAC_HIGH, 
+                              valid_count    = const._VALID_COUNT, 
+                              valid_ratio    = const._VALID_RATIO,
+                              stopwords      = stopwords,
+                              trigger_days   = const._TRIGGER_DAYS,
+                              keep_days      = const._KEEP_DAYS, 
+                              T              = const._T,
+                              logger         = utils.get_logger(lc._RUN_LOG_NAME+'.specials'))
 
-    topics.get_dictionary()
-    specials.get_dictionary()
     recoms = defaultdict(list)
     keyword_weight = defaultdict(list)
 
     # load previously saved corpus and similarity data if possible
     if args.l:
         try:
-            topics.load(const._CORPUS_DIR)
+            topics.load(const._TOPIC_DIR)
         except FileNotFoundError:
             logger.exception('Topic data files not found. New files will be created')
         try:
-            specials.load(const._SPECIALS_DIR)
+            specials.load(const._SPECIAL_DIR)
         except FileNotFoundError:
             logger.exception('Special topic data files not found. New files will be created')
-        try:
-            recoms = json.load(const._RECOMS)
-        except FileNotFoundError:
-            logger.exception('Recommendation data file not found. New dict will be instantiated')
-        except json.JSONDecodeError:
-            logger.exception('Failed to load recommendation data. New dict will be instantiated')
+
+        files = os.listdir(const._RECOM_DIR)
+        for file in files:
+            if not file.isnumeric():
+                continue
+            path = os.path.join(const._RECOM_DIR, file)
+            try:
+                with open(path, 'r') as f: 
+                    recoms[file] = json.load(f)
+            except FileNotFoundError:
+                logger.exception('File not found for special topic %s', file)
+            except json.JSONDecodeError:
+                logger.error('Failed to load topic %s', file)
+
+    topics.get_dictionary()
+    specials.get_dictionary()
     
+    #print(topics.dictionary)
+
     # establish rabbitmq connection and declare queues
     if args.c:
-        while True:
-            try:
-                credentials = pika.PlainCredentials(username = mc._USERNAME,
-                                                    password = mc._PASSWORD)          
-                params = pika.ConnectionParameters(host        = mc._HOST, 
-                                                   credentials = credentials)
-                break
-            except Exception as e:
-                logger.exception(e)
+        credentials = pika.PlainCredentials(username = mc._USERNAME,
+                                            password = mc._PASSWORD)          
+        params = pika.ConnectionParameters(host        = mc._HOST, 
+                                           credentials = credentials)
     else:
         params = pika.ConnectionParameters(host='localhost')
     
     lock = threading.Lock()
     save_topics = Save(topics   = topics, 
+                       recoms   = recoms,
                        interval = const._SAVE_INTERVAL,
                        lock     = lock, 
-                       save_dir = const._CORPUS_DIR,
+                       save_dir = const._RESULT_DIR,
                        mod_num  = const._NUM_RESULT_DIRS)
     
     save_topics.start()
@@ -175,10 +191,11 @@ def main(args):
                     word = topics.dictionary[word_id]
                     if word in specials.dictionary.token2id:
                         word_id_in_specials = specials.dictionary.token2id[word]
+                        assert specials.dictionary[word_id_in_specials] == word
                         if word_id_in_specials in tfidf_weight:
                             relevance += freq*tfidf_weight[word_id_in_specials]
                 
-                relevance *= math.min(1, math.exp(-(ts-t).days/self.T))
+                relevance *= min(1, math.exp(-(ts-t).days/topics.T))
 
                 return relevance
 
@@ -212,12 +229,13 @@ def main(args):
                 with lock:
                     if specials.add_one(special_topic):
                         specials.remove_old()
-                        model = specials.get_tfidf_model() 
+                        model = specials.get_tfidf_model(scheme=const._SMARTIRS_SCHEME) 
                         for stid in specials.corpus_data:
                             keyword_weight[stid] = model[specials.corpus_data[stid]['bow']]
                             keyword_weight[stid].sort(key=lambda x:x[1], reverse=True)
+                            print('keyword_weight: ', keyword_weight)
                             del keyword_weight[stid][const._KEYWORD_NUM:]
-                            recom_list = [[tid, get_relevance(stid, tid)] for tid in topics]
+                            recom_list = [[tid, get_relevance(stid, tid)] for tid in topics.corpus_data]
                             recom_list.sort(key=lambda x:x[1], reverse=True)
                             recoms[stid] = recom_list
                 
@@ -252,6 +270,7 @@ def main(args):
         
         except Exception as e:
             logger.exception(e)
+            logger.info('Retrying in %d seconds', const._SLEEP_TIME)
             time.sleep(const._SLEEP_TIME)
 
     '''
