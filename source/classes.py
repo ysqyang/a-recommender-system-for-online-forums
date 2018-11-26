@@ -106,7 +106,7 @@ class Corpus(object):
         '''
         Removes all topics posted before date specified by cut_off 
         '''
-        print(self.oldest, self.latest)
+        #print(self.oldest, self.latest)
         if (self.latest - self.oldest).days <= self.trigger_days:
             self.logger.info('No removal needed')
             return []

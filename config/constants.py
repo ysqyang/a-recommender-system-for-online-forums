@@ -33,6 +33,7 @@ _IRRELEVANT_THRESH  = 0.05
 _TRIGGER_DAYS       = 45
 _KEEP_DAYS          = 30
 _TOP_NUM            = 5 
+_KEYWORD_NUM        = 5
 _WEIGHTS            = [1, 1, 1]
 _PUNCS              = {'。', '，', '、', '：', ':', ';', '；', '“', '”', ' '}        
 _SINGLES            = {'一', '二', '三', '四', '五', '六', '七', '八', '九', '十', 

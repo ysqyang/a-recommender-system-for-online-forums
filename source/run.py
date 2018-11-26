@@ -3,11 +3,13 @@ import utils
 #import similarity as sim
 from gensim.models import TfidfModel
 import json
+import math
 import pika
 import os, sys
 import classes
 from datetime import datetime
 import time
+from collections import defaultdict
 import argparse
 import threading
 import logging
@@ -45,7 +47,6 @@ class Delete(threading.Thread):
             time.sleep(self.interval)
             with self.lock:
 '''
-
 
 def main(args):  
     while True:
@@ -85,11 +86,12 @@ def main(args):
                               trigger_days = const._TRIGGER_DAYS,
                               keep_days    = const._KEEP_DAYS, 
                               T            = const._T,
-                              logger       = utils.get_logger(lc._RUN_LOG_NAME+'.special'))
+                              logger       = utils.get_logger(lc._RUN_LOG_NAME+'.specials'))
 
     topics.get_dictionary()
     specials.get_dictionary()
-    tfidf = {}
+    recoms = defaultdict(list)
+    keyword_weight = defaultdict(list)
 
     # load previously saved corpus and similarity data if possible
     if args.l:
@@ -105,20 +107,15 @@ def main(args):
             recoms = json.load(const._RECOMS)
         except FileNotFoundError:
             logger.exception('Recommendation data file not found. New dict will be instantiated')
-            recoms = {}
         except json.JSONDecodeError:
             logger.exception('Failed to load recommendation data. New dict will be instantiated')
-            recoms = {}
-    else:
-        recoms = {}
     
     # establish rabbitmq connection and declare queues
     if args.c:
         while True:
             try:
                 credentials = pika.PlainCredentials(username = mc._USERNAME,
-                                                    password = mc._PASSWORD)
-                
+                                                    password = mc._PASSWORD)          
                 params = pika.ConnectionParameters(host        = mc._HOST, 
                                                    credentials = credentials)
                 break
@@ -126,25 +123,7 @@ def main(args):
                 logger.exception(e)
     else:
         params = pika.ConnectionParameters(host='localhost')
-
-    '''
-    def on_subject_update(ch, method, properties, body):
-        while type(body) != dict:
-            body = json.loads(body)
-
-        subject_dict = body
-        logger.info('Updating recommendations for subject %s', subject_dict['subID'])
-        keyword_weight
-        recoms = topics.get_topics_by_keywords(keyword_weight)
     
-    def on_update_topic(ch, method, properties, body):
-        update_topic = json.loads(body)
-        topic_id = update_topic['topicID']
-        for attr in update_topic:
-            if attr != 'topicID':
-                topic_dict[topic_id][attr] = update_topic[attr]
-        utils.save_topics(topic_dict, const._TOPIC_FILE)
-    '''   
     lock = threading.Lock()
     save_topics = Save(topics = topics, 
                        interval   = const._SAVE_INTERVAL,
@@ -177,48 +156,63 @@ def main(args):
                     msg = json.loads(msg)
                 return msg
 
+            '''
             def get_relevance(stid, tid):
                 relevance = 0
                 ts = datetime.fromtimestamp(specials.corpus_data[stid]['date'])
                 t = datetime.fromtimestamp(topics.corpus_data[tid]['date'])
 
                 bow = topics.corpus_data[topic_id]['bow']
-                keyword_weight = 
+                tfidf_weight = keyword_weight[stid]  
 
                 for word_id, freq in bow:
                     word = dictionary[word_id]
                     if word in keyword_weight:
                         relevance += freq*keyword_weight[word]
                 
-                relevance *= math.min(1, exp(-(ts-t).days/self.T))
+                relevance *= math.min(1, math.exp(-(ts-t).days/self.T))
 
                 return relevance
-
+            '''
+            
             def on_new_topic(ch, method, properties, body):
                 new_topic = decode_to_dict(body)
                 new_topic['postDate'] /= const._TIMESTAMP_FACTOR
-                logger.info('Received new topic %s', new_topic['topicID'])
+                new_tid = str(new_topic['topicID'])
+                logger.info('Received new topic %s', new_tid)
+
+                def recom_insert(target_list, tid, match_val):
+                    i = 0
+                    while i < len(target_list) and target_list[i][1] > match_val:
+                        i += 1
+                    target_list.insert(i, [tid, match_val])
 
                 with lock:
                     if topics.add_one(new_topic):
                         topics.remove_old()
+                        '''
                         for stid in specials.corpus_data:
-                            recoms[stid] = get_relevance(stid, new_topic['topicID'])
+                            match_val = get_relevance(stid, new_tid)
+                            recom_insert(recoms[stid], new_tid, match_val)
+                        '''
                 channel.basic_ack(delivery_tag=method.delivery_tag)      
 
             def on_special_topic(ch, method, properties, body):
                 special_topic = decode_to_dict(body)
+                stid = special_topic['topicID']
                 special_topic['postDate'] /= const._TIMESTAMP_FACTOR
                 logger.info('Received special topic %s', special_topic['topicID'])
 
                 with lock:
                     if specials.add_one(special_topic):
                         specials.remove_old()
-                        model = specials.get_tfidf_model()
-                        tfidf{special_topic['topicID']} = 
-
-                    specials.get_tfidf()
-                    keyword_weight = specials.corpus_data['']
+                        model = specials.get_tfidf_model() 
+                        for stid in specials.corpus_data:
+                            keyword_weight[stid] = model[specials.corpus_data[stid]['bow']]
+                            keyword_weight[stid].sort(key=lambda x:x[1], reverse=True)
+                            recom_list = [[tid, get_relevance(stid, tid)] for tid in topics]
+                            recom_list.sort(key=lambda x:x[1], reverse=True)
+                            recoms[stid] = recom_list
                 
                 channel.basic_ack(delivery_tag=method.delivery_tag) 
 
@@ -230,6 +224,16 @@ def main(args):
                     topics.delete_one(delete_topic['topicID'])
                 channel.basic_ack(delivery_tag=method.delivery_tag)
             
+            '''
+            def on_update_topic(ch, method, properties, body):
+                update_topic = json.loads(body)
+                topic_id = update_topic['topicID']
+                for attr in update_topic:
+                    if attr != 'topicID':
+                        topic_dict[topic_id][attr] = update_topic[attr]
+                utils.save_topics(topic_dict, const._TOPIC_FILE)
+            '''  
+
             channel.basic_consume(on_new_topic, queue='new_topics')
             channel.basic_consume(on_special_topic, queue='special_topics')
             channel.basic_consume(on_delete, queue='delete_topics')
