@@ -99,6 +99,7 @@ def main(args):
             topics.load(const._CORPUS_DIR)
         except FileNotFoundError:
             logger.exception('Topic data files not found. New files will be created')
+        '''
         try:
             specials.load(const._SPECIAL_CORPUS_DIR)
         except FileNotFoundError:
@@ -109,6 +110,7 @@ def main(args):
             logger.exception('Recommendation data file not found. New dict will be instantiated')
         except json.JSONDecodeError:
             logger.exception('Failed to load recommendation data. New dict will be instantiated')
+        '''
     
     # establish rabbitmq connection and declare queues
     if args.c:
@@ -174,7 +176,7 @@ def main(args):
 
                 return relevance
             '''
-            
+
             def on_new_topic(ch, method, properties, body):
                 new_topic = decode_to_dict(body)
                 new_topic['postDate'] /= const._TIMESTAMP_FACTOR
