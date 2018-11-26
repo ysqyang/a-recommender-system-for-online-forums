@@ -11,7 +11,7 @@ import pickle
 import json
 import pika
 import bisect
-import collections
+from collections import defaultdict
 import logging
 import os, sys
 import time
@@ -40,43 +40,24 @@ for tid, info in topics.items():
     topics[tid] = {'postDate': time.mktime(t.timetuple())*1000,
                    'body': info['body']}
 
-tids = sorted(list(topics.keys()))
+tids = sorted(list(topics.keys()), reverse=True)
 #print(tids)
 
 for tid in tids:
-    if int(tid) < 1506080:
-      rec = topics[tid]
-      rec['topicID'] = tid
-      msg = json.dumps(rec)
-      #print(msg)
-      channel.basic_publish(exchange=const._EXCHANGE_NAME,
+    rec = topics[tid]
+    rec['topicID'] = tid
+    msg = json.dumps(rec)
+    #print(msg)
+    channel.basic_publish(exchange=const._EXCHANGE_NAME,
                             routing_key='new',
                             body=msg)
-
-
-delete = {'topicID': 1506279}
-msg = json.dumps(delete)
-channel.basic_publish(exchange=const._EXCHANGE_NAME,
-                      routing_key='delete',
-                      body=msg)
-
-for tid in tids:
-    if int(tid) >= 1506080:
-      rec = topics[tid]
-      rec['topicID'] = tid
-      msg = json.dumps(rec)
-      #print(msg)
-      channel.basic_publish(exchange=const._EXCHANGE_NAME,
-                            routing_key='new',
-                            body=msg)
-
 
 connection.close()
 '''
 with open(const._TOPIC_FILE, 'r') as f:
     topics = json.load(f)
 
-tid = 1506377
+tid = 1506380
 print(topics[str(tid)]['body'])
 
 query_dict = {'topicID': str(tid)}
@@ -93,5 +74,30 @@ for tid in recoms:
     print('*'*80)
     print(topics[tid]['body'])
 
+
+class Foo(object):
+    def __init__(self, vals):
+        self.vals = vals
+
+    def f(self):
+        for i in range(len(self.vals)):
+            self.vals[i] *= 2
+
+class Foo1(Foo):
+    def __init__(self, vals, x):
+        super().__init__(vals)
+        self.x = x
+
+    def f(self):
+        super().f()
+        for i in range(len(self.vals)):
+            self.vals[i] += self.x
+
+o = Foo1([3,5, 7, 9], 1)
+o.f()
+
+print(o.vals)
 '''
+
+
 
