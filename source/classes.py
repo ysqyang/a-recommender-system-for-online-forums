@@ -21,6 +21,7 @@ class Corpus(object):
                  valid_count, valid_ratio, stopwords, trigger_days, 
                  keep_days, T, logger):
         self.corpus_data = {}
+        self.dictionary = corpora.Dictionary([])
         self.oldest = datetime.max
         self.latest = datetime.min
         self.singles = singles
@@ -71,10 +72,6 @@ class Corpus(object):
 
         return word_list
 
-    def get_dictionary(self):
-        corpus = [info['content'] for info in self.corpus_data.values()]
-        self.dictionary = corpora.Dictionary(corpus)
-
     def load(self, save_dir):       
         folders = os.listdir(save_dir)
         for folder in folders:
@@ -89,23 +86,25 @@ class Corpus(object):
                     with open(path, 'r') as f:
                         rec = json.load(f)
                         self.corpus_data[file] = {'date': rec['date'],
-                                                  'content': rec['content'],
-                                                  'bow': rec['bow'],
+                                                  'body': rec['body'],
                                                   'updated': False
                                                  }
                 except json.JSONDecodeError as e:
                     self.logger.error('Failed to load topic %s', file)
 
         self.logger.info('%d topics loaded from disk', len(self.corpus_data))
+
         if len(self.corpus_data) > 0:            
-            self.get_dictionary()
+            corpus = [info['body'] for info in self.corpus_data.values()]
+            self.dictionary = corpora.Dictionary(corpus)
+            self.logger.info('Dictionary created')
             int_tids = [int(tid) for tid in self.corpus_data]
             min_tid, max_tid = min(int_tids), max(int_tids)
             self.oldest = datetime.fromtimestamp(self.corpus_data[str(min_tid)]['date'])
             self.latest = datetime.fromtimestamp(self.corpus_data[str(max_tid)]['date'])
-  
+
     def get_tfidf_model(self, scheme):
-        corpus_bow = [info['bow'] for info in self.corpus_data.values()]
+        corpus_bow = [self.dictionary.doc2bow(info['body']) for info in self.corpus_data.values()]
         return models.TfidfModel(corpus_bow, smartirs=scheme) 
 
     def remove_old(self):
@@ -155,8 +154,7 @@ class Corpus(object):
         bow = self.dictionary.doc2bow(word_list)
 
         self.corpus_data[new_tid] = {'date': topic['postDate'],
-                                     'content': word_list,
-                                     'bow': bow,
+                                     'body': word_list,
                                      'updated': True}
 
         self.oldest = min(self.oldest, new_date)
@@ -271,14 +269,16 @@ class Corpus_with_similarity_data(Corpus):
 
         new_tid = str(topic['topicID'])
         new_date = datetime.fromtimestamp(self.corpus_data[new_tid]['date'])
-        bow = self.corpus_data[new_tid]['bow']
+        
+        bow = self.dictionary.doc2bow(self.corpus_data[new_tid]['body'])
         self.sim_sorted[new_tid] = []
 
         for tid, info in self.corpus_data.items():
             date = datetime.fromtimestamp(info['date'])
             time_factor = math.exp(-(new_date-date).days/self.T)
             if tid != new_tid:
-                sim_val = matutils.cossim(bow, info['bow'])
+                bow1 = self.dictionary.doc2bow(info['body'])
+                sim_val = matutils.cossim(bow, bow1)
                 sim_val_1 = sim_val * min(1, 1/time_factor)
                 sim_val_2 = sim_val * min(1, time_factor)
                 if self.irrelevant_thresh <= sim_val_1 <= self.duplicate_thresh:
@@ -314,12 +314,10 @@ class Corpus_with_similarity_data(Corpus):
         save_dir: directory under which to save the data
         mod_num:  number of data folders
         ''' 
-        assert len(self.sim_sorted)==len(self.corpus_data)
         for tid, info in self.corpus_data.items():
             if info['updated']:
                 sim_record = {'date': info['date'],
-                              'content': info['content'],
-                              'bow': info['bow'], 
+                              'body': info['body'],
                               'sim_list': self.sim_sorted[tid]}
                 folder_name = str(int(tid) % mod_num)
                 folder_path = os.path.join(save_dir, folder_name)

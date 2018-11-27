@@ -131,9 +131,7 @@ def main(args):
                 logger.exception('File not found for special topic %s', file)
             except json.JSONDecodeError:
                 logger.error('Failed to load topic %s', file)
-
-    topics.get_dictionary()
-    specials.get_dictionary()
+    
     
     #print(topics.dictionary)
 
@@ -160,6 +158,7 @@ def main(args):
         try:
             connection = pika.BlockingConnection(params)
             channel = connection.channel()
+            channel.basic_qos(prefetch_count=1)
             channel.exchange_declare(exchange=const._EXCHANGE_NAME, 
                                      exchange_type='direct')
           
@@ -184,7 +183,7 @@ def main(args):
                 ts = datetime.fromtimestamp(specials.corpus_data[stid]['date'])
                 t = datetime.fromtimestamp(topics.corpus_data[tid]['date'])
 
-                bow = topics.corpus_data[tid]['bow']
+                bow = topics.dictionary.doc2bow(topics.corpus_data[tid]['body'])
                 tfidf_weight = {wid:weight for wid, weight in keyword_weight[stid]}  
 
                 for word_id, freq in bow:
@@ -231,7 +230,8 @@ def main(args):
                         specials.remove_old()
                         model = specials.get_tfidf_model(scheme=const._SMARTIRS_SCHEME) 
                         for stid in specials.corpus_data:
-                            keyword_weight[stid] = model[specials.corpus_data[stid]['bow']]
+                            bow = specials.dictionary.doc2bow(specials.corpus_data[stid]['body'])
+                            keyword_weight[stid] = model[bow]
                             keyword_weight[stid].sort(key=lambda x:x[1], reverse=True)
                             print('keyword_weight: ', keyword_weight)
                             del keyword_weight[stid][const._KEYWORD_NUM:]

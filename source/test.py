@@ -42,7 +42,7 @@ def main(args):
             rec = topics[tid]
             rec['topicID'] = tid
             msg = json.dumps(rec)
-            if tid in {}:
+            if tid in {'1506377', '1506414'}:
                 channel.basic_publish(exchange=const._EXCHANGE_NAME,
                                       routing_key='special',
                                       body=msg)            
@@ -50,11 +50,12 @@ def main(args):
                 channel.basic_publish(exchange=const._EXCHANGE_NAME,
                                       routing_key='new',
                                       body=msg)
+
         connection.close()
     else:       
         with open(const._TOPIC_FILE, 'r') as f:
             topics = json.load(f)
-        tid = 1506380
+        tid = 1506377
         print(topics[str(tid)]['body'])
         query_dict = {'topicID': str(tid)}
         if args.s:
@@ -66,9 +67,9 @@ def main(args):
         response = r.json()
         recoms = response['dto']['list']
         print(recoms)
-        for tid in recoms:
+        for tid, match_val in recoms:
             print('*'*80)
-            print(topics[tid]['body'])
+            print(topics[tid]['body'], match_val)
 
 if __name__ == '__main__': 
     parser = argparse.ArgumentParser()
