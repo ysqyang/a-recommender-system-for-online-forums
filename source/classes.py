@@ -104,7 +104,8 @@ class Corpus(object):
             self.latest = datetime.fromtimestamp(self.corpus_data[str(max_tid)]['date'])
 
     def get_tfidf_model(self, scheme):
-        corpus_bow = [self.dictionary.doc2bow(info['body']) for info in self.corpus_data.values()]
+        corpus_bow = [self.dictionary.doc2bow(info['body']) 
+                      for info in self.corpus_data.values()]
         return models.TfidfModel(corpus_bow, smartirs=scheme) 
 
     def remove_old(self):
@@ -199,7 +200,7 @@ class Corpus_with_similarity_data(Corpus):
     '''
     def __init__(self, singles, puncs, punc_frac_low, punc_frac_high, 
                  valid_count, valid_ratio, stopwords, trigger_days, keep_days, 
-                 T, duplicate_thresh, irrelevant_thresh, max_size, logger):
+                 T, duplicate_thresh, irrelevant_thresh, logger):
         super().__init__(singles        = singles, 
                          puncs          = puncs, 
                          punc_frac_low  = punc_frac_low, 
@@ -214,7 +215,6 @@ class Corpus_with_similarity_data(Corpus):
         self.sim_sorted = defaultdict(list)
         self.duplicate_thresh = duplicate_thresh
         self.irrelevant_thresh = irrelevant_thresh
-        self.max_size = max_size
 
     def load(self, save_dir):       
         super().load(save_dir)
@@ -252,20 +252,29 @@ class Corpus_with_similarity_data(Corpus):
 
         return delete_tids
   
-    def add_one(self, topic):
+    def _sim_insert(sim_list, tid, sim_val, max_size):
+        '''
+        Helper function to insert into a list of [tid, sim_val]
+        entries sorted in descending order by sim_val
+        '''
+
+        if len(sim_list) == self.max_size and sim_val < sim_list[-1][1]:
+            return False
+        
+        i = 0
+        while i < len(sim_list) and sim_list[i][1] > sim_val:
+            i += 1
+        
+        sim_list.insert(i, [tid, sim_val])
+        
+        if len(sim_list) > self.max_size:
+            del sim_list[self.max_size:]  
+        
+        return True
+
+    def add_one(self, topic, max_size):
         if not super().add_one(topic):
             return False
-
-        def sim_insert(sim_list, target_tid, target_sim_val):
-            i = 0
-            while i < len(sim_list) and sim_list[i][1] > target_sim_val:
-                i += 1
-            if i == len(sim_list) == self.max_size:
-                return False
-            sim_list.insert(i, [target_tid, target_sim_val])
-            if len(sim_list) > self.max_size:
-                del sim_list[self.max_size:]  
-            return True       
 
         new_tid = str(topic['topicID'])
         new_date = datetime.fromtimestamp(self.corpus_data[new_tid]['date'])
@@ -281,11 +290,15 @@ class Corpus_with_similarity_data(Corpus):
                 sim_val = matutils.cossim(bow, bow1)
                 sim_val_1 = sim_val * min(1, 1/time_factor)
                 sim_val_2 = sim_val * min(1, time_factor)
+                
                 if self.irrelevant_thresh <= sim_val_1 <= self.duplicate_thresh:
-                    if sim_insert(self.sim_sorted[tid], new_tid, sim_val_1):
+                    if self._sim_insert(self.sim_sorted[tid], new_tid, 
+                                        sim_val_1, max_size):
                         self.corpus_data[tid]['updated'] = True
+                
                 if self.irrelevant_thresh <= sim_val_2 <= self.duplicate_thresh:   
-                    sim_insert(self.sim_sorted[new_tid], tid, sim_val_2)
+                    self._sim_insert(self.sim_sorted[new_tid], tid, 
+                                     sim_val_2, max_size)
 
         self.logger.info('Topic %s has been added to similarity results', new_tid)
         self.logger.debug('sim_sorted_len=%d', len(self.sim_sorted))
@@ -307,6 +320,22 @@ class Corpus_with_similarity_data(Corpus):
 
         return True
 
+    def find_most_similar(self, topic, n):
+        '''
+        Given a topic, compute its similarities with all topics 
+        in the corpus and return the top n most similar ones from 
+        the corpus
+        '''
+        sim_list = []
+        bow = self.dictionary.doc2bow(topic['body'])
+
+        for tid, info in self.corpus_data.items():
+            bow1 = self.dictionary.doc2bow(info['body'])
+            sim_val = matutils.cossim(bow, bow1)
+            self._sim_insert(sim_list, tid, sim_val)
+
+        return sim_list
+
     def save(self, save_dir, mod_num):
         '''
         Saves the corpus and similarity data to disk
@@ -314,16 +343,20 @@ class Corpus_with_similarity_data(Corpus):
         save_dir: directory under which to save the data
         mod_num:  number of data folders
         ''' 
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
+
         for tid, info in self.corpus_data.items():
             if info['updated']:
                 sim_record = {'date': info['date'],
                               'body': info['body'],
                               'sim_list': self.sim_sorted[tid]}
                 folder_name = str(int(tid) % mod_num)
-                folder_path = os.path.join(save_dir, folder_name)
-                if not os.path.exists(folder_path):
-                    os.mkdir(folder_path)
-                filename = os.path.join(folder_path, tid)
+                dir_path = os.path.join(save_dir, folder_name)
+                # build the subdir for storing topics
+                if not os.path.exists(dir_path):
+                    os.makedirs(dir_path) 
+                filename = os.path.join(dir_path, tid)
                 with open(filename, 'w') as f:
                     json.dump(sim_record, f)
                 info['updated'] = False

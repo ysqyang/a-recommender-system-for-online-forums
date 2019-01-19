@@ -21,31 +21,35 @@ import log_config as lc
 import mq_config as mc
 
 class Save(threading.Thread):
-    def __init__(self, topics, recoms, interval, lock, save_dir, 
-                 mod_num, logger=None):
+    def __init__(self, topics, recoms, interval, lock, topic_dir, 
+                 recom_dir, mod_num, logger=None):
         threading.Thread.__init__(self)
         self.topics = topics
-        self.recoms = recoms
+        self.recoms = recoms  # recommendations for special topics
         self.interval = interval
         self.lock = lock
-        self.save_dir = save_dir
+        self.topic_dir = topic_dir
+        self.recom_dir = recom_dir
         self.mod_num = mod_num
 
     def run(self):
         while True:
             time.sleep(self.interval)
-            with self.lock:
-                topic_path = os.path.join(self.save_dir, 'topics')
-                if not os.path.exists(topic_path):
-                    os.mkdir(topic_path)
-                self.topics.save(topic_path, self.mod_num)
-                
-                recom_path = os.path.join(self.save_dir, 'recoms')
-                if not os.path.exists(recom_path):
-                    os.mkdir(recom_path)
-                for stid in self.recoms:
-                    with open(os.path.join(recom_path, stid), 'w') as f:
-                        json.dump(self.recoms[stid], f)
+            with self.lock: 
+                self._save_topics(self.topic_dir, self.mod_num)
+                self._save_recoms(self.recom_dir)
+                 
+    def _save_topics(self, save_dir):
+        self.topics.save(save_dir, self.mod_num)
+
+    def _save_recoms(self, save_dir)
+        if not os.path.exists(save_dir):
+            os.makedirs(recom_path)
+        for stid in self.recoms:
+            with open(os.path.join(save_dir, stid), 'w') as f:
+                json.dump(self.recoms[stid], f)
+
+
 '''
 class Delete(threading.Thread):
     def __init__(self, topics, save_dir):
@@ -89,7 +93,6 @@ def main(args):
                          T                 = const._T,
                          duplicate_thresh  = const._DUPLICATE_THRESH, 
                          irrelevant_thresh = const._IRRELEVANT_THRESH, 
-                         max_size          = 2*const._TOP_NUM,
                          logger            = utils.get_logger(lc._RUN_LOG_NAME+'.topics')
                          )
 
@@ -132,7 +135,6 @@ def main(args):
             except json.JSONDecodeError:
                 logger.error('Failed to load topic %s', file)
     
-    
     #print(topics.dictionary)
 
     # establish rabbitmq connection and declare queues
@@ -143,14 +145,15 @@ def main(args):
                                            credentials = credentials)
     else:
         params = pika.ConnectionParameters(host='localhost')
-    
+
     lock = threading.Lock()
-    save_topics = Save(topics   = topics, 
-                       recoms   = recoms,
-                       interval = const._SAVE_INTERVAL,
-                       lock     = lock, 
-                       save_dir = const._RESULT_DIR,
-                       mod_num  = const._NUM_RESULT_DIRS)
+    save_topics = Save(topics    = topics, 
+                       recoms    = recoms,
+                       interval  = const._SAVE_INTERVAL,
+                       lock      = lock, 
+                       topic_dir = topic_dir,
+                       recom_dir = recom_dir,
+                       mod_num   = const._NUM_RESULT_DIRS)
     
     save_topics.start()
     
@@ -163,11 +166,14 @@ def main(args):
                                      exchange_type='direct')
           
             channel.queue_declare(queue='new_topics')
+            channel.queue_declare(queue='old_topics')
             channel.queue_declare(queue='special_topics')
             channel.queue_declare(queue='delete_topics')
             #channel.queue_declare(queue='update_topics')   
             channel.queue_bind(exchange=const._EXCHANGE_NAME, 
                                queue='new_topics', routing_key='new')
+            channel.queue_bind(exchange=const._EXCHANGE_NAME,
+                               queue='old_topics', routing_key='old')
             channel.queue_bind(exchange=const._EXCHANGE_NAME,
                                queue='special_topics', routing_key='special')
             channel.queue_bind(exchange=const._EXCHANGE_NAME, 
@@ -211,13 +217,28 @@ def main(args):
                     target_list.insert(i, [tid, match_val])
 
                 with lock:
-                    if topics.add_one(new_topic):
+                    if topics.add_one(new_topic, 2*const._TOP_NUM):
                         topics.remove_old()
                         for stid in specials.corpus_data:
                             match_val = get_relevance(stid, new_tid)
                             recom_insert(recoms[stid], new_tid, match_val)
 
                 channel.basic_ack(delivery_tag=method.delivery_tag)      
+
+            def on_old_topic(ch, method, properties, body):
+                old_topic = decode_to_dict(body)
+                old_tid = str(old_topic['topicID'])
+                logger.info('Received old topic %s', old_tid)
+                channel.basic_ack(delivery_tag=method.delivery_tag)
+
+                with lock:
+                    sim_list = topics.find_most_similar(old_topic)
+
+                sim_list = [tid for tid, val in sim_list][:const._TOP_NUM]
+                
+                channel.basic_publish(exchange=const._EXCHANGE_NAME,
+                                      routing_key='old',
+                                      body=json.dumps(sim_list))
 
             def on_special_topic(ch, method, properties, body):
                 special_topic = decode_to_dict(body)
@@ -273,36 +294,6 @@ def main(args):
             logger.info('Retrying in %d seconds', const._SLEEP_TIME)
             time.sleep(const._SLEEP_TIME)
 
-    '''
-    word_weights = tp.compute_profiles(topic_ids=topic_ids,  
-                                       filter_fn=utils.is_valid_text,
-                                       features=const._REPLY_FEATURES, 
-                                       weights=const._WEIGHTS, 
-                                       preprocess_fn=utils.preprocess, 
-                                       stopwords=stopwords, 
-                                       update=True, 
-                                       path=const._PROFILES, 
-                                       alpha=args.alpha, 
-                                       smartirs=args.smartirs)
-
-    # get k most representative words for each topic
-    profile_words = tp.get_profile_words(topic_ids=topic_ids, 
-                                         profiles=word_weights,
-                                         k=args.k, 
-                                         update=True, 
-                                         path=const._PROFILE_WORDS)
-   
-    similarities = sim.compute_similarities(corpus_topic_ids=topic_ids, 
-                                            update_topic_ids=topic_ids,
-                                            preprocess_fn=utils.preprocess, 
-                                            stopwords=stopwords, 
-                                            profile_words=profile_words, 
-                                            coeff=args.beta,
-                                            T=const._T,
-                                            update=True, 
-                                            path=const._SIMILARITIES)
-    
-    '''
 if __name__ == '__main__': 
     parser = argparse.ArgumentParser()
     parser.add_argument('-l', action='store_true', help='load previously saved corpus and similarity data')
