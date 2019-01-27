@@ -2,19 +2,21 @@ import numpy as np
 from sklearn import preprocessing
 import utils
 import random
-from gensim import corpora, models, similarities
+from gensim import corpora, models, similarities, matutils
 import collections
 from pprint import pprint
 import time
 from datetime import date, datetime, timedelta
 import pickle
 import json
+import jieba
 import pika
 import bisect
 import collections
 import logging
 import os, sys
 import time
+import re
 import argparse
 import requests
 root_dir = os.path.dirname(sys.path[0])
@@ -30,6 +32,7 @@ def main(args):
         channel.queue_declare(queue='new_topics')
         channel.queue_declare(queue='special_topics')
         channel.queue_declare(queue='delete_topics')
+        channel.queue_declare(queue='old_topics')
         #channel.queue_declare(queue='active_topics')
         with open(const._TOPIC_FILE, 'r') as f:
             topics = json.load(f)
@@ -70,6 +73,7 @@ def main(args):
         for tid, match_val in recoms:
             print('*'*80)
             print(topics[tid]['body'], match_val)
+
 
 if __name__ == '__main__': 
     parser = argparse.ArgumentParser()

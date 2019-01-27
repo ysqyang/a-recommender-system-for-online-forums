@@ -17,13 +17,12 @@ class Corpus(object):
     '''
     Corpus object
     '''
-    def __init__(self, singles, puncs, punc_frac_low, punc_frac_high,
+    def __init__(self, name, singles, puncs, punc_frac_low, punc_frac_high,
                  valid_count, valid_ratio, stopwords, trigger_days, 
                  keep_days, T, logger):
         self.corpus_data = {}
         self.dictionary = corpora.Dictionary([])
-        self.oldest = datetime.max
-        self.latest = datetime.min
+        self.name = name
         self.singles = singles
         self.puncs = puncs
         self.punc_frac_low = punc_frac_low
@@ -34,6 +33,8 @@ class Corpus(object):
         self.trigger_days = trigger_days
         self.keep_days = keep_days
         self.T = T
+        self.oldest = datetime.max
+        self.latest = datetime.min
         self.logger = logger
 
     def preprocess(self, text):
@@ -161,9 +162,9 @@ class Corpus(object):
         self.oldest = min(self.oldest, new_date)
         self.latest = max(self.latest, new_date)
                      
-        self.logger.info('New topic has been added to the collection')
-        self.logger.info('Corpus data have been updated')
-        self.logger.info('%d topics available', len(self.corpus_data))
+        self.logger.info('New topic has been added to collection %s', self.name)
+        self.logger.info('Corpus data have been updated for collection %s', self.name)
+        self.logger.info('%d topics available in collection %s', len(self.corpus_data), self.name)
         return True
 
     def delete_one(self, topic_id):       
@@ -198,10 +199,11 @@ class Corpus_with_similarity_data(Corpus):
     '''
     Corpus collection
     '''
-    def __init__(self, singles, puncs, punc_frac_low, punc_frac_high, 
+    def __init__(self, name, singles, puncs, punc_frac_low, punc_frac_high, 
                  valid_count, valid_ratio, stopwords, trigger_days, keep_days, 
                  T, duplicate_thresh, irrelevant_thresh, logger):
-        super().__init__(singles        = singles, 
+        super().__init__(name           = name,
+                         singles        = singles, 
                          puncs          = puncs, 
                          punc_frac_low  = punc_frac_low, 
                          punc_frac_high = punc_frac_high,
@@ -252,13 +254,13 @@ class Corpus_with_similarity_data(Corpus):
 
         return delete_tids
   
-    def _sim_insert(sim_list, tid, sim_val, max_size):
+    def _sim_insert(self, sim_list, tid, sim_val, max_size):
         '''
         Helper function to insert into a list of [tid, sim_val]
         entries sorted in descending order by sim_val
         '''
 
-        if len(sim_list) == self.max_size and sim_val < sim_list[-1][1]:
+        if len(sim_list) == max_size and sim_val < sim_list[-1][1]:
             return False
         
         i = 0
@@ -267,8 +269,8 @@ class Corpus_with_similarity_data(Corpus):
         
         sim_list.insert(i, [tid, sim_val])
         
-        if len(sim_list) > self.max_size:
-            del sim_list[self.max_size:]  
+        if len(sim_list) > max_size:
+            del sim_list[max_size:]  
         
         return True
 

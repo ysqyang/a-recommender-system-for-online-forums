@@ -31,22 +31,23 @@ class Save(threading.Thread):
         self.topic_dir = topic_dir
         self.recom_dir = recom_dir
         self.mod_num = mod_num
+        self.logger=logger
 
     def run(self):
         while True:
             time.sleep(self.interval)
             with self.lock: 
-                self._save_topics(self.topic_dir, self.mod_num)
-                self._save_recoms(self.recom_dir)
+                self._save_topics()
+                self._save_recoms()
                  
-    def _save_topics(self, save_dir):
-        self.topics.save(save_dir, self.mod_num)
+    def _save_topics(self):
+        self.topics.save(self.topic_dir, self.mod_num)
 
-    def _save_recoms(self, save_dir)
-        if not os.path.exists(save_dir):
-            os.makedirs(recom_path)
+    def _save_recoms(self):
+        if not os.path.exists(self.recom_dir):
+            os.makedirs(self.recom_dir)
         for stid in self.recoms:
-            with open(os.path.join(save_dir, stid), 'w') as f:
+            with open(os.path.join(self.recom_dir, stid), 'w') as f:
                 json.dump(self.recoms[stid], f)
 
 
@@ -81,6 +82,7 @@ def main(args):
     stopwords = utils.load_stopwords(const._STOPWORD_FILE)
 
     topics = classes.Corpus_with_similarity_data( 
+                         name              = 'topics',
                          singles           = const._SINGLES,
                          puncs             = const._PUNCS,  
                          punc_frac_low     = const._PUNC_FRAC_LOW,
@@ -96,7 +98,8 @@ def main(args):
                          logger            = utils.get_logger(lc._RUN_LOG_NAME+'.topics')
                          )
 
-    specials = classes.Corpus(singles        = const._SINGLES,
+    specials = classes.Corpus(name           = 'specials',
+                              singles        = const._SINGLES,
                               puncs          = const._PUNCS,                                                            
                               punc_frac_low  = const._PUNC_FRAC_LOW,
                               punc_frac_high = const._PUNC_FRAC_HIGH, 
@@ -151,8 +154,8 @@ def main(args):
                        recoms    = recoms,
                        interval  = const._SAVE_INTERVAL,
                        lock      = lock, 
-                       topic_dir = topic_dir,
-                       recom_dir = recom_dir,
+                       topic_dir = const._TOPIC_DIR,
+                       recom_dir = const._RECOM_DIR,
                        mod_num   = const._NUM_RESULT_DIRS)
     
     save_topics.start()
@@ -283,6 +286,7 @@ def main(args):
             channel.basic_consume(on_new_topic, queue='new_topics')
             channel.basic_consume(on_special_topic, queue='special_topics')
             channel.basic_consume(on_delete, queue='delete_topics')
+            channel.basic_consume(on_old_topic, queue='old_topics')
             '''
             channel.basic_consume(on_update_topic, queue='update_topics')                                  
             '''    
