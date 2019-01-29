@@ -217,6 +217,7 @@ class Corpus_with_similarity_data(Corpus):
         self.sim_sorted = defaultdict(list)
         self.duplicate_thresh = duplicate_thresh
         self.irrelevant_thresh = irrelevant_thresh
+        self.appears_in = defaultdict(list)
 
     def load(self, save_dir):       
         super().load(save_dir)
@@ -244,35 +245,51 @@ class Corpus_with_similarity_data(Corpus):
         delete_tids = super().remove_old()
         if delete_tids == []:
             return delete_tids
-        
+
         for delete_tid in delete_tids:
             if delete_tid in self.sim_sorted:
                 del self.sim_sorted[delete_tid]
 
-        for tid, sim_list in self.sim_sorted.items():
-            self.sim_sorted[tid] = [x for x in sim_list if x[0] not in delete_tids]
+            for tid in self.appears_in[delete_tid]:
+                self._delete_from_sim_list(tid, delete_tid)
+
+            del self.appears_in[delete_tid]
 
         return delete_tids
   
-    def _sim_insert(self, sim_list, tid, sim_val, max_size):
+    def _insert_into_sim_list(self, target_id, id_, val, max_size):
         '''
-        Helper function to insert into a list of [tid, sim_val]
-        entries sorted in descending order by sim_val
+        Helper function to insert [id_, val] into the similarity list for
+        target_id while maintaining the sorted order of similarity values
         '''
-
-        if len(sim_list) == max_size and sim_val < sim_list[-1][1]:
+        l = self.sim_sorted[target_id]
+        if len(l) == max_size and val < l[-1][1]:
             return False
         
         i = 0
-        while i < len(sim_list) and sim_list[i][1] > sim_val:
+        while i < len(l) and l[i][1] > val:
             i += 1
         
-        sim_list.insert(i, [tid, sim_val])
+        l.insert(i, [id_, val])
         
-        if len(sim_list) > max_size:
-            del sim_list[max_size:]  
-        
+        if len(l) > max_size:
+            self.appears_in[l[-1][0]].remove(target_id)
+            del l[-1]
+
         return True
+
+    def _delete_from_sim_list(self, target_id, id_):
+        '''
+        Helper function to remove the entry specified by id_
+        whose from the similarity list for target_id
+        '''
+        l = self.sim_sorted[target_id]
+        i = 0
+        while i < len(l) and l[i][0] != id_:
+            i += 1
+
+        if i < len(l):
+            del l[i]
 
     def add_one(self, topic, max_size):
         if not super().add_one(topic):
@@ -282,7 +299,6 @@ class Corpus_with_similarity_data(Corpus):
         new_date = datetime.fromtimestamp(self.corpus_data[new_tid]['date'])
         
         bow = self.dictionary.doc2bow(self.corpus_data[new_tid]['body'])
-        self.sim_sorted[new_tid] = []
 
         for tid, info in self.corpus_data.items():
             date = datetime.fromtimestamp(info['date'])
@@ -294,13 +310,13 @@ class Corpus_with_similarity_data(Corpus):
                 sim_val_2 = sim_val * min(1, time_factor)
                 
                 if self.irrelevant_thresh <= sim_val_1 <= self.duplicate_thresh:
-                    if self._sim_insert(self.sim_sorted[tid], new_tid, 
-                                        sim_val_1, max_size):
+                    if self._insert_into_sim_list(tid, new_tid, sim_val_1, max_size):
                         self.corpus_data[tid]['updated'] = True
+                        self.appears_in[new_tid].append(tid)
                 
                 if self.irrelevant_thresh <= sim_val_2 <= self.duplicate_thresh:   
-                    self._sim_insert(self.sim_sorted[new_tid], tid, 
-                                     sim_val_2, max_size)
+                    if self._insert_into_sim_list(new_tid, tid, sim_val_2, max_size):
+                        self.appears_in[tid].append(new_tid)
 
         self.logger.info('Topic %s has been added to similarity results', new_tid)
         self.logger.debug('sim_sorted_len=%d', len(self.sim_sorted))
@@ -314,8 +330,10 @@ class Corpus_with_similarity_data(Corpus):
         if topic_id in self.sim_sorted:
             del self.sim_sorted[topic_id]
 
-        for tid, sim_list in self.sim_sorted.items():
-            self.sim_sorted[tid] = [x for x in sim_list if x[0] != topic_id]
+        if topic_id in self.appears_in:
+            for tid in self.appears_in[topic_id]:
+                self._delete_from_sim_list(tid, topic_id)
+            del self.appears_in[topic_id] 
 
         self.logger.info('Topic %s has been deleted from similarity results', topic_id)
         self.logger.debug('sim_sorted_len=%d', len(self.sim_sorted))
@@ -334,7 +352,8 @@ class Corpus_with_similarity_data(Corpus):
         for tid, info in self.corpus_data.items():
             bow1 = self.dictionary.doc2bow(info['body'])
             sim_val = matutils.cossim(bow, bow1)
-            self._sim_insert(sim_list, tid, sim_val)
+            if self.irrelevant_thresh <= sim_val <= self.duplicate_thresh:
+                self._insert_into_sim_list(sim_list, tid, sim_val)
 
         return sim_list
 
