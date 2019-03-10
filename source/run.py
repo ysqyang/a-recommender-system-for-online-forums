@@ -66,9 +66,10 @@ class Delete(threading.Thread):
         while True:
             time.sleep(self.interval)
             with self.lock:
-                t = datetime.now() - timedelta(days=self.keep_days)
-                tid = self.topics.find_topic_id_by_date(t)
-                self.topics.delete(range(self.topics.oldest(), tid))
+                latest = datetime.fromtimestamp(self.topics.corpus_data[self.topics.latest]['date'])
+                t = latest - timedelta(days=self.keep_days)
+                self.logger.info('Removing all topics older than {}'.format(t))
+                self.topics.remove_before(t)
 
 '''
 class Delete(threading.Thread):
@@ -180,7 +181,7 @@ def main(args):
                            interval=const.DELETE_EVERY,
                            keep_days=const.KEEP_DAYS,
                            lock=lock,
-                           logger=None)
+                           logger=utils.get_logger(lc.RUN_LOG_NAME+'.topics'))
 
     delete_topics.start()
     
@@ -206,6 +207,7 @@ def main(args):
             channel.queue_bind(exchange=const.EXCHANGE_NAME, 
                                queue='delete_topics', routing_key='delete')
             #channel.queue_bind(exchange=const.EXCHANGE_NAME, queue='update_topics', routing_key='update')
+            
             def decode_to_dict(msg):
                 while type(msg) != dict:
                     msg = json.loads(msg)
@@ -274,7 +276,6 @@ def main(args):
 
                 with lock:
                     if specials.add_one(special_topic):
-                        specials.remove_old()
                         model = specials.get_tfidf_model(scheme=const.SMARTIRS_SCHEME) 
                         for stid in specials.corpus_data:
                             bow = specials.dictionary.doc2bow(specials.corpus_data[stid]['body'])
@@ -293,7 +294,7 @@ def main(args):
                 logger.info('Deleting topic %s', delete_topic['topicID'])
                 
                 with lock:
-                    topics.delete_one(delete_topic['topicID'])
+                    topics.delete(delete_topic['topicID'])
                 channel.basic_ack(delivery_tag=method.delivery_tag)
             
             '''

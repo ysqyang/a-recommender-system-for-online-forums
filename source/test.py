@@ -24,20 +24,21 @@ config_path = os.path.abspath(os.path.join(root_dir, 'config'))
 sys.path.insert(1, config_path)
 import constants as const
 
+
 def main(args):
     if args.p:
         connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
         channel = connection.channel()
-        channel.exchange_declare(exchange=const._EXCHANGE_NAME, exchange_type='direct')
+        channel.exchange_declare(exchange=const.EXCHANGE_NAME, exchange_type='direct')
         channel.queue_declare(queue='new_topics')
         channel.queue_declare(queue='special_topics')
         channel.queue_declare(queue='delete_topics')
         channel.queue_declare(queue='old_topics')
         #channel.queue_declare(queue='active_topics')
-        with open(const._TOPIC_FILE, 'r') as f:
+        with open(const.TOPIC_FILE, 'r') as f:
             topics = json.load(f)
         for tid, info in topics.items():
-            t = datetime.strptime(info['POSTDATE'], const._DATETIME_FORMAT)
+            t = datetime.strptime(info['POSTDATE'], const.DATETIME_FORMAT)
             topics[tid] = {'postDate': time.mktime(t.timetuple())*1000,
                            'body': info['body']}
         tids = sorted(list(topics.keys()))
@@ -46,17 +47,22 @@ def main(args):
             rec['topicID'] = tid
             msg = json.dumps(rec)
             if tid in {'1506377', '1506414'}:
-                channel.basic_publish(exchange=const._EXCHANGE_NAME,
+                channel.basic_publish(exchange=const.EXCHANGE_NAME,
                                       routing_key='special',
                                       body=msg)            
             else:
-                channel.basic_publish(exchange=const._EXCHANGE_NAME,
+                channel.basic_publish(exchange=const.EXCHANGE_NAME,
                                       routing_key='new',
                                       body=msg)
 
+        msg = json.dumps({'topicID': '1506556'})
+        channel.basic_publish(exchange=const.EXCHANGE_NAME,
+                              routing_key='delete',
+                              body=msg)
+
         connection.close()
     else:       
-        with open(const._TOPIC_FILE, 'r') as f:
+        with open(const.TOPIC_FILE, 'r') as f:
             topics = json.load(f)
         tid = 1506377
         print(topics[str(tid)]['body'])

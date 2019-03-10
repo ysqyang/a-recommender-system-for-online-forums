@@ -117,42 +117,32 @@ class Corpus(object):
 
         self.corpus_data[new_tid] = {'date': topic['postDate'],
                                      'body': word_list,
-                                     'updated': True}
+                                     'updated': False}
                      
         self.logger.info('New topic has been added to collection %s', self.name)
         self.logger.info('Corpus data have been updated for collection %s', self.name)
         self.logger.info('%d topics available in collection %s', len(self.corpus_data), self.name)
+        
         return True
 
-    def delete(self, topic_ids):
-        for tid in topic_ids:
-            tid = str(tid)
-            if tid in self.corpus_data:
-                del self.corpus_data[tid]
-                self.logger.info('Topic %s has been deleted from the collection', tid)
-            else:
-                self.logger.warning('Topic not found in collection')
-
-        self.logger.info('Corpus data have been updated')
-        self.logger.info('%d topics remaining', len(self.corpus_data))
-
-    def find_topic_id_by_date(self, t):
-        if type(t) != float:
-            t = time.mktime(t.timetuple())
-        earliest, tid_to_find = float('inf'), None
-        for tid, info in self.corpus_data.items():
-            if t <= info['date'] < earliest:
-                tid_to_find = tid
-                earliest = info['date']
-
-        return tid_to_find
+    def delete(self, topic_id):
+        topic_id = str(topic_id)
+        if topic_id in self.corpus_data:
+            del self.corpus_data[topic_id]
+            self.logger.info('Topic %s has been deleted from the collection', topic_id)
+            self.logger.info('Corpus data have been updated')
+            self.logger.info('%d topics remaining', len(self.corpus_data))
 
     @ property
     def oldest(self):
+        if len(self.corpus_data) == 0:
+            return -1
         return min(self.corpus_data.keys())
 
     @ property
     def latest(self):
+        if len(self.corpus_data) == 0:
+            return -1
         return max(self.corpus_data.keys())
 
 
@@ -250,23 +240,30 @@ class Corpus_with_similarity_data(Corpus):
 
         return True
 
-    def delete(self, topic_ids):
-        super().delete(topic_ids)
+    def delete(self, topic_id):
+        print('deleting {}'.format(topic_id))
+        super().delete(topic_id)
 
-        for tid in topic_ids:
-            if tid in self.sim_sorted:
-                del self.sim_sorted[tid]
+        if topic_id in self.sim_sorted:
+            del self.sim_sorted[topic_id]
+            self.logger.debug('sim_sorted_len=%d', len(self.sim_sorted))
 
-            if tid in self.appears_in:
-                for tid_ in self.appears_in[tid]: # list of topic id's whose similarity lists tid appears in
-                    self.sim_sorted[tid_] = [x for x in self.sim_sorted[tid_]
-                                             if x[0] != tid]
-                del self.appears_in[tid]
+        if topic_id in self.appears_in:
+            for tid in self.appears_in[topic_id]: # list of topic id's whose similarity lists tid appears in
+                print(self.sim_sorted[tid])
+                self.sim_sorted[tid] = [x for x in self.sim_sorted[tid] if x[0]!=topic_id]
+                self.corpus_data[tid]['updated'] = True
 
-            self.logger.info('Topic %s has been deleted from similarity results', tid)
+            del self.appears_in[topic_id]
+            self.logger.info('Topic %s has been deleted from similarity results', topic_id)
 
-        self.logger.debug('sim_sorted_len=%d', len(self.sim_sorted))
-
+    def remove_before(self, t):
+        if type(t) != float:
+            t = time.mktime(t.timetuple())
+        
+        for tid in list(self.corpus_data.keys()):
+            if self.corpus_data[tid]['date'] < t:
+                self.delete(tid)
 
     def find_most_similar(self, topic, n):
         '''
