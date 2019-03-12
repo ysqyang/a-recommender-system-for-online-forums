@@ -65,6 +65,8 @@ class Delete(threading.Thread):
     def run(self):
         while True:
             time.sleep(self.interval)
+            if self.topics.size == 0:
+                return
             with self.lock:
                 latest = datetime.fromtimestamp(self.topics.corpus_data[self.topics.latest]['date'])
                 t = latest - timedelta(days=self.keep_days)
@@ -307,10 +309,10 @@ def main(args):
                 utils.save_topics(topic_dict, const.TOPIC_FILE)
             '''  
 
-            channel.basic_consume(on_new_topic, queue='new_topics')
-            channel.basic_consume(on_special_topic, queue='special_topics')
-            channel.basic_consume(on_delete, queue='delete_topics')
-            channel.basic_consume(on_old_topic, queue='old_topics')
+            channel.basic_consume('new_topics', on_new_topic)
+            channel.basic_consume('special_topics', on_special_topic)
+            channel.basic_consume('delete_topics', on_delete)
+            channel.basic_consume('old_topics', on_old_topic)
             '''
             channel.basic_consume(on_update_topic, queue='update_topics')                                  
             '''    

@@ -31,6 +31,10 @@ class Corpus(object):
         self.stopwords = stopwords
         self.logger = logger
 
+    @property
+    def size(self):
+        return len(self.corpus_data)
+
     def preprocess(self, text):
         '''
         Tokenize a Chinese document to a list of words
@@ -136,13 +140,13 @@ class Corpus(object):
     @ property
     def oldest(self):
         if len(self.corpus_data) == 0:
-            return -1
+            return None
         return min(self.corpus_data.keys())
 
     @ property
     def latest(self):
         if len(self.corpus_data) == 0:
-            return -1
+            return None
         return max(self.corpus_data.keys())
 
 
@@ -206,7 +210,7 @@ class Corpus_with_similarity_data(Corpus):
         
         if len(l) > max_size:
             self.appears_in[l[-1][0]].remove(target_id)
-            del l[-1]
+            del l[max_size:]
 
         return True
 
@@ -250,7 +254,7 @@ class Corpus_with_similarity_data(Corpus):
 
         if topic_id in self.appears_in:
             for tid in self.appears_in[topic_id]: # list of topic id's whose similarity lists tid appears in
-                print(self.sim_sorted[tid])
+
                 self.sim_sorted[tid] = [x for x in self.sim_sorted[tid] if x[0]!=topic_id]
                 self.corpus_data[tid]['updated'] = True
 
