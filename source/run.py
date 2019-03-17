@@ -68,7 +68,7 @@ class Delete(threading.Thread):
             if self.topics.size == 0:
                 return
             with self.lock:
-                latest = datetime.fromtimestamp(self.topics.corpus_data[self.topics.latest]['date'])
+                latest = datetime.fromtimestamp(self.topics.data[self.topics.latest]['date'])
                 t = latest - timedelta(days=self.keep_days)
                 self.logger.info('Removing all topics older than {}'.format(t))
                 self.topics.remove_before(t)
@@ -104,15 +104,16 @@ def main(args):
     # load stopwords
     stopwords = utils.load_stopwords(const.STOPWORD_FILE)
 
-    topics = classes.Corpus_with_similarity_data( 
+    preprocessor = classes.Preprocessor(singles=const.SINGLES,
+                                        puncs=const.PUNCS,
+                                        punc_frac_low=const.PUNC_FRAC_LOW,
+                                        punc_frac_high=const.PUNC_FRAC_HIGH,
+                                        valid_count=const.VALID_COUNT,
+                                        valid_ratio=const.VALID_RATIO,
+                                        stopwords=stopwords)
+
+    topics = classes.CorpuSimilarity(
                          name='topics',
-                         singles=const.SINGLES,
-                         puncs=const.PUNCS,
-                         punc_frac_low=const.PUNC_FRAC_LOW,
-                         punc_frac_high=const.PUNC_FRAC_HIGH,
-                         valid_count= const.VALID_COUNT,
-                         valid_ratio= const.VALID_RATIO,
-                         stopwords=stopwords,
                          time_decay_scale=const.TIME_DECAY_SCALE,
                          duplicate_thresh=const.DUPLICATE_THRESH,
                          irrelevant_thresh=const.IRRELEVANT_THRESH,
@@ -120,15 +121,9 @@ def main(args):
                          logger=utils.get_logger(lc.RUN_LOG_NAME+'.topics')
                          )
 
-    specials = classes.Corpus(name='specials',
-                              singles=const.SINGLES,
-                              puncs=const.PUNCS,
-                              punc_frac_low=const.PUNC_FRAC_LOW,
-                              punc_frac_high=const.PUNC_FRAC_HIGH,
-                              valid_count=const.VALID_COUNT,
-                              valid_ratio=const.VALID_RATIO,
-                              stopwords=stopwords,
-                              logger=utils.get_logger(lc.RUN_LOG_NAME+'.specials'))
+    specials = classes.CorpusTfidf(name='specials',
+                                   logger=utils.get_logger(lc.RUN_LOG_NAME+'.specials')
+                                   )
 
     recoms = defaultdict(list)
     keyword_weight = defaultdict(list)
@@ -215,50 +210,29 @@ def main(args):
                     msg = json.loads(msg)
                 return msg
 
-            def get_relevance(stid, tid):
-                relevance = 0
-                ts = datetime.fromtimestamp(specials.corpus_data[stid]['date'])
-                t = datetime.fromtimestamp(topics.corpus_data[tid]['date'])
+            def get_topic_data(topic):
+                topic = decode_to_dict(topic)
+                topic_id = str(topic['topicID'])
+                content = preprocessor.preprocess(topic['body'])
+                date = topic['postDate'] / const.TIMESTAMP_FACTOR
 
-                bow = topics.dictionary.doc2bow(topics.corpus_data[tid]['body'])
-                tfidf_weight = {wid: weight for wid, weight in keyword_weight[stid]}
-
-                for word_id, freq in bow:
-                    word = topics.dictionary[word_id]
-                    if word in specials.dictionary.token2id:
-                        word_id_in_specials = specials.dictionary.token2id[word]
-                        assert specials.dictionary[word_id_in_specials] == word
-                        if word_id_in_specials in tfidf_weight:
-                            relevance += freq*tfidf_weight[word_id_in_specials]
-                
-                relevance *= min(1, math.exp(-(ts-t).days/topics.time_decay_scale))
-
-                return relevance
+                return topic_id, content, date
 
             def on_new_topic(ch, method, properties, body):
-                new_topic = decode_to_dict(body)
-                new_topic['postDate'] /= const.TIMESTAMP_FACTOR
-                new_tid = str(new_topic['topicID'])
-                logger.info('Received new topic %s', new_tid)
-
-                def recom_insert(target_list, tid, match_val):
-                    i = 0
-                    while i < len(target_list) and target_list[i][1] > match_val:
-                        i += 1
-                    target_list.insert(i, [tid, match_val])
+                topic_id, content, date = get_topic_data(body)
+                logger.info('Received new topic %s', topic_id)
 
                 with lock:
-                    if topics.add_one(new_topic):
-                        for stid in specials.corpus_data:
-                            match_val = get_relevance(stid, new_tid)
-                            recom_insert(recoms[stid], new_tid, match_val)
+                    if topics.add(topic_id, content, date):
+                        for stid in specials.data:
+                            match_val = get_relevance(stid, topic_id)
+                            recom_insert(recoms[stid], topic_id, match_val)
 
                 channel.basic_ack(delivery_tag=method.delivery_tag)      
 
             def on_old_topic(ch, method, properties, body):
-                old_topic = decode_to_dict(body)
-                old_tid = str(old_topic['topicID'])
-                logger.info('Received old topic %s', old_tid)
+                topic_id, content, date = get_topic_data(body)
+                logger.info('Received old topic %s', topic_id)
                 channel.basic_ack(delivery_tag=method.delivery_tag)
 
                 with lock:
@@ -271,32 +245,26 @@ def main(args):
                                       body=json.dumps(sim_list))
 
             def on_special_topic(ch, method, properties, body):
-                special_topic = decode_to_dict(body)
-                stid = special_topic['topicID']
-                special_topic['postDate'] /= const.TIMESTAMP_FACTOR
-                logger.info('Received special topic %s', special_topic['topicID'])
+                topic_id, content, date = get_topic_data(body)
+                logger.info('Received special topic %s', topic_id)
 
                 with lock:
-                    if specials.add_one(special_topic):
-                        model = specials.get_tfidf_model(scheme=const.SMARTIRS_SCHEME) 
-                        for stid in specials.corpus_data:
-                            bow = specials.dictionary.doc2bow(specials.corpus_data[stid]['body'])
-                            keyword_weight[stid] = model[bow]
-                            keyword_weight[stid].sort(key=lambda x:x[1], reverse=True)
-                            print('keyword_weight: ', keyword_weight)
-                            del keyword_weight[stid][const.KEYWORD_NUM:]
-                            recom_list = [[tid, get_relevance(stid, tid)] for tid in topics.corpus_data]
+                    if specials.add(topic_id, content, date):
+                        specials.generate_keywords(const.KEYWORD_NUM)
+
+                        for stid in specials.data:
+                            recom_list = [[tid, get_relevance(stid, tid)] for tid in topics.data]
                             recom_list.sort(key=lambda x:x[1], reverse=True)
                             recoms[stid] = recom_list
                 
                 channel.basic_ack(delivery_tag=method.delivery_tag) 
 
             def on_delete(ch, method, properties, body):
-                delete_topic = decode_to_dict(body)
-                logger.info('Deleting topic %s', delete_topic['topicID'])
+                topic_id, _, _ = get_topic_data(body)
+                logger.info('Deleting topic %s', topic_id)
                 
                 with lock:
-                    topics.delete(delete_topic['topicID'])
+                    topics.delete(topic_id)
                 channel.basic_ack(delivery_tag=method.delivery_tag)
             
             '''
