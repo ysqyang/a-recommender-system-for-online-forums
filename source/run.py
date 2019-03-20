@@ -116,7 +116,7 @@ def main(args):
                              time_decay_scale=const.TIME_DECAY_SCALE,
                              duplicate_thresh=const.DUPLICATE_THRESH,
                              irrelevant_thresh=const.IRRELEVANT_THRESH,
-                             max_size=const.MAX_SIZE,
+                             max_recoms=const.MAX_SIZE,
                              logger=utils.get_logger(lc.RUN_LOG_NAME+'.topics')
                              )
 
@@ -126,7 +126,7 @@ def main(args):
 
     recoms = Recom(corpus_kw=specials,
                    corpus_target=topics,
-                   max_len=const.MAX_LEN,
+                   max_recoms=const.MAX_LEN,
                    time_decay=const.)
     keyword_weight = defaultdict(list)
 

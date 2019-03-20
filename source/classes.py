@@ -175,14 +175,14 @@ class CorpusSimilarity(Corpus):
     Corpus collection
     '''
     def __init__(self, name, time_decay, duplicate_thresh,
-                 irrelevant_thresh, max_len, logger):
+                 irrelevant_thresh, max_recoms, logger):
         super().__init__(name=name,
                          logger=logger)
         self.sim_sorted = defaultdict(list)
         self.time_decay = time_decay
         self.duplicate_thresh = duplicate_thresh
         self.irrelevant_thresh = irrelevant_thresh
-        self.max_len = max_len
+        self.max_recoms = max_recoms
         self.appears_in = defaultdict(list)
 
     def load(self, save_dir):       
@@ -204,28 +204,6 @@ class CorpusSimilarity(Corpus):
                 except json.JSONDecodeError:
                     self.logger.error('Failed to load similarity data for topic %s', file)
 
-    def _insert_into_sim_list(self, target_id, id_, val, max_len):
-        '''
-        Helper function to insert [id_, val] into the similarity list for
-        target_id while maintaining the sorted order of similarity values
-        '''
-        l = self.sim_sorted[target_id]
-        if len(l) == max_len and val < l[-1][1]:
-            return False
-
-        i = 0
-        while i < len(l) and l[i][1] > val:
-            i += 1
-
-        l.insert(i, [id_, val])
-        self.appears_in[id_].append(target_id)
-
-        if len(l) > max_len:
-            self.appears_in[l[-1][0]].remove(target_id)
-            del l[max_len:]
-
-        return True
-
     def add(self, topic_id, content, date):
         if not super().add(topic_id, content, date):
             return False
@@ -245,7 +223,7 @@ class CorpusSimilarity(Corpus):
                 
                 if self.irrelevant_thresh <= sim_1 <= self.duplicate_thresh:
                     l = self.sim_sorted[tid]
-                    del_id = insert(l, topic_id, sim_1, self.max_len)
+                    del_id = insert(l, topic_id, sim_1, self.max_recoms)
                     if del_id is not None:
                         self.appears_in[topic_id].append(tid)
                         self.data[tid]['updated'] = True
@@ -254,7 +232,7 @@ class CorpusSimilarity(Corpus):
                 
                 if self.irrelevant_thresh <= sim_2 <= self.duplicate_thresh:
                     l = self.sim_sorted[topic_id]
-                    inserted, del_id = insert(l, tid, sim_2, self.max_len)
+                    inserted, del_id = insert(l, tid, sim_2, self.max_recoms)
                     if del_id is not None:
                         self.appears_in[tid].append(topic_id)
                         if del_id >= 0:
@@ -303,7 +281,7 @@ class CorpusSimilarity(Corpus):
             bow1 = self.dictionary.doc2bow(data['body'])
             sim = matutils.cossim(bow, bow1)
             if self.irrelevant_thresh <= sim <= self.duplicate_thresh:
-                self._insert_into_sim_list(sim_list, tid, sim, self.max_len)
+                insert(sim_list, tid, sim, self.max_recoms)
 
         return sim_list[:n]
 
@@ -341,7 +319,7 @@ class Recom():
         self.corpus_kw = corpus_kw
         self.corpus_target = corpus_target
         self.recommendations = {tid: [] for tid in self.corpus_kw.keywords}
-        self.max_len = max_len
+        self.max_recoms = max_recoms
         self.time_decay = time_decay
 
     def update_on_new_topic(self, topic_id, content, date):
@@ -353,7 +331,7 @@ class Recom():
             for word in content:
                 relevance += kw[word] if word in kw else 0
             relevance *= min(1, math.pow(self.time_decay, (dt - date).days))
-            insert(recom, topic_id, relevance, self.max_len)
+            insert(recom, topic_id, relevance, self.max_recoms)
 
     def update_on_new_special_topic(self, topic_id, date):
         self.corpus_kw.generate_keywords()
@@ -364,4 +342,4 @@ class Recom():
             for word in data['body']:
                 relevance += keywords[word] if word in keywords else 0
             relevance *= min(1, math.pow(self.time_decay, (date - dt).days))
-            insert(self.recommendations[topic_id], tid, relevance, self.max_len)
+            insert(self.recommendations[topic_id], tid, relevance, self.max_recoms)

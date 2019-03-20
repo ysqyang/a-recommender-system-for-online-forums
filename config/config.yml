@@ -1,42 +1,41 @@
 # -*- coding: utf-8 -*-
 directories:
-  root: os.path.dirname(sys.path[0])
-  results:         = os.path.join(ROOT, 'results')
-  data:          = os.path.join(ROOT, 'data')
-  stopwords:  = os.path.join(ROOT, 'stopwords.txt')
+  results: '../results'
+  data: '../data'
+  stopwords: '../stopwords.txt'
   topics:
   replies:
   special_topics:
   recommendations:
+  num_result_dirs:
+queue:
+  exchange_name: 'recommender'
+main:
+  save_every: 60  # number of seconds between saves
+  delete_every: 30  # number of seconds between deletes
+  keep_days: 30
+  retry_every: 10
+preprocessing:
+  min_count: 5      #lower limit of the number of tokens
+  min_ratio: 10     #lower threshold for the ratio of token count to distinct token count
+  min_punc_frac: 0      #lower threshold for the fraction of punctuation marks
+  max_punc_frac: 0.5    #upper threshold for the fraction of punctuation marks
+  min_replies: 0
+recommendation:
+  duplicate_thresh: 0.5
+  irrelevant_thresh: 0.05
+  max_recoms: 5
+  top_num_special: 20
+  time_decay_factor: 0.9
+special_topics:
+  smartirs_scheme: 'ntn'
+  keyword_num: 3
+general:
+  datetime_format: '%Y-%m-%d %H:%M:%S'
+  timestamp_factor: 1000
 
 
-SMARTIRS_SCHEME    = 'ntn'
-SLEEP_TIME         = 10
-DB_INFO            = ('192.168.1.102','tgbweb','tgb123321','taoguba', 3307, 'utf8mb4')
-EXCHANGE_NAME      = 'recommender'
-DATETIME_FORMAT    = '%Y-%m-%d %H:%M:%S'
-NUM_RESULT_DIRS    = 1000
-SAVE_EVERY         = 60     # number of seconds between saves
-DELETE_EVERY       = 30       # number of seconds between deletes
-TIMESTAMP_FACTOR   = 1000
-DAYS               = 90
-TIME_DECAY_SCALE   = 30
-MIN_LEN            = 90
-MIN_REPLIES        = 0
-MIN_REPLIES_1      = 20
-VALID_COUNT        = 5      #lower limit of the number of tokens
-VALID_RATIO        = 10     #lower threshold for the ratio of token count to distinct token count
-PUNC_FRAC_LOW      = 0      #lower threshold for the fraction of punctuation marks
-PUNC_FRAC_HIGH     = 1/2    #upper threshold for the fraction of punctuation marks
-DUPLICATE_THRESH   = 0.5
-IRRELEVANT_THRESH  = 0.05
-TRIGGER_DAYS       = 45
-KEEP_DAYS          = 30
-TOP_NUM            = 5
-MAX_SIZE           = 10
-TOP_NUM_SPECIAL    = 10
-KEYWORD_NUM        = 5
-WEIGHTS            = [1, 1, 1]
+
 PUNCS              = {'。', '，', '、', '：', ':', ';', '；', '“', '”', ' '}
 SINGLES            = {'一', '二', '三', '四', '五', '六', '七', '八', '九', '十',
                        '两', '这', '那', '不', '很', '是', '只', '就', '你', '我', 
