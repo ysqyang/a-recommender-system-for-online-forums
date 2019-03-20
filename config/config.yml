@@ -1,18 +1,15 @@
 # -*- coding: utf-8 -*-
-import os
-import sys
+directories:
+  root: os.path.dirname(sys.path[0])
+  results:         = os.path.join(ROOT, 'results')
+  data:          = os.path.join(ROOT, 'data')
+  stopwords:  = os.path.join(ROOT, 'stopwords.txt')
+  topics:
+  replies:
+  special_topics:
+  recommendations:
 
-ROOT               = os.path.dirname(sys.path[0])
-RESULT_DIR         = os.path.join(ROOT, 'results')
-DATA_DIR           = os.path.join(ROOT, 'data')
-STOPWORD_FILE      = os.path.join(ROOT, 'stopwords.txt')
-TOPIC_FILE         = os.path.join(DATA_DIR, 'topics')
-REPLY_FILE         = os.path.join(DATA_DIR, 'replies')
-#_PROFILES          = os.path.join(RESULTS_DIR, 'profiles')
-#_PROFILE_WORDS     = os.path.join(RESULTS_DIR, 'profile_words')
-SPECIAL_DIR        = os.path.join(RESULT_DIR, 'special_topics')
-TOPIC_DIR          = os.path.join(RESULT_DIR, 'topics')
-RECOM_DIR          = os.path.join(RESULT_DIR, 'recoms')
+
 SMARTIRS_SCHEME    = 'ntn'
 SLEEP_TIME         = 10
 DB_INFO            = ('192.168.1.102','tgbweb','tgb123321','taoguba', 3307, 'utf8mb4')

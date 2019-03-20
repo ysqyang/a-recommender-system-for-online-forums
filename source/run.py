@@ -12,7 +12,7 @@ import math
 #import similarity as sim
 from gensim.models import TfidfModel
 import pika
-import classes
+from classes TextPreprocessor, CorpusSimilarity, CorpusTfidf, Recom
 import utils
 root_dir = os.path.dirname(sys.path[0])
 config_path = os.path.abspath(os.path.join(root_dir, 'config'))
@@ -104,28 +104,30 @@ def main(args):
     # load stopwords
     stopwords = utils.load_stopwords(const.STOPWORD_FILE)
 
-    preprocessor = classes.Preprocessor(singles=const.SINGLES,
-                                        puncs=const.PUNCS,
-                                        punc_frac_low=const.PUNC_FRAC_LOW,
-                                        punc_frac_high=const.PUNC_FRAC_HIGH,
-                                        valid_count=const.VALID_COUNT,
-                                        valid_ratio=const.VALID_RATIO,
-                                        stopwords=stopwords)
+    preprocessor = TextPreprocessor(singles=const.SINGLES,
+                                    puncs=const.PUNCS,
+                                    punc_frac_low=const.PUNC_FRAC_LOW,
+                                    punc_frac_high=const.PUNC_FRAC_HIGH,
+                                    valid_count=const.VALID_COUNT,
+                                    valid_ratio=const.VALID_RATIO,
+                                    stopwords=stopwords)
 
-    topics = classes.CorpuSimilarity(
-                         name='topics',
-                         time_decay_scale=const.TIME_DECAY_SCALE,
-                         duplicate_thresh=const.DUPLICATE_THRESH,
-                         irrelevant_thresh=const.IRRELEVANT_THRESH,
-                         max_size=const.MAX_SIZE,
-                         logger=utils.get_logger(lc.RUN_LOG_NAME+'.topics')
-                         )
+    topics = CorpusSimilarity(name='topics',
+                             time_decay_scale=const.TIME_DECAY_SCALE,
+                             duplicate_thresh=const.DUPLICATE_THRESH,
+                             irrelevant_thresh=const.IRRELEVANT_THRESH,
+                             max_size=const.MAX_SIZE,
+                             logger=utils.get_logger(lc.RUN_LOG_NAME+'.topics')
+                             )
 
-    specials = classes.CorpusTfidf(name='specials',
-                                   logger=utils.get_logger(lc.RUN_LOG_NAME+'.specials')
-                                   )
+    specials = CorpusTfidf(name='specials',
+                           logger=utils.get_logger(lc.RUN_LOG_NAME+'.specials')
+                           )
 
-    recoms = defaultdict(list)
+    recoms = Recom(corpus_kw=specials,
+                   corpus_target=topics,
+                   max_len=const.MAX_LEN,
+                   time_decay=const.)
     keyword_weight = defaultdict(list)
 
     # load previously saved corpus and similarity data if possible
