@@ -9,13 +9,12 @@ import re
 from gensim.corpora import Dictionary
 from utils import insert
 
-root_dir = os.path.dirname(sys.path[0])
-config_path = os.path.abspath(os.path.join(root_dir, 'config'))
-sys.path.insert(1, config_path)
-import constants as const
+import yaml
 
+with open("../config/config.yml", 'r') as ymlfile:
+    cfg = yaml.load(ymlfile, Loader=yaml.FullLoader)
 
-a = 0
+for section in cfg:
+    print(section)
 
-if a:
-    print('ha')
+print(cfg['preprocessing'])

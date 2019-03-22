@@ -7,19 +7,13 @@ import argparse
 import threading
 import logging
 import json
-import math
-#import topic_profiling as tp
-#import similarity as sim
-from gensim.models import TfidfModel
+import yaml
 import pika
-from classes TextPreprocessor, CorpusSimilarity, CorpusTfidf, Recom
+from classes import TextPreprocessor, CorpusSimilarity, CorpusTfidf, Recom
 import utils
 root_dir = os.path.dirname(sys.path[0])
 config_path = os.path.abspath(os.path.join(root_dir, 'config'))
 sys.path.insert(1, config_path)
-import constants as const
-import log_config as lc
-import mq_config as mc
 
 
 class Save(threading.Thread):
@@ -89,36 +83,43 @@ class Delete(threading.Thread):
 
 
 def main(args):  
+    # read configurations
     while True:
         try:
-            logger = utils.get_logger_with_config(name=lc.RUN_LOG_NAME,
-                                                  logger_level=lc.LOGGER_LEVEL,
-                                                  handler_levels=lc.LEVELS,
-                                                  log_dir=lc.LOG_DIR,
-                                                  mode=lc.MODE,
-                                                  log_format=lc.LOG_FORMAT)
+            config = yaml.load(input, Loader=yaml.FullLoader)
             break
         except Exception as e:
             logging.exception(e)
 
-    # load stopwords
-    stopwords = utils.load_stopwords(const.STOPWORD_FILE)
 
-    preprocessor = TextPreprocessor(singles=const.SINGLES,
-                                    puncs=const.PUNCS,
-                                    punc_frac_low=const.PUNC_FRAC_LOW,
-                                    punc_frac_high=const.PUNC_FRAC_HIGH,
-                                    valid_count=const.VALID_COUNT,
-                                    valid_ratio=const.VALID_RATIO,
+    log_cfg = config['logging']
+    pre_cfg = config['preprocessing']
+    logger = utils.get_logger_with_config(name=log_cfg['run_log_name'],
+                                          logger_level=log_cfg['log_level'],
+                                          handler_levels=log_cfg['handler_level'],
+                                          log_dir=log_cfg['dir'],
+                                          mode=log_cfg['mode'],
+                                          log_format=log_cfg['format'])
+
+
+    # load stopwords
+    stopwords = utils.load_stopwords(cfg[''])
+
+    preprocessor = TextPreprocessor(singles=pre_cfg['singles'],
+                                    puncs=pre_cfg['punctuations'],
+                                    punc_frac_low=pre_cfg['min_punc_frac'],
+                                    punc_frac_high=pre_cfg['max_punc_frac'],
+                                    valid_count=pre_cfg['min_count'],
+                                    valid_ratio=pre_cfg['min_ratio'],
                                     stopwords=stopwords)
 
     topics = CorpusSimilarity(name='topics',
-                             time_decay_scale=const.TIME_DECAY_SCALE,
-                             duplicate_thresh=const.DUPLICATE_THRESH,
-                             irrelevant_thresh=const.IRRELEVANT_THRESH,
-                             max_recoms=const.MAX_SIZE,
-                             logger=utils.get_logger(lc.RUN_LOG_NAME+'.topics')
-                             )
+                              time_decay_scale=const.TIME_DECAY_SCALE,
+                              duplicate_thresh=const.DUPLICATE_THRESH,
+                              irrelevant_thresh=const.IRRELEVANT_THRESH,
+                              max_recoms=const.MAX_SIZE,
+                              logger=utils.get_logger(lc.RUN_LOG_NAME+'.topics')
+                              )
 
     specials = CorpusTfidf(name='specials',
                            logger=utils.get_logger(lc.RUN_LOG_NAME+'.specials')

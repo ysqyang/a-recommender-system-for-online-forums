@@ -1,13 +1,12 @@
-# -*- coding: utf-8 -*-
 directories:
   results: '../results'
   data: '../data'
   stopwords: '../stopwords.txt'
-  topics:
-  replies:
-  special_topics:
-  recommendations:
-  num_result_dirs:
+  topics: '../data/topics'
+  replies: '../data/replies'
+  special_topics: '../data/special_topics'
+  recommendations: '../results/recommendations'
+  num_result_dirs: 1000
 queue:
   exchange_name: 'recommender'
 main:
@@ -21,6 +20,46 @@ preprocessing:
   min_punc_frac: 0      #lower threshold for the fraction of punctuation marks
   max_punc_frac: 0.5    #upper threshold for the fraction of punctuation marks
   min_replies: 0
+  punctuations:
+    - '。'
+    - ', '
+    - '、'
+    - '：'
+    - ':'
+    - ';'
+    - '；'
+    - '“'
+    - '”'
+    - ' '
+  singles:
+    - '一'
+    - '二'
+    - '三'
+    - '四'
+    - '五'
+    - '六'
+    - '七'
+    - '八'
+    - '九'
+    - '十'
+    - '两'
+    - '这'
+    - '那'
+    - '不'
+    - '很'
+    - '是'
+    - '只'
+    - '就'
+    - '你'
+    - '我'
+    - '他'
+    - '她'
+    - '它'
+    - '啊'
+    - '呵'
+    - '哈'
+    - '哦'
+    - '去'
 recommendation:
   duplicate_thresh: 0.5
   irrelevant_thresh: 0.05
@@ -33,10 +72,15 @@ special_topics:
 general:
   datetime_format: '%Y-%m-%d %H:%M:%S'
   timestamp_factor: 1000
-
-
-
-PUNCS              = {'。', '，', '、', '：', ':', ';', '；', '“', '”', ' '}
-SINGLES            = {'一', '二', '三', '四', '五', '六', '七', '八', '九', '十',
-                       '两', '这', '那', '不', '很', '是', '只', '就', '你', '我', 
-                       '他', '她', '它', '啊', '呵', '哈', '哦', '去'}
+message_queue:
+  host: '192.168.1.102'
+  username: 'rabbitadmin'
+  password: 'tgb123_321'
+logging:
+  dir: '../logs'
+  run_log_name: 'run'
+  serve_log_name: 'serve'
+  log_level: 'info'
+  handler_level: 'info'
+  format: '[%(asctime)s] [%(name)-10s] [%(levelname)-8s] -- %(message)s'
+  mode: 'w'
