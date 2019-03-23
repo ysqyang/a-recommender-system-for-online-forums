@@ -91,9 +91,13 @@ def main(args):
         except Exception as e:
             logging.exception(e)
 
-
+    path_cfg = config['paths']
+    main_cfg = config['main']
     log_cfg = config['logging']
     pre_cfg = config['preprocessing']
+    recom_cfg = config['recommendation']
+    mq_cfg = config['message_queue']
+    misc_cfg = config['micellaneous']
     logger = utils.get_logger_with_config(name=log_cfg['run_log_name'],
                                           logger_level=log_cfg['log_level'],
                                           handler_levels=log_cfg['handler_level'],
@@ -114,39 +118,39 @@ def main(args):
                                     stopwords=stopwords)
 
     topics = CorpusSimilarity(name='topics',
-                              time_decay_scale=const.TIME_DECAY_SCALE,
-                              duplicate_thresh=const.DUPLICATE_THRESH,
-                              irrelevant_thresh=const.IRRELEVANT_THRESH,
-                              max_recoms=const.MAX_SIZE,
-                              logger=utils.get_logger(lc.RUN_LOG_NAME+'.topics')
+                              time_decay_scale=recom_cfg['time_decay_factor'],
+                              duplicate_thresh=recom_cfg['duplicate_thresh'],
+                              irrelevant_thresh=recom_cfg['irrelevant_thresh'],
+                              max_recoms=recom_cfg['max_recoms'],
+                              logger=utils.get_logger(log_cfg['run_log_name']+'.topics')
                               )
 
     specials = CorpusTfidf(name='specials',
-                           logger=utils.get_logger(lc.RUN_LOG_NAME+'.specials')
+                           logger=utils.get_logger(log_cfg['run_log_name']+'.specials')
                            )
 
     recoms = Recom(corpus_kw=specials,
                    corpus_target=topics,
-                   max_recoms=const.MAX_LEN,
-                   time_decay=const.)
+                   max_recoms=recom_cfg['max_recoms_special'],
+                   time_decay=recom_cfg['time_decay_factor'])
     keyword_weight = defaultdict(list)
 
     # load previously saved corpus and similarity data if possible
     if args.l:
         try:
-            topics.load(const.TOPIC_DIR)
+            topics.load(path_cfg['topics'])
         except FileNotFoundError:
             logger.exception('Topic data files not found. New files will be created')
         try:
-            specials.load(const.SPECIAL_DIR)
+            specials.load(path_cfg['special_topics'])
         except FileNotFoundError:
             logger.exception('Special topic data files not found. New files will be created')
 
-        files = os.listdir(const.RECOM_DIR)
+        files = os.listdir(path_cfg['recommendations'])
         for file in files:
             if not file.isnumeric():
                 continue
-            path = os.path.join(const.RECOM_DIR, file)
+            path = os.path.join(path_cfg['recommendations'], file)
             try:
                 with open(path, 'r') as f: 
                     recoms[file] = json.load(f)
@@ -159,9 +163,9 @@ def main(args):
 
     # establish rabbitmq connection and declare queues
     if args.c:
-        credentials = pika.PlainCredentials(username=mc.USERNAME,
-                                            password=mc.PASSWORD)
-        params = pika.ConnectionParameters(host=mc.HOST,
+        credentials = pika.PlainCredentials(username=mq_cfg['username'],
+                                            password=mq_cfg['password'])
+        params = pika.ConnectionParameters(host=mq_cfg['host'],
                                            credentials=credentials)
     else:
         params = pika.ConnectionParameters(host='localhost')
@@ -169,28 +173,29 @@ def main(args):
     lock = threading.Lock()
     save_topics = Save(topics=topics,
                        recoms=recoms,
-                       interval=const.SAVE_EVERY,
+                       interval=main_cfg['save_every'],
                        lock=lock,
-                       topic_dir=const.TOPIC_DIR,
-                       recom_dir=const.RECOM_DIR,
-                       mod_num=const.NUM_RESULT_DIRS)
+                       topic_dir=path_cfg['topics'],
+                       recom_dir=path_cfg['recommendations'],
+                       mod_num=misc_cfg['num_result_dirs'])
     
     save_topics.start()
 
     delete_topics = Delete(topics=topics,
-                           interval=const.DELETE_EVERY,
-                           keep_days=const.KEEP_DAYS,
+                           interval=main_cfg['delete_every'],
+                           keep_days=main_cfg['keep_days'],
                            lock=lock,
-                           logger=utils.get_logger(lc.RUN_LOG_NAME+'.topics'))
+                           logger=utils.get_logger(log_cfg['run_log_name']+'.topics'))
 
     delete_topics.start()
     
     while True:       
         try:
+            exchange = mq_cfg['exchange_name']
             connection = pika.BlockingConnection(params)
             channel = connection.channel()
             channel.basic_qos(prefetch_count=1)
-            channel.exchange_declare(exchange=const.EXCHANGE_NAME, 
+            channel.exchange_declare(exchange=mq_cfg['exchange_name'], 
                                      exchange_type='direct')
           
             channel.queue_declare(queue='new_topics')
@@ -198,15 +203,15 @@ def main(args):
             channel.queue_declare(queue='special_topics')
             channel.queue_declare(queue='delete_topics')
             #channel.queue_declare(queue='update_topics')   
-            channel.queue_bind(exchange=const.EXCHANGE_NAME, 
+            channel.queue_bind(exchange=exchange, 
                                queue='new_topics', routing_key='new')
-            channel.queue_bind(exchange=const.EXCHANGE_NAME,
+            channel.queue_bind(exchange=exchange,
                                queue='old_topics', routing_key='old')
-            channel.queue_bind(exchange=const.EXCHANGE_NAME,
+            channel.queue_bind(exchange=exchange,
                                queue='special_topics', routing_key='special')
-            channel.queue_bind(exchange=const.EXCHANGE_NAME, 
+            channel.queue_bind(exchange=exchange, 
                                queue='delete_topics', routing_key='delete')
-            #channel.queue_bind(exchange=const.EXCHANGE_NAME, queue='update_topics', routing_key='update')
+            #channel.queue_bind(exchange=exchange, queue='update_topics', routing_key='update')
             
             def decode_to_dict(msg):
                 while type(msg) != dict:
@@ -217,7 +222,7 @@ def main(args):
                 topic = decode_to_dict(topic)
                 topic_id = str(topic['topicID'])
                 content = preprocessor.preprocess(topic['body'])
-                date = topic['postDate'] / const.TIMESTAMP_FACTOR
+                date = topic['postDate'] / config['general']['timestamp_factor']
 
                 return topic_id, content, date
 
@@ -243,7 +248,7 @@ def main(args):
 
                 sim_list = [tid for tid, val in sim_list][:const.TOP_NUM]
                 
-                channel.basic_publish(exchange=const.EXCHANGE_NAME,
+                channel.basic_publish(exchange=exchange,
                                       routing_key='old',
                                       body=json.dumps(sim_list))
 
@@ -292,8 +297,8 @@ def main(args):
         
         except Exception as e:
             logger.exception(e)
-            logger.info('Retrying in %d seconds', const.SLEEP_TIME)
-            time.sleep(const.SLEEP_TIME)
+            logger.info('Retrying in %d seconds', main_cfg['retry_every'])
+            time.sleep(main_cfg['retry_every'])
 
 
 if __name__ == '__main__':

@@ -1,4 +1,4 @@
-directories:
+paths:
   results: '../results'
   data: '../data'
   stopwords: '../stopwords.txt'
@@ -6,8 +6,10 @@ directories:
   replies: '../data/replies'
   special_topics: '../data/special_topics'
   recommendations: '../results/recommendations'
-  num_result_dirs: 1000
-queue:
+message_queue:
+  host: '192.168.1.102'
+  username: 'rabbitadmin'
+  password: 'tgb123_321'
   exchange_name: 'recommender'
 main:
   save_every: 60  # number of seconds between saves
@@ -64,18 +66,16 @@ recommendation:
   duplicate_thresh: 0.5
   irrelevant_thresh: 0.05
   max_recoms: 5
+  max_recoms_special: 20
   top_num_special: 20
   time_decay_factor: 0.9
 special_topics:
   smartirs_scheme: 'ntn'
   keyword_num: 3
-general:
+micellaneous:
   datetime_format: '%Y-%m-%d %H:%M:%S'
   timestamp_factor: 1000
-message_queue:
-  host: '192.168.1.102'
-  username: 'rabbitadmin'
-  password: 'tgb123_321'
+  num_result_dirs: 1000
 logging:
   dir: '../logs'
   run_log_name: 'run'
