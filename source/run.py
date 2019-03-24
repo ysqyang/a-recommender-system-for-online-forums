@@ -17,14 +17,15 @@ sys.path.insert(1, config_path)
 
 
 class Save(threading.Thread):
-    def __init__(self, topics, recom, interval, lock, topic_path,
-                 recom_path, mod_num, logger=None):
+    def __init__(self, topics, specials, interval, lock, topic_path,
+                 specials_path, recom_path, mod_num, logger=None):
         threading.Thread.__init__(self)
         self.topics = topics
-        self.recom = recom
+        self.specials = specials
         self.interval = interval
         self.lock = lock
         self.topic_path = topic_path
+        self.specials_path = specials_path
         self.recom_path = recom_path
         self.mod_num = mod_num
         self.logger = logger
@@ -36,9 +37,10 @@ class Save(threading.Thread):
                 if not os.path.exists(self.topic_path):
                     os.makedirs(self.topic_path)
                 self.topics.save(self.topic_path, self.mod_num)
-                if not os.path.exists(self.recom_path):
-                    os.makedirs(self.recom_path)
-                self.recom.save_recommendations(self.recom_path)
+
+                if not os.path.exists(self.specials_path):
+                    os.makedirs(self.specials_path)
+                self.specials.save(self.specials_path, self.mod_num)
 
 
 class Delete(threading.Thread):
@@ -66,8 +68,9 @@ def main(args):
     # read configurations
     while True:
         try:
-            with open('../config/config.yml', 'r') as f:
+            with open('../config/config.yml', 'rb') as f:
                 config = yaml.load(f)
+                print(config)
                 break
         except Exception as e:
             logging.exception(e)
@@ -110,11 +113,6 @@ def main(args):
                            logger=utils.get_logger(log_cfg['run_log_name']+'.specials')
                            )
 
-    recom = Recom(corpus_kw=specials,
-                  corpus_target=topics,
-                  max_recoms=recom_cfg['max_recoms_special'],
-                  time_decay=recom_cfg['time_decay_factor'])
-
     # load previously saved corpus and similarity data if possible
     if args.l:
         try:
@@ -133,13 +131,11 @@ def main(args):
             path = os.path.join(path_cfg['recommendations'], file)
             try:
                 with open(path, 'r') as f: 
-                    recoms[file] = json.load(f)
+                    recoms.load_recommendations = json.load(f)
             except FileNotFoundError:
                 logger.exception('File not found for special topic %s', file)
             except json.JSONDecodeError:
                 logger.error('Failed to load topic %s', file)
-    
-    #print(topics.dictionary)
 
     # establish rabbitmq connection and declare queues
     if args.c:
@@ -152,10 +148,11 @@ def main(args):
 
     lock = threading.Lock()
     save_topics = Save(topics=topics,
-                       recom=recom,
+                       specials=specials,
                        interval=main_cfg['save_every'],
                        lock=lock,
                        topic_path=path_cfg['topics'],
+                       specials_path=path_cfg['specials'],
                        recom_path=path_cfg['recommendations'],
                        mod_num=misc_cfg['num_result_dirs'])
     
@@ -182,7 +179,7 @@ def main(args):
             channel.queue_declare(queue='old_topics')
             channel.queue_declare(queue='special_topics')
             channel.queue_declare(queue='delete_topics')
-            #channel.queue_declare(queue='update_topics')   
+
             channel.queue_bind(exchange=exchange, 
                                queue='new_topics', routing_key='new')
             channel.queue_bind(exchange=exchange,
@@ -191,7 +188,6 @@ def main(args):
                                queue='special_topics', routing_key='special')
             channel.queue_bind(exchange=exchange, 
                                queue='delete_topics', routing_key='delete')
-            #channel.queue_bind(exchange=exchange, queue='update_topics', routing_key='update')
             
             def decode_to_dict(msg):
                 while type(msg) != dict:
@@ -211,7 +207,8 @@ def main(args):
                 logger.info('Received new topic %s', topic_id)
 
                 with lock:
-                    topics.update_on_new_topic(topic_id, content, date)
+                    topics.add(topic_id, content, date)
+                    specials.update_on_new_topic(topic_id, content, date)
 
                 channel.basic_ack(delivery_tag=method.delivery_tag)      
 
@@ -234,7 +231,7 @@ def main(args):
                 logger.info('Received special topic %s', topic_id)
 
                 with lock:
-                    recom.update_on_new_special_topic(topic_id, date)
+                    specials.add(topic_id, content, date)
                 
                 channel.basic_ack(delivery_tag=method.delivery_tag) 
 

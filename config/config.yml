@@ -5,7 +5,8 @@ paths:
   topics: '../data/topics'
   replies: '../data/replies'
   special_topics: '../data/special_topics'
-  recommendations: '../results/recommendations'
+  recommendations: '../results/recoms'
+  recommendations_special: '../results/recoms_special'
 message_queue:
   host: '192.168.1.102'
   username: 'rabbitadmin'
@@ -80,7 +81,7 @@ logging:
   dir: '../logs'
   run_log_name: 'run'
   serve_log_name: 'serve'
-  log_level: 'info'
+  log_level: 20
   handler_level: 'info'
   format: '[%(asctime)s] [%(name)-10s] [%(levelname)-8s] -- %(message)s'
   mode: 'w'

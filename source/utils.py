@@ -52,7 +52,7 @@ def insert(l, id_, value, max_len):
     Helper function to insert into a list of [id, value]'s sorted
     by value, keeping the length of the list no more than max_len.
     Returns None if no insertion is performed, -1 if insertion is
-    performed but not element is removed from the original list and
+    performed but no element is removed from the original list and
     the removed id if the insertion is performed and an element is
     removed from the list.
     '''

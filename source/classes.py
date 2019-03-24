@@ -144,13 +144,18 @@ class Corpus(object):
 
 
 class CorpusTfidf(Corpus):
-    def __init__(self, name, tfidf_scheme, num_keywords, logger):
+    def __init__(self, name, target_corpus, tfidf_scheme, num_keywords,
+                 time_decay, max_recoms, logger):
         super().__init__(name=name,
                          logger=logger)
+        self.target_corpus = target_corpus
         self.tfidf_scheme = tfidf_scheme
-        self.keywords = {}
         self.num_keywords = num_keywords
-        
+        self.time_decay = time_decay
+        self.max_recoms = max_recoms
+        self.keywords = {}
+        self.recommendations = {}
+
     def generate_keywords(self):
         """
         For each topic in the corpus, generate using TFIDF a list of
@@ -168,6 +173,55 @@ class CorpusTfidf(Corpus):
             # generate token-to-weight mapping instead of id-to-weight mapping
             self.keywords[tid] = {self.dictionary[wid]: weight
                                   for wid, weight in weights[:self.num_keywords]}
+
+    def update_on_new_topic(self, topic_id, content, date):
+        relevance = 0
+        date = datetime.fromtimestamp(date)
+        for tid, kw in self.keywords.items():
+            recom = self.recommendations[tid]
+            dt = datetime.fromtimestamp(self.data[tid]['date'])
+            for word in content:
+                relevance += kw[word] if word in kw else 0
+            relevance *= min(1, math.pow(self.time_decay, (dt - date).days))
+            del_id = insert(recom, topic_id, relevance, self.max_recoms)
+            if del_id is not None:
+                self.data[tid]['updated'] = True
+
+    def add(self, topic_id, content, date):
+        if not super().add(topic_id, content, date):
+            return False
+
+        self.generate_keywords()
+        relevance = 0
+        for tid, data in self.target_corpus.data.items():
+            dt = datetime.fromtimestamp(data['date'])
+            for word in data['body']:
+                relevance += self.keywords[topic_id].get(word, 0)
+            relevance *= min(1, math.pow(self.time_decay, (date - dt).days))
+            del_id = insert(self.recommendations[topic_id], tid, relevance, self.max_recoms)
+
+
+    def save(self, save_dir):
+        '''
+        Saves the corpus and similarity data to disk
+        Args:
+        save_dir: directory under which to save the data
+        mod_num:  number of data folders
+        '''
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
+
+        for tid, data in self.data.items():
+            if data['updated']:
+                record = {'date': data['date'],
+                          'body': data['body'],
+                          'recoms': self.recommendations[tid]}
+                with open(os.path.join(save_dir, tid), 'w') as f:
+                    json.dump(record, f)
+                data['updated'] = False
+                self.logger.info('data for special topic %s updated on disk', tid)
+            else:
+                self.logger.info('No updates for special topic %s', tid)
 
 
 class CorpusSimilarity(Corpus):
@@ -312,38 +366,3 @@ class CorpusSimilarity(Corpus):
                 self.logger.info('similarity data for topic %s updated on disk', tid)
             else:
                 self.logger.info('No updates for topic %s', tid)
-
-
-class Recom:
-    def __init__(self, corpus_kw, corpus_target, max_recoms, time_decay):
-        self.corpus_kw = corpus_kw
-        self.corpus_target = corpus_target
-        self.recommendations = {tid: [] for tid in self.corpus_kw.keywords}
-        self.max_recoms = max_recoms
-        self.time_decay = time_decay
-
-    def update_on_new_topic(self, topic_id, content, date):
-        relevance = 0
-        date = datetime.fromtimestamp(date)
-        for tid, kw in self.corpus_kw.keywords.items():
-            recom = self.recommendations[tid]
-            dt = datetime.fromtimestamp(self.corpus_kw.data[tid]['date'])
-            for word in content:
-                relevance += kw[word] if word in kw else 0
-            relevance *= min(1, math.pow(self.time_decay, (dt - date).days))
-            insert(recom, topic_id, relevance, self.max_recoms)
-
-    def update_on_new_special_topic(self, topic_id, date):
-        self.corpus_kw.generate_keywords()
-        keywords = self.corpus_kw.keywords[topic_id]
-        relevance = 0
-        for tid, data in self.corpus_target.data.items():
-            dt = datetime.fromtimestamp(data['date'])
-            for word in data['body']:
-                relevance += keywords[word] if word in keywords else 0
-            relevance *= min(1, math.pow(self.time_decay, (date - dt).days))
-            insert(self.recommendations[topic_id], tid, relevance, self.max_recoms)
-
-    def save_recommendations(self, path):
-        with open(path, 'w') as f:
-            json.dump(self.recommendations, f)
