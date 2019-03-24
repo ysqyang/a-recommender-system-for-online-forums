@@ -17,15 +17,15 @@ sys.path.insert(1, config_path)
 
 
 class Save(threading.Thread):
-    def __init__(self, topics, recoms, interval, lock, topic_dir, 
-                 recom_dir, mod_num, logger=None):
+    def __init__(self, topics, recom, interval, lock, topic_path,
+                 recom_path, mod_num, logger=None):
         threading.Thread.__init__(self)
         self.topics = topics
-        self.recoms = recoms  # recommendations for special topics
+        self.recom = recom
         self.interval = interval
         self.lock = lock
-        self.topic_dir = topic_dir
-        self.recom_dir = recom_dir
+        self.topic_path = topic_path
+        self.recom_path = recom_path
         self.mod_num = mod_num
         self.logger = logger
 
@@ -33,18 +33,12 @@ class Save(threading.Thread):
         while True:
             time.sleep(self.interval)
             with self.lock: 
-                self._save_topics()
-                self._save_recoms()
-                 
-    def _save_topics(self):
-        self.topics.save(self.topic_dir, self.mod_num)
-
-    def _save_recoms(self):
-        if not os.path.exists(self.recom_dir):
-            os.makedirs(self.recom_dir)
-        for stid in self.recoms:
-            with open(os.path.join(self.recom_dir, stid), 'w') as f:
-                json.dump(self.recoms[stid], f)
+                if not os.path.exists(self.topic_path):
+                    os.makedirs(self.topic_path)
+                self.topics.save(self.topic_path, self.mod_num)
+                if not os.path.exists(self.recom_path):
+                    os.makedirs(self.recom_path)
+                self.recom.save_recommendations(self.recom_path)
 
 
 class Delete(threading.Thread):
@@ -67,27 +61,14 @@ class Delete(threading.Thread):
                 self.logger.info('Removing all topics older than {}'.format(t))
                 self.topics.remove_before(t)
 
-'''
-class Delete(threading.Thread):
-    def __init__(self, topics, save_dir):
-        threading.Thread.__init__(self)
-        self.topics = topics
-        self.interval = interval
-        self.save_dir = save_dir
-
-    def run(self):
-        while True:
-            time.sleep(self.interval)
-            with self.lock:
-'''
-
 
 def main(args):  
     # read configurations
     while True:
         try:
-            config = yaml.load(input, Loader=yaml.FullLoader)
-            break
+            with open('../config/config.yml', 'r') as f:
+                config = yaml.load(f)
+                break
         except Exception as e:
             logging.exception(e)
 
@@ -107,7 +88,7 @@ def main(args):
 
 
     # load stopwords
-    stopwords = utils.load_stopwords(cfg[''])
+    stopwords = utils.load_stopwords(path_cfg['stopwords'])
 
     preprocessor = TextPreprocessor(singles=pre_cfg['singles'],
                                     puncs=pre_cfg['punctuations'],
@@ -129,11 +110,10 @@ def main(args):
                            logger=utils.get_logger(log_cfg['run_log_name']+'.specials')
                            )
 
-    recoms = Recom(corpus_kw=specials,
-                   corpus_target=topics,
-                   max_recoms=recom_cfg['max_recoms_special'],
-                   time_decay=recom_cfg['time_decay_factor'])
-    keyword_weight = defaultdict(list)
+    recom = Recom(corpus_kw=specials,
+                  corpus_target=topics,
+                  max_recoms=recom_cfg['max_recoms_special'],
+                  time_decay=recom_cfg['time_decay_factor'])
 
     # load previously saved corpus and similarity data if possible
     if args.l:
@@ -172,11 +152,11 @@ def main(args):
 
     lock = threading.Lock()
     save_topics = Save(topics=topics,
-                       recoms=recoms,
+                       recom=recom,
                        interval=main_cfg['save_every'],
                        lock=lock,
-                       topic_dir=path_cfg['topics'],
-                       recom_dir=path_cfg['recommendations'],
+                       topic_path=path_cfg['topics'],
+                       recom_path=path_cfg['recommendations'],
                        mod_num=misc_cfg['num_result_dirs'])
     
     save_topics.start()
@@ -231,10 +211,7 @@ def main(args):
                 logger.info('Received new topic %s', topic_id)
 
                 with lock:
-                    if topics.add(topic_id, content, date):
-                        for stid in specials.data:
-                            match_val = get_relevance(stid, topic_id)
-                            recom_insert(recoms[stid], topic_id, match_val)
+                    topics.update_on_new_topic(topic_id, content, date)
 
                 channel.basic_ack(delivery_tag=method.delivery_tag)      
 
@@ -244,9 +221,9 @@ def main(args):
                 channel.basic_ack(delivery_tag=method.delivery_tag)
 
                 with lock:
-                    sim_list = topics.find_most_similar(old_topic)
+                    sim_list = topics.find_most_similar(content)
 
-                sim_list = [tid for tid, val in sim_list][:const.TOP_NUM]
+                sim_list = [tid for tid, val in sim_list][recom_cfg['max_recoms']]
                 
                 channel.basic_publish(exchange=exchange,
                                       routing_key='old',
@@ -257,13 +234,7 @@ def main(args):
                 logger.info('Received special topic %s', topic_id)
 
                 with lock:
-                    if specials.add(topic_id, content, date):
-                        specials.generate_keywords(const.KEYWORD_NUM)
-
-                        for stid in specials.data:
-                            recom_list = [[tid, get_relevance(stid, tid)] for tid in topics.data]
-                            recom_list.sort(key=lambda x:x[1], reverse=True)
-                            recoms[stid] = recom_list
+                    recom.update_on_new_special_topic(topic_id, date)
                 
                 channel.basic_ack(delivery_tag=method.delivery_tag) 
 
@@ -274,16 +245,6 @@ def main(args):
                 with lock:
                     topics.delete(topic_id)
                 channel.basic_ack(delivery_tag=method.delivery_tag)
-            
-            '''
-            def on_update_topic(ch, method, properties, body):
-                update_topic = json.loads(body)
-                topic_id = update_topic['topicID']
-                for attr in update_topic:
-                    if attr != 'topicID':
-                        topic_dict[topic_id][attr] = update_topic[attr]
-                utils.save_topics(topic_dict, const.TOPIC_FILE)
-            '''  
 
             channel.basic_consume('new_topics', on_new_topic)
             channel.basic_consume('special_topics', on_special_topic)

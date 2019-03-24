@@ -268,7 +268,7 @@ class CorpusSimilarity(Corpus):
             if self.data[tid]['date'] < t:
                 self.delete(tid)
 
-    def find_most_similar(self, topic, n):
+    def find_most_similar(self, topic):
         '''
         Given a topic, compute its similarities with all topics 
         in the corpus and return the top n most similar ones from 
@@ -283,7 +283,7 @@ class CorpusSimilarity(Corpus):
             if self.irrelevant_thresh <= sim <= self.duplicate_thresh:
                 insert(sim_list, tid, sim, self.max_recoms)
 
-        return sim_list[:n]
+        return sim_list
 
     def save(self, save_dir, mod_num):
         '''
@@ -314,8 +314,8 @@ class CorpusSimilarity(Corpus):
                 self.logger.info('No updates for topic %s', tid)
 
 
-class Recom():
-    def __init__(self, corpus_kw, corpus_target, max_len, time_decay):
+class Recom:
+    def __init__(self, corpus_kw, corpus_target, max_recoms, time_decay):
         self.corpus_kw = corpus_kw
         self.corpus_target = corpus_target
         self.recommendations = {tid: [] for tid in self.corpus_kw.keywords}
@@ -343,3 +343,7 @@ class Recom():
                 relevance += keywords[word] if word in keywords else 0
             relevance *= min(1, math.pow(self.time_decay, (date - dt).days))
             insert(self.recommendations[topic_id], tid, relevance, self.max_recoms)
+
+    def save_recommendations(self, path):
+        with open(path, 'w') as f:
+            json.dump(self.recommendations, f)
