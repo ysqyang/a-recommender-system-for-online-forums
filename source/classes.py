@@ -77,33 +77,6 @@ class Corpus(object):
     def size(self):
         return len(self.data)
 
-    def load(self, save_dir):       
-        folders = os.listdir(save_dir)
-        for folder in folders:
-            if not folder.isnumeric():
-                continue
-            files = os.listdir(os.path.join(save_dir, folder))
-            for file in files:
-                if not file.isnumeric():
-                    continue
-                path = os.path.join(save_dir, folder, file)
-                try:
-                    with open(path, 'r') as f:
-                        rec = json.load(f)
-                        self.data[file] = {'date': rec['date'],
-                                           'body': rec['body'],
-                                           'updated': False
-                                           }
-                except json.JSONDecodeError:
-                    self.logger.error('Failed to load topic %s', file)
-
-        self.logger.info('%d topics loaded from disk', len(self.data))
-
-        if len(self.data) > 0:            
-            corpus = [data['body'] for data in self.data.values()]
-            self.dictionary = corpora.Dictionary(corpus)
-            self.logger.info('Dictionary created')
-
     def add(self, topic_id, content, date):
         if topic_id in self.data:
             self.logger.warning('Topic already exists. Ignoring...')
@@ -201,6 +174,35 @@ class CorpusTfidf(Corpus):
             del_id = insert(self.recommendations[topic_id], tid, relevance, self.max_recoms)
 
 
+
+    def load(self, save_dir):
+        folders = os.listdir(save_dir)
+        for folder in folders:
+            if not folder.isnumeric():
+                continue
+            files = os.listdir(os.path.join(save_dir, folder))
+            for file in files:
+                if not file.isnumeric():
+                    continue
+                path = os.path.join(save_dir, folder, file)
+                try:
+                    with open(path, 'r') as f:
+                        rec = json.load(f)
+                        self.data[file] = {'date': rec['date'],
+                                           'body': rec['body'],
+                                           'sim_list': rec['sim_list'],
+                                           'updated': False
+                                           }
+                except json.JSONDecodeError:
+                    self.logger.error('Failed to load topic %s', file)
+
+        self.logger.info('%d topics loaded from disk', len(self.data))
+
+        if len(self.data) > 0:
+            corpus = [data['body'] for data in self.data.values()]
+            self.dictionary = corpora.Dictionary(corpus)
+            self.logger.info('Dictionary created')
+
     def save(self, save_dir):
         '''
         Saves the corpus and similarity data to disk
@@ -237,9 +239,7 @@ class CorpusSimilarity(Corpus):
         self.irrelevant_thresh = irrelevant_thresh
         self.max_recoms = max_recoms
 
-    def load(self, save_dir):       
-        super().load(save_dir)
-        
+    def load(self, save_dir):
         folders = os.listdir(save_dir)
         for folder in folders:
             if not folder.isnumeric():
@@ -252,9 +252,20 @@ class CorpusSimilarity(Corpus):
                 try:
                     with open(path, 'r') as f:
                         rec = json.load(f)
-                        self.data[file]['sim_list'] = rec['sim_list']
+                        self.data[file] = {'date': rec['date'],
+                                           'body': rec['body'],
+                                           'sim_list': rec['sim_list'],
+                                           'updated': False
+                                           }
                 except json.JSONDecodeError:
-                    self.logger.error('Failed to load similarity data for topic %s', file)
+                    self.logger.error('Failed to load topic %s', file)
+
+        self.logger.info('%d topics loaded from disk', len(self.data))
+
+        if len(self.data) > 0:
+            corpus = [data['body'] for data in self.data.values()]
+            self.dictionary = corpora.Dictionary(corpus)
+            self.logger.info('Dictionary created')
 
     def add(self, topic_id, content, date):
         if not super().add(topic_id, content, date):
@@ -304,11 +315,9 @@ class CorpusSimilarity(Corpus):
 
         appears_in = self.data[topic_id]['appears_in']
 
-        for tid in appears_in[topic_id]: # list of topic id's whose similarity lists tid appears in
-            if tid in self.data:
-                self.data[tid]['sim_list'] = [x for x in self.data[tid]['sim_list']
-                                              if x[0] != topic_id]
-                self.data[tid]['updated'] = True
+        for tid in appears_in:  # list of topic id's whose similarity lists tid appears in
+            self.data[tid]['sim_list'].remove(topic_id)
+            self.data[tid]['updated'] = True
 
         del self.data[topic_id]
         self.logger.info('Topic %s has been deleted from similarity results', topic_id)
