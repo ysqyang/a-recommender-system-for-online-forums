@@ -232,12 +232,10 @@ class CorpusSimilarity(Corpus):
                  irrelevant_thresh, max_recoms, logger):
         super().__init__(name=name,
                          logger=logger)
-        self.sim_sorted = defaultdict(list)
         self.time_decay = time_decay
         self.duplicate_thresh = duplicate_thresh
         self.irrelevant_thresh = irrelevant_thresh
         self.max_recoms = max_recoms
-        self.appears_in = defaultdict(list)
 
     def load(self, save_dir):       
         super().load(save_dir)
@@ -254,13 +252,16 @@ class CorpusSimilarity(Corpus):
                 try:
                     with open(path, 'r') as f:
                         rec = json.load(f)
-                        self.sim_sorted[file] = rec['sim_list']
+                        self.data[file]['sim_list'] = rec['sim_list']
                 except json.JSONDecodeError:
                     self.logger.error('Failed to load similarity data for topic %s', file)
 
     def add(self, topic_id, content, date):
         if not super().add(topic_id, content, date):
             return False
+
+        self.data[topic_id]['sim_list'] = []
+        self.data[topic_id]['appears_in'] = []
 
         new_date = datetime.fromtimestamp(self.data[topic_id]['date'])
         
@@ -276,43 +277,41 @@ class CorpusSimilarity(Corpus):
                 sim_2 = sim * min(1, time_factor)
                 
                 if self.irrelevant_thresh <= sim_1 <= self.duplicate_thresh:
-                    l = self.sim_sorted[tid]
-                    del_id = insert(l, topic_id, sim_1, self.max_recoms)
+                    del_id = insert(data['sim_list'], topic_id, sim_1, self.max_recoms)
                     if del_id is not None:
-                        self.appears_in[topic_id].append(tid)
+                        self.data[topic_id]['appears_in'].append(tid)
                         self.data[tid]['updated'] = True
                         if del_id >= 0:
-                            self.appears_in[del_id].remove(tid)
+                            self.data[del_id]['appears_in'].remove(tid)
                 
                 if self.irrelevant_thresh <= sim_2 <= self.duplicate_thresh:
-                    l = self.sim_sorted[topic_id]
-                    inserted, del_id = insert(l, tid, sim_2, self.max_recoms)
+                    inserted, del_id = insert(self.data[topic_id]['sim_list'],
+                                              tid, sim_2, self.max_recoms)
                     if del_id is not None:
-                        self.appears_in[tid].append(topic_id)
+                        self.data[tid]['appears_in'].append(topic_id)
                         if del_id >= 0:
-                            self.appears_in[del_id].remove(topic_id)
+                            self.data[del_id]['appears_in'].remove(topic_id)
 
         self.logger.info('Topic %s has been added to similarity results', topic_id)
-        self.logger.debug('sim_sorted_len=%d', len(self.sim_sorted))
 
         return True
 
     def delete(self, topic_id):
         print('deleting {}'.format(topic_id))
-        super().delete(topic_id)
 
-        if topic_id in self.sim_sorted:
-            del self.sim_sorted[topic_id]
-            self.logger.debug('sim_sorted_len=%d', len(self.sim_sorted))
+        if topic_id not in self.data:
+            return
 
-        if topic_id in self.appears_in:
-            for tid in self.appears_in[topic_id]: # list of topic id's whose similarity lists tid appears in
-                if tid in self.data:
-                    self.sim_sorted[tid] = [x for x in self.sim_sorted[tid] if x[0]!=topic_id]
-                    self.data[tid]['updated'] = True
+        appears_in = self.data[topic_id]['appears_in']
 
-            del self.appears_in[topic_id]
-            self.logger.info('Topic %s has been deleted from similarity results', topic_id)
+        for tid in appears_in[topic_id]: # list of topic id's whose similarity lists tid appears in
+            if tid in self.data:
+                self.data[tid]['sim_list'] = [x for x in self.data[tid]['sim_list']
+                                              if x[0] != topic_id]
+                self.data[tid]['updated'] = True
+
+        del self.data[topic_id]
+        self.logger.info('Topic %s has been deleted from similarity results', topic_id)
 
     def remove_before(self, t):
         if type(t) != float:
@@ -351,9 +350,9 @@ class CorpusSimilarity(Corpus):
 
         for tid, data in self.data.items():
             if data['updated']:
-                sim_record = {'date': data['date'],
-                              'body': data['body'],
-                              'sim_list': self.sim_sorted[tid]}
+                record = {'date': data['date'],
+                          'body': data['body'],
+                          'sim_list': data['sim_list']}
                 folder_name = str(int(tid) % mod_num)
                 dir_path = os.path.join(save_dir, folder_name)
                 # build the subdir for storing topics
@@ -361,7 +360,7 @@ class CorpusSimilarity(Corpus):
                     os.makedirs(dir_path) 
                 filename = os.path.join(dir_path, tid)
                 with open(filename, 'w') as f:
-                    json.dump(sim_record, f)
+                    json.dump(record, f)
                 data['updated'] = False
                 self.logger.info('similarity data for topic %s updated on disk', tid)
             else:
