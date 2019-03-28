@@ -72,7 +72,7 @@ recommendation:
   time_decay_base: 0.9
 special_topics:
   smartirs_scheme: 'ntn'
-  keyword_num: 3
+  num_keywords: 3
 micellaneous:
   datetime_format: '%Y-%m-%d %H:%M:%S'
   timestamp_factor: 1000

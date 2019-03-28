@@ -148,7 +148,12 @@ class CorpusTfidf(AbstractCorpus):
             relevance = sum(self.data[topic_id]['keywords'][word] for word in data['body'])
             day_delta = (int(date) - int(data['date'])) / NUM_SECONDS_PER_DAY
             relevance *= min(1.0, math.pow(self.time_decay, day_delta))
-            insert(self.data[topic_id]['recommendations'], tid, relevance, self.max_recoms)
+            del_id = insert(self.data[topic_id]['recommendations'], tid, relevance, self.max_recoms)
+            if del_id is None:
+                continue
+            data['appears_in_special'].append(topic_id)
+            if del_id >= 0:
+                data['appears_in_special'].remove(del_id)
 
     def update_on_new_topic(self, topic_id, content, date):
         """
@@ -159,12 +164,24 @@ class CorpusTfidf(AbstractCorpus):
             day_delta = (int(data['date']) - int(date)) / NUM_SECONDS_PER_DAY  # convert to number of days
             relevance *= min(1.0, math.pow(self.time_decay, day_delta))
             del_id = insert(data['recommendations'], topic_id, relevance, self.max_recoms)
-            if del_id is not None:  # insertion performed
-                self.data[tid]['updated'] = True
+            if del_id is None:  # no insertion performed
+                continue
+            self.data[tid]['updated'] = True
+            self.target_corpus.data[topic_id]['appears_in_special'].append(tid)
+            if del_id >= 0:
+                self.target_corpus.data[del_id]['appears_in_special'].remove(tid)
+
+    def update_on_delete_topic(self, topic_id):
+        for tid in self.target_corpus.data['appears_in_special']:
+            if topic_id in self.data[tid]['recommendations']:
+                self.data[tid]['recommendations'].remove(topic_id)
 
     def delete(self, topic_id):
         if topic_id not in self.data:
             return
+
+        for tid in self.data[topic_id]['recommendations']:
+            self.target_corpus.data[tid]['appears_in_special'].remove(topic_id)
 
         del self.data[topic_id]
 
@@ -226,7 +243,7 @@ class CorpusSimilarity(AbstractCorpus):
     '''
     Corpus collection
     '''
-    def __init__(self, name, special_topics, time_decay, duplicate_thresh,
+    def __init__(self, name, time_decay, duplicate_thresh,
                  irrelevant_thresh, max_recoms, logger):
         super().__init__(name=name,
                          logger=logger)
@@ -277,6 +294,7 @@ class CorpusSimilarity(AbstractCorpus):
                                'body': content,
                                'sim_list': [],
                                'appears_in': [],
+                               'appears_in_special': [],
                                'updated': False}
 
         self._update_pairwise_similarity(topic_id, content, date)
@@ -341,6 +359,7 @@ class CorpusSimilarity(AbstractCorpus):
                                            'body': rec['body'],
                                            'sim_list': rec['sim_list'],
                                            'appears_in': rec['appears_in'],
+                                           'appears_in_special': rec['appears_in_special'],
                                            'updated': False
                                            }
                 except json.JSONDecodeError:
@@ -368,7 +387,8 @@ class CorpusSimilarity(AbstractCorpus):
                 record = {'date': data['date'],
                           'body': data['body'],
                           'sim_list': data['sim_list'],
-                          'appears_in': data['appears_in']}
+                          'appears_in': data['appears_in'],
+                          'appears_in_special': data['appears_in_special']}
                 folder_name = str(int(tid) % mod_num)
                 dir_path = os.path.join(save_dir, folder_name)
                 # build the subdir for storing topics

@@ -82,6 +82,7 @@ def main(args):
     recom_cfg = config['recommendation']
     mq_cfg = config['message_queue']
     misc_cfg = config['micellaneous']
+    special_cfg = config['special_topics']
     logger = utils.get_logger_with_config(name=log_cfg['run_log_name'],
                                           logger_level=log_cfg['log_level'],
                                           handler_levels=log_cfg['handler_levels'],
@@ -99,7 +100,7 @@ def main(args):
                                     punc_frac_high=pre_cfg['max_punc_frac'],
                                     valid_count=pre_cfg['min_count'],
                                     valid_ratio=pre_cfg['min_ratio'],
-                                    stopwords=stopwords)
+        ke                            stopwords=stopwords)
 
     topics = CorpusSimilarity(name='topics',
                               time_decay=recom_cfg['time_decay_base'],
@@ -110,6 +111,11 @@ def main(args):
                               )
 
     specials = CorpusTfidf(name='specials',
+                           target_corpus=topics,
+                           tfidf_scheme=special_cfg['smart_irs_scheme'],
+                           num_keywords=special_cfg['num_keywords'],
+                           time_decay=recom_cfg['time_decay_base'],
+                           max_recoms=recom_cfg['max_recoms_special'],
                            logger=utils.get_logger(log_cfg['run_log_name']+'.specials')
                            )
 
@@ -228,6 +234,7 @@ def main(args):
                 
                 with lock:
                     topics.delete(topic_id)
+                    specials.update_on_delete_topic(topic_id)
                 channel.basic_ack(delivery_tag=method.delivery_tag)
 
             channel.basic_consume('new_topics', on_new_topic)
