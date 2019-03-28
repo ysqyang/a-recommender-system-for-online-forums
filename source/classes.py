@@ -14,6 +14,7 @@ import numpy as np
 import jieba
 from utils import insert
 
+NUM_SECONDS_PER_DAY = 86400
 
 class TextPreprocessor(object):
     def __init__(self, singles, puncs, punc_frac_low, punc_frac_high,
@@ -63,7 +64,7 @@ class TextPreprocessor(object):
         return word_list
 
 
-class Corpus(object):
+class AbstractCorpus(object):
     '''
     Corpus object
     '''
@@ -77,46 +78,32 @@ class Corpus(object):
     def size(self):
         return len(self.data)
 
-    def add(self, topic_id, content, date):
-        if topic_id in self.data:
-            self.logger.warning('Topic already exists. Ignoring...')
-            return False
-
-        if len(content) == 0:
-            self.logger.info('Topic not recommendable')
-            return False      
-        
-        self.dictionary.add_documents([content])
-
-        self.data[topic_id] = {'date': date, 'body': content, 'updated': False}
-                     
-        self.logger.info('New topic has been added to collection %s', self.name)
-        self.logger.info('Corpus data have been updated for collection %s', self.name)
-        self.logger.info('%d topics available in collection %s', len(self.data), self.name)
-        
-        return True
-
-    def delete(self, topic_id):
-        if topic_id in self.data:
-            del self.data[topic_id]
-            self.logger.info('Topic %s has been deleted from the collection', topic_id)
-            self.logger.info('Corpus data have been updated')
-            self.logger.info('%d topics remaining', len(self.data))
-
-    @ property
+    @property
     def oldest(self):
         if len(self.data) == 0:
             return None
         return min(self.data.keys())
 
-    @ property
+    @property
     def latest(self):
         if len(self.data) == 0:
             return None
         return max(self.data.keys())
 
+    def add(self, topic_id, content, date):
+        return NotImplemented
 
-class CorpusTfidf(Corpus):
+    def delete(self, topic_id):
+        return NotImplemented
+
+    def load(self, save_dir):
+        return NotImplemented
+
+    def save(self, save_dir, mod_num):
+        return NotImplemented
+
+
+class CorpusTfidf(AbstractCorpus):
     def __init__(self, name, target_corpus, tfidf_scheme, num_keywords,
                  time_decay, max_recoms, logger):
         super().__init__(name=name,
@@ -126,10 +113,8 @@ class CorpusTfidf(Corpus):
         self.num_keywords = num_keywords
         self.time_decay = time_decay
         self.max_recoms = max_recoms
-        self.keywords = {}
-        self.recommendations = {}
 
-    def generate_keywords(self):
+    def _update_keywords(self):
         """
         For each topic in the corpus, generate using TFIDF a list of
         n_keywords most importance keywords in the form of token-to-weight
@@ -144,36 +129,46 @@ class CorpusTfidf(Corpus):
             weights = tfidf[self.dictionary.doc2bow(data['body'])]
             weights.sort(key=lambda x: x[1], reverse=True)
             # generate token-to-weight mapping instead of id-to-weight mapping
-            self.keywords[tid] = {self.dictionary[wid]: weight
-                                  for wid, weight in weights[:self.num_keywords]}
-
-    def update_on_new_topic(self, topic_id, content, date):
-        relevance = 0
-        date = datetime.fromtimestamp(date)
-        for tid, kw in self.keywords.items():
-            recom = self.recommendations[tid]
-            dt = datetime.fromtimestamp(self.data[tid]['date'])
-            for word in content:
-                relevance += kw[word] if word in kw else 0
-            relevance *= min(1, math.pow(self.time_decay, (dt - date).days))
-            del_id = insert(recom, topic_id, relevance, self.max_recoms)
-            if del_id is not None:
-                self.data[tid]['updated'] = True
+            data['keywords'] = {self.dictionary[wid]: weight
+                                for wid, weight in weights[:self.num_keywords]}
 
     def add(self, topic_id, content, date):
-        if not super().add(topic_id, content, date):
-            return False
+        self.data[topic_id] = {'date': date,
+                               'body': content,
+                               'keywords': defaultdict(),
+                               'recommendations': [],
+                               'updated': True
+                               }
 
-        self.generate_keywords()
-        relevance = 0
+        self._generate_recommendations(topic_id, date)
+
+    def _generate_recommendations(self, topic_id, date):
+        self._update_keywords()
         for tid, data in self.target_corpus.data.items():
-            dt = datetime.fromtimestamp(data['date'])
-            for word in data['body']:
-                relevance += self.keywords[topic_id].get(word, 0)
-            relevance *= min(1, math.pow(self.time_decay, (date - dt).days))
-            del_id = insert(self.recommendations[topic_id], tid, relevance, self.max_recoms)
+            relevance = sum(self.data[topic_id]['keywords'][word] for word in data['body'])
+            day_delta = (int(date) - int(data['date'])) / NUM_SECONDS_PER_DAY
+            relevance *= min(1.0, math.pow(self.time_decay, day_delta))
+            insert(self.data[topic_id]['recommendations'], tid, relevance, self.max_recoms)
 
+    def update_on_new_topic(self, topic_id, content, date):
+        """
+        updates recommendation data for special topics
+        """
+        for tid, data in self.data.items():
+            relevance = sum(data['keywords'][word] for word in content)
+            day_delta = (int(data['date']) - int(date)) / NUM_SECONDS_PER_DAY  # convert to number of days
+            relevance *= min(1.0, math.pow(self.time_decay, day_delta))
+            del_id = insert(data['recommendations'], topic_id, relevance, self.max_recoms)
+            if del_id is not None:  # insertion performed
+                self.data[tid]['updated'] = True
 
+    def delete(self, topic_id):
+        if topic_id not in self.data:
+            return
+
+        del self.data[topic_id]
+
+        self.logger.info('Topic %s has been deleted', topic_id)
 
     def load(self, save_dir):
         folders = os.listdir(save_dir)
@@ -190,7 +185,8 @@ class CorpusTfidf(Corpus):
                         rec = json.load(f)
                         self.data[file] = {'date': rec['date'],
                                            'body': rec['body'],
-                                           'sim_list': rec['sim_list'],
+                                           'keywords': rec['keywords'],
+                                           'recommendations': rec['recommendations'],
                                            'updated': False
                                            }
                 except json.JSONDecodeError:
@@ -203,7 +199,7 @@ class CorpusTfidf(Corpus):
             self.dictionary = corpora.Dictionary(corpus)
             self.logger.info('Dictionary created')
 
-    def save(self, save_dir):
+    def save(self, save_dir, mod_num):
         '''
         Saves the corpus and similarity data to disk
         Args:
@@ -217,20 +213,20 @@ class CorpusTfidf(Corpus):
             if data['updated']:
                 record = {'date': data['date'],
                           'body': data['body'],
-                          'recoms': self.recommendations[tid]}
+                          'keywords': data['keywords'],
+                          'recommendations': data['recommendations']}
                 with open(os.path.join(save_dir, tid), 'w') as f:
                     json.dump(record, f)
-                data['updated'] = False
-                self.logger.info('data for special topic %s updated on disk', tid)
+                self.logger.info('data for special topic %s saved on disk', tid)
             else:
-                self.logger.info('No updates for special topic %s', tid)
+                self.logger.info('No updates for topic %s', tid)
 
 
-class CorpusSimilarity(Corpus):
+class CorpusSimilarity(AbstractCorpus):
     '''
     Corpus collection
     '''
-    def __init__(self, name, time_decay, duplicate_thresh,
+    def __init__(self, name, special_topics, time_decay, duplicate_thresh,
                  irrelevant_thresh, max_recoms, logger):
         super().__init__(name=name,
                          logger=logger)
@@ -238,6 +234,95 @@ class CorpusSimilarity(Corpus):
         self.duplicate_thresh = duplicate_thresh
         self.irrelevant_thresh = irrelevant_thresh
         self.max_recoms = max_recoms
+
+    def _update_pairwise_similarity(self, topic_id, content, date):
+        """
+        updates similarity data within the corpus
+        """
+        bow = self.dictionary.doc2bow(content)
+        for tid, data in self.data.items():
+            day_delta = (int(date) - int(data['date'])) / NUM_SECONDS_PER_DAY
+            time_factor = math.pow(self.time_decay, day_delta)
+            if tid == topic_id:
+                continue
+            bow1 = self.dictionary.doc2bow(data['body'])
+            sim = matutils.cossim(bow, bow1)
+            sim_1 = sim * min(1.0, 1 / time_factor)
+            sim_2 = sim * min(1.0, time_factor)
+
+            if self.irrelevant_thresh <= sim_1 <= self.duplicate_thresh:
+                del_id = insert(data['sim_list'], topic_id, sim_1, self.max_recoms)
+                if del_id is not None:
+                    self.data[topic_id]['appears_in'].append(tid)
+                    self.data[tid]['updated'] = True
+                    if del_id >= 0:
+                        self.data[del_id]['appears_in'].remove(tid)
+
+            if self.irrelevant_thresh <= sim_2 <= self.duplicate_thresh:
+                inserted, del_id = insert(self.data[topic_id]['sim_list'],
+                                          tid, sim_2, self.max_recoms)
+                if del_id is not None:
+                    self.data[tid]['appears_in'].append(topic_id)
+                    if del_id >= 0:
+                        self.data[del_id]['appears_in'].remove(topic_id)
+
+    def add(self, topic_id, content, date):
+        if len(content) == 0:
+            self.logger.info('Topic not recommendable')
+            return False
+
+        self.dictionary.add_documents([content])
+
+        self.data[topic_id] = {'date': date,
+                               'body': content,
+                               'sim_list': [],
+                               'appears_in': [],
+                               'updated': False}
+
+        self._update_pairwise_similarity(topic_id, content, date)
+
+        self.logger.info('New topic has been added to collection %s', self.name)
+        self.logger.info('%d topics available in collection %s', len(self.data), self.name)
+
+        return True
+
+    def delete(self, topic_id):
+        if topic_id not in self.data:
+            return
+
+        appears_in = self.data[topic_id]['appears_in']
+
+        for tid in appears_in:  # list of topic id's whose similarity lists tid appears in
+            self.data[tid]['sim_list'].remove(topic_id)
+            self.data[tid]['updated'] = True
+
+        del self.data[topic_id]
+        self.logger.info('Topic %s has been deleted', topic_id)
+
+    def remove_before(self, t):
+        if type(t) != float:
+            t = time.mktime(t.timetuple())
+
+        for tid in list(self.data.keys()):
+            if self.data[tid]['date'] < t:
+                self.delete(tid)
+
+    def find_most_similar(self, topic):
+        """
+        Given a topic, compute its similarities with all topics 
+        in the corpus and return the top n most similar ones from 
+        the corpus
+        """
+        sim_list = []
+        bow = self.dictionary.doc2bow(topic['body'])
+
+        for tid, data in self.data.items():
+            bow1 = self.dictionary.doc2bow(data['body'])
+            sim = matutils.cossim(bow, bow1)
+            if self.irrelevant_thresh <= sim <= self.duplicate_thresh:
+                insert(sim_list, tid, sim, self.max_recoms)
+
+        return sim_list
 
     def load(self, save_dir):
         folders = os.listdir(save_dir)
@@ -255,6 +340,7 @@ class CorpusSimilarity(Corpus):
                         self.data[file] = {'date': rec['date'],
                                            'body': rec['body'],
                                            'sim_list': rec['sim_list'],
+                                           'appears_in': rec['appears_in'],
                                            'updated': False
                                            }
                 except json.JSONDecodeError:
@@ -266,86 +352,6 @@ class CorpusSimilarity(Corpus):
             corpus = [data['body'] for data in self.data.values()]
             self.dictionary = corpora.Dictionary(corpus)
             self.logger.info('Dictionary created')
-
-    def add(self, topic_id, content, date):
-        if not super().add(topic_id, content, date):
-            return False
-
-        self.data[topic_id]['sim_list'] = []
-        self.data[topic_id]['appears_in'] = []
-
-        new_date = datetime.fromtimestamp(self.data[topic_id]['date'])
-        
-        bow = self.dictionary.doc2bow(self.data[topic_id]['body'])
-
-        for tid, data in self.data.items():
-            date = datetime.fromtimestamp(data['date'])
-            time_factor = math.pow(self.time_decay, (new_date-date).days)
-            if tid != topic_id:
-                bow1 = self.dictionary.doc2bow(data['body'])
-                sim = matutils.cossim(bow, bow1)
-                sim_1 = sim * min(1, 1/time_factor)
-                sim_2 = sim * min(1, time_factor)
-                
-                if self.irrelevant_thresh <= sim_1 <= self.duplicate_thresh:
-                    del_id = insert(data['sim_list'], topic_id, sim_1, self.max_recoms)
-                    if del_id is not None:
-                        self.data[topic_id]['appears_in'].append(tid)
-                        self.data[tid]['updated'] = True
-                        if del_id >= 0:
-                            self.data[del_id]['appears_in'].remove(tid)
-                
-                if self.irrelevant_thresh <= sim_2 <= self.duplicate_thresh:
-                    inserted, del_id = insert(self.data[topic_id]['sim_list'],
-                                              tid, sim_2, self.max_recoms)
-                    if del_id is not None:
-                        self.data[tid]['appears_in'].append(topic_id)
-                        if del_id >= 0:
-                            self.data[del_id]['appears_in'].remove(topic_id)
-
-        self.logger.info('Topic %s has been added to similarity results', topic_id)
-
-        return True
-
-    def delete(self, topic_id):
-        print('deleting {}'.format(topic_id))
-
-        if topic_id not in self.data:
-            return
-
-        appears_in = self.data[topic_id]['appears_in']
-
-        for tid in appears_in:  # list of topic id's whose similarity lists tid appears in
-            self.data[tid]['sim_list'].remove(topic_id)
-            self.data[tid]['updated'] = True
-
-        del self.data[topic_id]
-        self.logger.info('Topic %s has been deleted from similarity results', topic_id)
-
-    def remove_before(self, t):
-        if type(t) != float:
-            t = time.mktime(t.timetuple())
-
-        for tid in list(self.data.keys()):
-            if self.data[tid]['date'] < t:
-                self.delete(tid)
-
-    def find_most_similar(self, topic):
-        '''
-        Given a topic, compute its similarities with all topics 
-        in the corpus and return the top n most similar ones from 
-        the corpus
-        '''
-        sim_list = []
-        bow = self.dictionary.doc2bow(topic['body'])
-
-        for tid, data in self.data.items():
-            bow1 = self.dictionary.doc2bow(data['body'])
-            sim = matutils.cossim(bow, bow1)
-            if self.irrelevant_thresh <= sim <= self.duplicate_thresh:
-                insert(sim_list, tid, sim, self.max_recoms)
-
-        return sim_list
 
     def save(self, save_dir, mod_num):
         '''
@@ -361,7 +367,8 @@ class CorpusSimilarity(Corpus):
             if data['updated']:
                 record = {'date': data['date'],
                           'body': data['body'],
-                          'sim_list': data['sim_list']}
+                          'sim_list': data['sim_list'],
+                          'appears_in': data['appears_in']}
                 folder_name = str(int(tid) % mod_num)
                 dir_path = os.path.join(save_dir, folder_name)
                 # build the subdir for storing topics

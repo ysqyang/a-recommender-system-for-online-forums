@@ -69,7 +69,7 @@ recommendation:
   max_recoms: 5
   max_recoms_special: 20
   top_num_special: 20
-  time_decay_factor: 0.9
+  time_decay_base: 0.9
 special_topics:
   smartirs_scheme: 'ntn'
   keyword_num: 3
@@ -82,6 +82,10 @@ logging:
   run_log_name: 'run'
   serve_log_name: 'serve'
   log_level: 20
-  handler_level: 'info'
+  handler_levels:
+    - 20
+    - 30
+    - 40
+    - 50
   format: '[%(asctime)s] [%(name)-10s] [%(levelname)-8s] -- %(message)s'
   mode: 'w'

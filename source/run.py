@@ -9,7 +9,7 @@ import logging
 import json
 import yaml
 import pika
-from classes import TextPreprocessor, CorpusSimilarity, CorpusTfidf, Recom
+from classes import TextPreprocessor, CorpusSimilarity, CorpusTfidf
 import utils
 root_dir = os.path.dirname(sys.path[0])
 config_path = os.path.abspath(os.path.join(root_dir, 'config'))
@@ -84,7 +84,7 @@ def main(args):
     misc_cfg = config['micellaneous']
     logger = utils.get_logger_with_config(name=log_cfg['run_log_name'],
                                           logger_level=log_cfg['log_level'],
-                                          handler_levels=log_cfg['handler_level'],
+                                          handler_levels=log_cfg['handler_levels'],
                                           log_dir=log_cfg['dir'],
                                           mode=log_cfg['mode'],
                                           log_format=log_cfg['format'])
@@ -102,7 +102,7 @@ def main(args):
                                     stopwords=stopwords)
 
     topics = CorpusSimilarity(name='topics',
-                              time_decay_scale=recom_cfg['time_decay_factor'],
+                              time_decay=recom_cfg['time_decay_base'],
                               duplicate_thresh=recom_cfg['duplicate_thresh'],
                               irrelevant_thresh=recom_cfg['irrelevant_thresh'],
                               max_recoms=recom_cfg['max_recoms'],
@@ -123,19 +123,6 @@ def main(args):
             specials.load(path_cfg['special_topics'])
         except FileNotFoundError:
             logger.exception('Special topic data files not found. New files will be created')
-
-        files = os.listdir(path_cfg['recommendations'])
-        for file in files:
-            if not file.isnumeric():
-                continue
-            path = os.path.join(path_cfg['recommendations'], file)
-            try:
-                with open(path, 'r') as f: 
-                    recoms.load_recommendations = json.load(f)
-            except FileNotFoundError:
-                logger.exception('File not found for special topic %s', file)
-            except json.JSONDecodeError:
-                logger.error('Failed to load topic %s', file)
 
     # establish rabbitmq connection and declare queues
     if args.c:
@@ -198,7 +185,7 @@ def main(args):
                 topic = decode_to_dict(topic)
                 topic_id = str(topic['topicID'])
                 content = preprocessor.preprocess(topic['body'])
-                date = topic['postDate'] / config['general']['timestamp_factor']
+                date = topic['postDate'] // config['general']['timestamp_factor']
 
                 return topic_id, content, date
 

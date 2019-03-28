@@ -36,7 +36,7 @@ def get_logger_with_config(name, logger_level, handler_levels,
     for level in handler_levels:
         filename = os.path.join(log_dir, '{}.{}'.format(name, level))
         handler = logging.FileHandler(filename=filename, mode=mode)
-        handler.setLevel(handler_levels[level])
+        handler.setLevel(level)
         handler.setFormatter(formatter)
         logger.addHandler(handler)
 
