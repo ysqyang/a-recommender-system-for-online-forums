@@ -1,12 +1,11 @@
 paths:
-  results: '../results'
   data: '../data'
   stopwords: '../stopwords.txt'
   topics: '../data/topics'
   replies: '../data/replies'
   special_topics: '../data/special_topics'
-  recommendations: '../results/recoms'
-  recommendations_special: '../results/recoms_special'
+  topic_save_dir: '../results/topics'
+  special_save_dir: '../results/specials'
 message_queue:
   host: '192.168.1.102'
   username: 'rabbitadmin'

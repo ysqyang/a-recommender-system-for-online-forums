@@ -70,4 +70,21 @@ def insert(l, id_, value, max_len):
         del l[-1]
         return deleted_id
 
-    return -1
+    return ''
+
+def remove(l, id_):
+    """
+    Helper function to remove from a list of [id, value]'s the entry whose
+    zeroth element is -id_
+    """
+    if len(l) == 0:
+        return
+
+    i = 0
+    while i < len(l) and l[i][0] != id_:
+        i += 1
+
+    if i == len(l):
+        return
+
+    del l[i]

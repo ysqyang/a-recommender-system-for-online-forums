@@ -12,7 +12,7 @@ from gensim.models import tfidfmodel, ldamodel
 from gensim.models import Word2Vec
 import numpy as np
 import jieba
-from utils import insert
+from utils import insert, remove
 
 NUM_SECONDS_PER_DAY = 86400
 
@@ -59,7 +59,7 @@ class TextPreprocessor(object):
 
         if len(word_list) < self.valid_count \
                 or len(word_list) / len(set(word_list)) > self.valid_ratio: \
-                return []
+            return []
 
         return word_list
 
@@ -131,16 +131,18 @@ class CorpusTfidf(AbstractCorpus):
             # generate token-to-weight mapping instead of id-to-weight mapping
             data['keywords'] = {self.dictionary[wid]: weight
                                 for wid, weight in weights[:self.num_keywords]}
+            data['keywords'] = defaultdict(lambda: 0, data['keywords'])
 
     def add(self, topic_id, content, date):
         self.data[topic_id] = {'date': date,
                                'body': content,
-                               'keywords': defaultdict(),
                                'recommendations': [],
                                'updated': True
                                }
 
         self._generate_recommendations(topic_id, date)
+
+        self.logger.info('Special topic %s added to %s (%d)', topic_id, self.name, len(self.data))
 
     def _generate_recommendations(self, topic_id, date):
         self._update_keywords()
@@ -152,13 +154,16 @@ class CorpusTfidf(AbstractCorpus):
             if del_id is None:
                 continue
             data['appears_in_special'].append(topic_id)
-            if del_id >= 0:
-                data['appears_in_special'].remove(del_id)
+            if del_id != '':
+                remove(data['appears_in_special'], del_id)
 
     def update_on_new_topic(self, topic_id, content, date):
         """
         updates recommendation data for special topics
         """
+        if len(content) == 0:
+            return
+
         for tid, data in self.data.items():
             relevance = sum(data['keywords'][word] for word in content)
             day_delta = (int(data['date']) - int(date)) / NUM_SECONDS_PER_DAY  # convert to number of days
@@ -168,24 +173,27 @@ class CorpusTfidf(AbstractCorpus):
                 continue
             self.data[tid]['updated'] = True
             self.target_corpus.data[topic_id]['appears_in_special'].append(tid)
-            if del_id >= 0:
-                self.target_corpus.data[del_id]['appears_in_special'].remove(tid)
+            if del_id != '':
+                remove(self.target_corpus.data[del_id]['appears_in_special'], tid)
 
     def update_on_delete_topic(self, topic_id):
-        for tid in self.target_corpus.data['appears_in_special']:
+        if topic_id not in self.target_corpus.data:
+            return
+
+        for tid in self.target_corpus.data[topic_id]['appears_in_special']:
             if topic_id in self.data[tid]['recommendations']:
-                self.data[tid]['recommendations'].remove(topic_id)
+                remove(self.data[tid]['recommendations'], topic_id)
 
     def delete(self, topic_id):
         if topic_id not in self.data:
             return
 
         for tid in self.data[topic_id]['recommendations']:
-            self.target_corpus.data[tid]['appears_in_special'].remove(topic_id)
+            remove(self.target_corpus.data[tid]['appears_in_special'], topic_id)
 
         del self.data[topic_id]
 
-        self.logger.info('Topic %s has been deleted', topic_id)
+        self.logger.info('Topic %s deleted', topic_id)
 
     def load(self, save_dir):
         folders = os.listdir(save_dir)
@@ -234,7 +242,7 @@ class CorpusTfidf(AbstractCorpus):
                           'recommendations': data['recommendations']}
                 with open(os.path.join(save_dir, tid), 'w') as f:
                     json.dump(record, f)
-                self.logger.info('data for special topic %s saved on disk', tid)
+                self.logger.info('Special topic %s saved on disk', tid)
             else:
                 self.logger.info('No updates for topic %s', tid)
 
@@ -264,7 +272,7 @@ class CorpusSimilarity(AbstractCorpus):
                 continue
             bow1 = self.dictionary.doc2bow(data['body'])
             sim = matutils.cossim(bow, bow1)
-            sim_1 = sim * min(1.0, 1 / time_factor)
+            sim_1 = sim * min(1.0, 1/time_factor)
             sim_2 = sim * min(1.0, time_factor)
 
             if self.irrelevant_thresh <= sim_1 <= self.duplicate_thresh:
@@ -272,20 +280,19 @@ class CorpusSimilarity(AbstractCorpus):
                 if del_id is not None:
                     self.data[topic_id]['appears_in'].append(tid)
                     self.data[tid]['updated'] = True
-                    if del_id >= 0:
-                        self.data[del_id]['appears_in'].remove(tid)
+                    if del_id != '':
+                        remove(self.data[del_id]['appears_in'], tid)
 
             if self.irrelevant_thresh <= sim_2 <= self.duplicate_thresh:
-                inserted, del_id = insert(self.data[topic_id]['sim_list'],
-                                          tid, sim_2, self.max_recoms)
+                del_id = insert(self.data[topic_id]['sim_list'], tid, sim_2, self.max_recoms)
                 if del_id is not None:
                     self.data[tid]['appears_in'].append(topic_id)
-                    if del_id >= 0:
-                        self.data[del_id]['appears_in'].remove(topic_id)
+                    if del_id != '':
+                        remove(self.data[del_id]['appears_in'], topic_id)
 
     def add(self, topic_id, content, date):
         if len(content) == 0:
-            self.logger.info('Topic not recommendable')
+            self.logger.info('Topic %s is not recommendable', topic_id)
             return False
 
         self.dictionary.add_documents([content])
@@ -299,8 +306,7 @@ class CorpusSimilarity(AbstractCorpus):
 
         self._update_pairwise_similarity(topic_id, content, date)
 
-        self.logger.info('New topic has been added to collection %s', self.name)
-        self.logger.info('%d topics available in collection %s', len(self.data), self.name)
+        self.logger.info('Topic %s added to %s (%d)', topic_id, self.name, len(self.data))
 
         return True
 
@@ -308,14 +314,13 @@ class CorpusSimilarity(AbstractCorpus):
         if topic_id not in self.data:
             return
 
-        appears_in = self.data[topic_id]['appears_in']
-
-        for tid in appears_in:  # list of topic id's whose similarity lists tid appears in
-            self.data[tid]['sim_list'].remove(topic_id)
-            self.data[tid]['updated'] = True
+        for tid in self.data[topic_id]['appears_in']:  # list of topic id's whose similarity lists tid appears in
+            if tid in self.data:
+                remove(self.data[tid]['sim_list'], topic_id)
+                self.data[tid]['updated'] = True
 
         del self.data[topic_id]
-        self.logger.info('Topic %s has been deleted', topic_id)
+        self.logger.info('Topic %s deleted (%d)', topic_id, len(self.data))
 
     def remove_before(self, t):
         if type(t) != float:
@@ -401,3 +406,12 @@ class CorpusSimilarity(AbstractCorpus):
                 self.logger.info('similarity data for topic %s updated on disk', tid)
             else:
                 self.logger.info('No updates for topic %s', tid)
+
+
+class CorpusInference(AbstractCorpus):
+    def __init__(self, name, logger, num_topics):
+        super().__init__(name=name, logger=logger)
+        self.num_topics = num_topics
+
+
+

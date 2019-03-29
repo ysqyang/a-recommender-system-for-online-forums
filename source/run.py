@@ -18,7 +18,7 @@ sys.path.insert(1, config_path)
 
 class Save(threading.Thread):
     def __init__(self, topics, specials, interval, lock, topic_path,
-                 specials_path, recom_path, mod_num, logger=None):
+                 specials_path, mod_num, logger=None):
         threading.Thread.__init__(self)
         self.topics = topics
         self.specials = specials
@@ -26,7 +26,6 @@ class Save(threading.Thread):
         self.lock = lock
         self.topic_path = topic_path
         self.specials_path = specials_path
-        self.recom_path = recom_path
         self.mod_num = mod_num
         self.logger = logger
 
@@ -70,7 +69,6 @@ def main(args):
         try:
             with open('../config/config.yml', 'rb') as f:
                 config = yaml.load(f)
-                print(config)
                 break
         except Exception as e:
             logging.exception(e)
@@ -100,9 +98,9 @@ def main(args):
                                     punc_frac_high=pre_cfg['max_punc_frac'],
                                     valid_count=pre_cfg['min_count'],
                                     valid_ratio=pre_cfg['min_ratio'],
-        ke                            stopwords=stopwords)
+                                    stopwords=stopwords)
 
-    topics = CorpusSimilarity(name='topics',
+    topics = CorpusSimilarity(name='TOPICS',
                               time_decay=recom_cfg['time_decay_base'],
                               duplicate_thresh=recom_cfg['duplicate_thresh'],
                               irrelevant_thresh=recom_cfg['irrelevant_thresh'],
@@ -110,9 +108,9 @@ def main(args):
                               logger=utils.get_logger(log_cfg['run_log_name']+'.topics')
                               )
 
-    specials = CorpusTfidf(name='specials',
+    specials = CorpusTfidf(name='SPECIAL TOPICS',
                            target_corpus=topics,
-                           tfidf_scheme=special_cfg['smart_irs_scheme'],
+                           tfidf_scheme=special_cfg['smartirs_scheme'],
                            num_keywords=special_cfg['num_keywords'],
                            time_decay=recom_cfg['time_decay_base'],
                            max_recoms=recom_cfg['max_recoms_special'],
@@ -144,9 +142,8 @@ def main(args):
                        specials=specials,
                        interval=main_cfg['save_every'],
                        lock=lock,
-                       topic_path=path_cfg['topics'],
-                       specials_path=path_cfg['specials'],
-                       recom_path=path_cfg['recommendations'],
+                       topic_path=path_cfg['topic_save_dir'],
+                       specials_path=path_cfg['special_save_dir'],
                        mod_num=misc_cfg['num_result_dirs'])
     
     save_topics.start()
@@ -190,14 +187,13 @@ def main(args):
             def get_topic_data(topic):
                 topic = decode_to_dict(topic)
                 topic_id = str(topic['topicID'])
-                content = preprocessor.preprocess(topic['body'])
-                date = topic['postDate'] // config['general']['timestamp_factor']
+                content = preprocessor.preprocess(topic['body']) if 'body' in topic else []
+                date = topic['postDate']//misc_cfg['timestamp_factor'] if 'postDate' in topic else -1
 
                 return topic_id, content, date
 
             def on_new_topic(ch, method, properties, body):
                 topic_id, content, date = get_topic_data(body)
-                logger.info('Received new topic %s', topic_id)
 
                 with lock:
                     topics.add(topic_id, content, date)
@@ -221,7 +217,6 @@ def main(args):
 
             def on_special_topic(ch, method, properties, body):
                 topic_id, content, date = get_topic_data(body)
-                logger.info('Received special topic %s', topic_id)
 
                 with lock:
                     specials.add(topic_id, content, date)
@@ -230,11 +225,11 @@ def main(args):
 
             def on_delete(ch, method, properties, body):
                 topic_id, _, _ = get_topic_data(body)
-                logger.info('Deleting topic %s', topic_id)
                 
                 with lock:
-                    topics.delete(topic_id)
                     specials.update_on_delete_topic(topic_id)
+                    topics.delete(topic_id)
+
                 channel.basic_ack(delivery_tag=method.delivery_tag)
 
             channel.basic_consume('new_topics', on_new_topic)
