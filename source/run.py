@@ -104,7 +104,7 @@ def main(args):
                               time_decay=recom_cfg['time_decay_base'],
                               duplicate_thresh=recom_cfg['duplicate_thresh'],
                               irrelevant_thresh=recom_cfg['irrelevant_thresh'],
-                              max_recoms=recom_cfg['max_recoms'],
+                              max_recoms=recom_cfg['max_recoms_stored'],
                               logger=utils.get_logger(log_cfg['run_log_name']+'.topics')
                               )
 
@@ -113,7 +113,7 @@ def main(args):
                            tfidf_scheme=special_cfg['smartirs_scheme'],
                            num_keywords=special_cfg['num_keywords'],
                            time_decay=recom_cfg['time_decay_base'],
-                           max_recoms=recom_cfg['max_recoms_special'],
+                           max_recoms=recom_cfg['max_recoms_stored_special'],
                            logger=utils.get_logger(log_cfg['run_log_name']+'.specials')
                            )
 
@@ -209,7 +209,7 @@ def main(args):
                 with lock:
                     sim_list = topics.find_most_similar(content)
 
-                sim_list = [tid for tid, val in sim_list][recom_cfg['max_recoms']]
+                sim_list = [tid for tid, val in sim_list][recom_cfg['max_recoms_stored']]
                 
                 channel.basic_publish(exchange=exchange,
                                       routing_key='old',

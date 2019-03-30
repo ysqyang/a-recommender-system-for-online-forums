@@ -65,8 +65,10 @@ preprocessing:
 recommendation:
   duplicate_thresh: 0.5
   irrelevant_thresh: 0.05
-  max_recoms: 5
-  max_recoms_special: 20
+  max_stored: 10   # max number of recommendations stored on disk
+  max_shown: 5   # max number of recommendations given
+  max_stored_special: 40
+  max_shown_special: 20
   top_num_special: 20
   time_decay_base: 0.9
 special_topics:
