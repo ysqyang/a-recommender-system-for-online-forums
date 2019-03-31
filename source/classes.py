@@ -7,7 +7,7 @@ from collections import defaultdict
 import math
 import json
 from gensim import corpora, matutils
-from gensim.models import tfidfmodel, ldamodel
+from gensim.models import tfidfmodel, LdaModel
 #from gensim.similarities import Similarity
 from gensim.models import Word2Vec
 import numpy as np
@@ -140,9 +140,7 @@ class CorpusTfidf(AbstractCorpus):
                                }
 
         self.dictionary.add_documents([content])
-
         self._generate_recommendations(topic_id, date)
-
         self.logger.info('Special topic %s added to %s (%d)', topic_id, self.name, len(self.data))
 
     def _generate_recommendations(self, topic_id, date):
@@ -294,7 +292,7 @@ class CorpusSimilarity(AbstractCorpus):
     def add(self, topic_id, content, date):
         if len(content) == 0:
             self.logger.info('Topic %s is not recommendable', topic_id)
-            return False
+            return
 
         self.dictionary.add_documents([content])
 
@@ -308,8 +306,6 @@ class CorpusSimilarity(AbstractCorpus):
         self._update_pairwise_similarity(topic_id, content, date)
 
         self.logger.info('Topic %s added to %s (%d)', topic_id, self.name, len(self.data))
-
-        return True
 
     def delete(self, topic_id):
         if topic_id not in self.data:
@@ -410,9 +406,28 @@ class CorpusSimilarity(AbstractCorpus):
 
 
 class CorpusInference(AbstractCorpus):
-    def __init__(self, name, logger, num_topics):
+    def __init__(self, name, target_corpus, logger, num_topics):
         super().__init__(name=name, logger=logger)
+        self.target_corpus = target_corpus
         self.num_topics = num_topics
+        self.lda = None
+
+    def add(self, topic_id, content, date):
+        self.dictionary.add_documents([content])
+        self.data[topic_id] = {'date': date,
+                               'body': content,
+                               'updated': False}
+
+        self.lda.update([content])
+        self.logger.info('Topic %s added to %s (%d)', topic_id, self.name, len(self.data))
+
+    def delete(self, topic_id):
+        del self.data[topic_id]
+
+        self.logger.info('Topic %s deleted (%d)', topic_id, len(self.data))
+
+    def load():
 
 
 
+    def save():
