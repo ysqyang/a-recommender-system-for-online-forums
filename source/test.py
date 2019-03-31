@@ -76,7 +76,7 @@ def main(args):
     else:       
         with open(path_cfg['topics'], 'r') as f:
             topics = json.load(f)
-        tid = 1506377
+        tid = 1506404
         print(topics[str(tid)]['body'])
         query_dict = {'topicID': str(tid)}
         if args.s:

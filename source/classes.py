@@ -131,7 +131,6 @@ class CorpusTfidf(AbstractCorpus):
             # generate token-to-weight mapping instead of id-to-weight mapping
             data['keywords'] = {self.dictionary[wid]: weight
                                 for wid, weight in weights[:self.num_keywords]}
-            data['keywords'] = defaultdict(lambda: 0, data['keywords'])
 
     def add(self, topic_id, content, date):
         self.data[topic_id] = {'date': date,
@@ -140,6 +139,8 @@ class CorpusTfidf(AbstractCorpus):
                                'updated': True
                                }
 
+        self.dictionary.add_documents([content])
+
         self._generate_recommendations(topic_id, date)
 
         self.logger.info('Special topic %s added to %s (%d)', topic_id, self.name, len(self.data))
@@ -147,7 +148,7 @@ class CorpusTfidf(AbstractCorpus):
     def _generate_recommendations(self, topic_id, date):
         self._update_keywords()
         for tid, data in self.target_corpus.data.items():
-            relevance = sum(self.data[topic_id]['keywords'][word] for word in data['body'])
+            relevance = sum(self.data[topic_id]['keywords'].get(word, 0) for word in data['body'])
             day_delta = (int(date) - int(data['date'])) / NUM_SECONDS_PER_DAY
             relevance *= min(1.0, math.pow(self.time_decay, day_delta))
             del_id = insert(self.data[topic_id]['recommendations'], tid, relevance, self.max_recoms)
@@ -165,7 +166,7 @@ class CorpusTfidf(AbstractCorpus):
             return
 
         for tid, data in self.data.items():
-            relevance = sum(data['keywords'][word] for word in content)
+            relevance = sum(data['keywords'].get(word, 0) for word in content)
             day_delta = (int(data['date']) - int(date)) / NUM_SECONDS_PER_DAY  # convert to number of days
             relevance *= min(1.0, math.pow(self.time_decay, day_delta))
             del_id = insert(data['recommendations'], topic_id, relevance, self.max_recoms)

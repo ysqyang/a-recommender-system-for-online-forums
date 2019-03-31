@@ -42,6 +42,7 @@ def serve_recommendations(request):
     Given the similarity matrix, generate top_num recommendations for
     target_tid
     '''
+    print(config)
     if request.method == 'POST':
         return JsonResponse({'status': True,
                              'errorCode': 1,
