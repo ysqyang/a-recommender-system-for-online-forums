@@ -58,7 +58,7 @@ def serve_recommendations(request):
         with open(file_name, 'r') as f:
             data = json.load(f)
 
-        recoms = [x[0] for x in data[:recom_cfg['max_recoms']]]
+        recoms = data['sim_list'][:recom_cfg['max_recoms']]
         return JsonResponse({'status': True,
                              'errorCode': 0,
                              'errorMessage': '',

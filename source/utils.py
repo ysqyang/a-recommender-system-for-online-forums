@@ -56,7 +56,7 @@ def insert(l, id_, value, max_len):
     the removed id if the insertion is performed and an element is
     removed from the list.
     '''
-    if len(l) == max_len and value < l[-1][1]:
+    if value == 0 or (len(l) == max_len and value < l[-1][1]):
         return
 
     i = 0
