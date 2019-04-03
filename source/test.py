@@ -27,7 +27,7 @@ sys.path.insert(1, config_path)
 
 def main(args):
     with open('../config/config.yml', 'rb') as f:
-        config = yaml.load(f)
+        config = yaml.load(f, Loader=yaml.FullLoader)
 
         path_cfg = config['paths']
         main_cfg = config['main']

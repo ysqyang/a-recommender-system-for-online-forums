@@ -18,7 +18,7 @@ import utils
 while True:
     try:
         with open('../config/config.yml', 'rb') as f:
-            config = yaml.load(f)
+            config = yaml.load(f, Loader=yaml.FullLoader)
             break
     except Exception as e:
         logging.exception(e)
@@ -58,7 +58,7 @@ def serve_recommendations(request):
         with open(file_name, 'r') as f:
             data = json.load(f)
 
-        recoms = data['sim_list'][:recom_cfg['max_recoms']]
+        recoms = data['sim_list'][:recom_cfg['max_shown']]
         return JsonResponse({'status': True,
                              'errorCode': 0,
                              'errorMessage': '',

@@ -1,9 +1,8 @@
 # class definitions
 import re
 import time
-from datetime import datetime, timedelta
 import os
-from collections import defaultdict
+import glob
 import math
 import json
 from gensim import corpora, matutils
@@ -195,26 +194,18 @@ class CorpusTfidf(AbstractCorpus):
         self.logger.info('Topic %s deleted', topic_id)
 
     def load(self, save_dir):
-        folders = os.listdir(save_dir)
-        for folder in folders:
-            if not folder.isnumeric():
-                continue
-            files = os.listdir(os.path.join(save_dir, folder))
-            for file in files:
-                if not file.isnumeric():
-                    continue
-                path = os.path.join(save_dir, folder, file)
-                try:
-                    with open(path, 'r') as f:
-                        rec = json.load(f)
-                        self.data[file] = {'date': rec['date'],
-                                           'body': rec['body'],
-                                           'keywords': rec['keywords'],
-                                           'recommendations': rec['recommendations'],
-                                           'updated': False
-                                           }
-                except json.JSONDecodeError:
-                    self.logger.error('Failed to load topic %s', file)
+        for file in glob.glob(os.path.join(save_dir, '[0-9]*')):
+            try:
+                with open(file, 'r') as f:
+                    rec = json.load(f)
+                    self.data[file] = {'date': rec['date'],
+                                       'body': rec['body'],
+                                       'keywords': rec['keywords'],
+                                       'recommendations': rec['recommendations'],
+                                       'updated': False
+                                       }
+            except json.JSONDecodeError:
+                self.logger.error('Failed to load topic %s', file)
 
         self.logger.info('%d topics loaded from disk', len(self.data))
 
@@ -320,9 +311,6 @@ class CorpusSimilarity(AbstractCorpus):
         self.logger.info('Topic %s deleted (%d)', topic_id, len(self.data))
 
     def remove_before(self, t):
-        if type(t) != float:
-            t = time.mktime(t.timetuple())
-
         for tid in list(self.data.keys()):
             if self.data[tid]['date'] < t:
                 self.delete(tid)
@@ -345,14 +333,9 @@ class CorpusSimilarity(AbstractCorpus):
         return sim_list
 
     def load(self, save_dir):
-        folders = os.listdir(save_dir)
-        for folder in folders:
-            if not folder.isnumeric():
-                continue
+        for file in glob.glob(os.path.join(save_dir, '')):
             files = os.listdir(os.path.join(save_dir, folder))
             for file in files:
-                if not file.isnumeric():
-                    continue
                 path = os.path.join(save_dir, folder, file)
                 try:
                     with open(path, 'r') as f:
@@ -426,8 +409,9 @@ class CorpusInference(AbstractCorpus):
 
         self.logger.info('Topic %s deleted (%d)', topic_id, len(self.data))
 
-    def load():
+    def load(self, save_dir):
+        pass
 
 
-
-    def save():
+    def save(self, save_dir):
+        pass

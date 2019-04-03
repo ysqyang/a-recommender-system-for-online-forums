@@ -15,6 +15,7 @@ root_dir = os.path.dirname(sys.path[0])
 config_path = os.path.abspath(os.path.join(root_dir, 'config'))
 sys.path.insert(1, config_path)
 
+NUM_SECONDS_PER_DAY = 86400
 
 class Save(threading.Thread):
     def __init__(self, topics, specials, interval, lock, topic_path,
@@ -57,9 +58,8 @@ class Delete(threading.Thread):
             if self.topics.size == 0:
                 return
             with self.lock:
-                latest = datetime.fromtimestamp(self.topics.data[self.topics.latest]['date'])
-                t = latest - timedelta(days=self.keep_days)
-                self.logger.info('Removing all topics older than {}'.format(t))
+                t = self.topics.data[self.topics.latest]['date'] - self.keep_days*NUM_SECONDS_PER_DAY
+                self.logger.info('Removing topics older than {}'.format(t))
                 self.topics.remove_before(t)
 
 
@@ -104,7 +104,7 @@ def main(args):
                               time_decay=recom_cfg['time_decay_base'],
                               duplicate_thresh=recom_cfg['duplicate_thresh'],
                               irrelevant_thresh=recom_cfg['irrelevant_thresh'],
-                              max_recoms=recom_cfg['max_recoms_stored'],
+                              max_recoms=recom_cfg['max_stored'],
                               logger=utils.get_logger(log_cfg['run_log_name']+'.topics')
                               )
 
@@ -113,7 +113,7 @@ def main(args):
                            tfidf_scheme=special_cfg['smartirs_scheme'],
                            num_keywords=special_cfg['num_keywords'],
                            time_decay=recom_cfg['time_decay_base'],
-                           max_recoms=recom_cfg['max_recoms_stored_special'],
+                           max_recoms=recom_cfg['max_stored_special'],
                            logger=utils.get_logger(log_cfg['run_log_name']+'.specials')
                            )
 
@@ -209,7 +209,7 @@ def main(args):
                 with lock:
                     sim_list = topics.find_most_similar(content)
 
-                sim_list = [tid for tid, val in sim_list][recom_cfg['max_recoms_stored']]
+                sim_list = [tid for tid, val in sim_list][recom_cfg['max_stored']]
                 
                 channel.basic_publish(exchange=exchange,
                                       routing_key='old',
