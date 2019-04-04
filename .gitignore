@@ -1,5 +1,5 @@
-# Don't track contents of these folders
+# Don't track these
+*.pyc
 .idea
 tmp
 server/.DS_Store
-*.pyc
