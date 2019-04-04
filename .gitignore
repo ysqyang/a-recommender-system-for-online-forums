@@ -3,3 +3,5 @@
 .idea
 tmp
 server/.DS_Store
+logs/
+results/
