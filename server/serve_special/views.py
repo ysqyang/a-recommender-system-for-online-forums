@@ -19,7 +19,6 @@ while True:
     try:
         with open('../config/config.yml', 'rb') as f:
             config = yaml.load(f, Loader=yaml.FullLoader)
-            print(config)
             break
     except Exception as e:
         logging.exception(e)
@@ -27,7 +26,7 @@ while True:
 path_cfg = config['paths']
 log_cfg = config['logging']
 recom_cfg = config['recommendation']
-misc_cfg = config['micellaneous']
+misc_cfg = config['miscellaneous']
 
 logger = utils.get_logger_with_config(name=log_cfg['serve_log_name'],
                                       logger_level=log_cfg['log_level'],
@@ -50,10 +49,10 @@ def serve_recommendations(request):
                              'dto': {'list': []},
                              '_t': datetime.now().timestamp()})
 
-    result_dir = path_cfg['special_save_dir']
+    dir = path_cfg['special_save_dir']
+    file_name = os.path.join(dir, str(request.GET['topicID']))
 
     try:
-        file_name = os.path.join(result_dir, str(request.GET['topicID']))
         with open(file_name, 'r') as f:
             data = json.load(f)
 

@@ -68,7 +68,7 @@ def main(args):
     while True:
         try:
             with open('../config/config.yml', 'rb') as f:
-                config = yaml.load(f)
+                config = yaml.load(f, Loader=yaml.FullLoader)
                 break
         except Exception as e:
             logging.exception(e)
@@ -79,7 +79,7 @@ def main(args):
     pre_cfg = config['preprocessing']
     recom_cfg = config['recommendation']
     mq_cfg = config['message_queue']
-    misc_cfg = config['micellaneous']
+    misc_cfg = config['miscellaneous']
     special_cfg = config['special_topics']
     logger = utils.get_logger_with_config(name=log_cfg['run_log_name'],
                                           logger_level=log_cfg['log_level'],
@@ -120,11 +120,11 @@ def main(args):
     # load previously saved corpus and similarity data if possible
     if args.l:
         try:
-            topics.load(path_cfg['topics'])
+            topics.load(path_cfg['topic_save'])
         except FileNotFoundError:
             logger.exception('Topic data files not found. New files will be created')
         try:
-            specials.load(path_cfg['special_topics'])
+            specials.load(path_cfg['special_save'])
         except FileNotFoundError:
             logger.exception('Special topic data files not found. New files will be created')
 
@@ -142,9 +142,9 @@ def main(args):
                        specials=specials,
                        interval=main_cfg['save_every'],
                        lock=lock,
-                       topic_path=path_cfg['topic_save_dir'],
-                       specials_path=path_cfg['special_save_dir'],
-                       mod_num=misc_cfg['num_result_dirs'])
+                       topic_path=path_cfg['topic_save'],
+                       specials_path=path_cfg['special_save'],
+                       mod_num=misc_cfg['num_topic_files_per_folder'])
     
     save_topics.start()
 

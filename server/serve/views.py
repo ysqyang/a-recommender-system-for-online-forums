@@ -26,7 +26,7 @@ while True:
 path_cfg = config['paths']
 log_cfg = config['logging']
 recom_cfg = config['recommendation']
-misc_cfg = config['micellaneous']
+misc_cfg = config['miscellaneous']
 
 logger = utils.get_logger_with_config(name=log_cfg['serve_log_name'],
                                       logger_level=log_cfg['log_level'],
@@ -48,13 +48,12 @@ def serve_recommendations(request):
                              'dto': {'list': []},
                              '_t': datetime.now().timestamp()})
 
-    n_dirs = misc_cfg['num_result_dirs']
-    result_dir = path_cfg['topic_save_dir']
+    n_dirs = misc_cfg['num_topic_files_per_folder']
+    dir = path_cfg['topic_save_dir']
+    tid = str(request.GET['topicID'])
+    file_name = os.path.join(dir, str(int(tid) // n_dirs), tid)
             
     try:
-        topic_id = str(request.GET['topicID'])
-        folder = str(int(topic_id) % n_dirs)
-        file_name = os.path.join(result_dir, folder, topic_id)
         with open(file_name, 'r') as f:
             data = json.load(f)
 

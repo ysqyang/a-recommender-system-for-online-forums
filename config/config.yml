@@ -4,8 +4,8 @@ paths:
   topics: '../data/topics'
   replies: '../data/replies'
   special_topics: '../data/special_topics'
-  topic_save_dir: '../results/topics'
-  special_save_dir: '../results/specials'
+  topic_save: '../results/topics'
+  special_save: '../results/specials'
 message_queue:
   host: '192.168.1.102'
   username: 'rabbitadmin'
@@ -15,7 +15,7 @@ main:
   save_every: 60  # number of seconds between saves
   delete_every: 30  # number of seconds between deletes
   keep_days: 30
-  retry_every: 10
+  retry_every: 10  # number of seconds between message consumption retries
 preprocessing:
   min_count: 5      #lower limit of the number of tokens
   min_ratio: 10     #lower threshold for the ratio of token count to distinct token count
@@ -74,10 +74,10 @@ recommendation:
 special_topics:
   smartirs_scheme: 'ntn'
   num_keywords: 3
-micellaneous:
+miscellaneous:
   datetime_format: '%Y-%m-%d %H:%M:%S'
   timestamp_factor: 1000
-  num_result_dirs: 1000
+  num_topic_files_per_folder: 3000
 logging:
   dir: '../logs'
   run_log_name: 'run'

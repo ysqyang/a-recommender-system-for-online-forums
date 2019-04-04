@@ -98,7 +98,7 @@ class AbstractCorpus(object):
     def load(self, save_dir):
         return NotImplemented
 
-    def save(self, save_dir, mod_num):
+    def save(self, save_dir, num_files_per_folder):
         return NotImplemented
 
 
@@ -205,21 +205,20 @@ class CorpusTfidf(AbstractCorpus):
                                        'updated': False
                                        }
             except json.JSONDecodeError:
-                self.logger.error('Failed to load topic %s', file)
+                self.logger.error('Failed to load special topic %s', file)
 
-        self.logger.info('%d topics loaded from disk', len(self.data))
+        self.logger.info('%d special topics loaded from disk', len(self.data))
 
         if len(self.data) > 0:
             corpus = [data['body'] for data in self.data.values()]
             self.dictionary = corpora.Dictionary(corpus)
-            self.logger.info('Dictionary created')
 
-    def save(self, save_dir, mod_num):
+    def save(self, save_dir, num_files_per_folder=None):
         '''
         Saves the corpus and similarity data to disk
         Args:
         save_dir: directory under which to save the data
-        mod_num:  number of data folders
+        num_files_per_folder: maximum number of saved topic files per folder
         '''
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
@@ -292,7 +291,7 @@ class CorpusSimilarity(AbstractCorpus):
                                'sim_list': [],
                                'appears_in': [],
                                'appears_in_special': [],
-                               'updated': False}
+                               'updated': True}
 
         self._update_pairwise_similarity(topic_id, content, date)
 
@@ -333,36 +332,34 @@ class CorpusSimilarity(AbstractCorpus):
         return sim_list
 
     def load(self, save_dir):
-        for file in glob.glob(os.path.join(save_dir, '')):
-            files = os.listdir(os.path.join(save_dir, folder))
-            for file in files:
-                path = os.path.join(save_dir, folder, file)
-                try:
-                    with open(path, 'r') as f:
-                        rec = json.load(f)
-                        self.data[file] = {'date': rec['date'],
-                                           'body': rec['body'],
-                                           'sim_list': rec['sim_list'],
-                                           'appears_in': rec['appears_in'],
-                                           'appears_in_special': rec['appears_in_special'],
-                                           'updated': False
-                                           }
-                except json.JSONDecodeError:
-                    self.logger.error('Failed to load topic %s', file)
+        for file in glob.glob(os.path.join(save_dir, '[0-9]*', '[0-9]*')):
+            try:
+                with open(file, 'r') as f:
+                    rec = json.load(f)
+                    self.data[file] = {'date': rec['date'],
+                                       'body': rec['body'],
+                                       'sim_list': rec['sim_list'],
+                                       'appears_in': rec['appears_in'],
+                                       'appears_in_special': rec['appears_in_special'],
+                                       'updated': False
+                                       }
+            except json.JSONDecodeError:
+                self.logger.error('Failed to load topic %s', file)
+            except KeyError:
+                self.logger.error('Vital keys missing in topic file %s', file)
 
         self.logger.info('%d topics loaded from disk', len(self.data))
 
         if len(self.data) > 0:
             corpus = [data['body'] for data in self.data.values()]
             self.dictionary = corpora.Dictionary(corpus)
-            self.logger.info('Dictionary created')
 
-    def save(self, save_dir, mod_num):
+    def save(self, save_dir, num_files_per_folder):
         '''
         Saves the corpus and similarity data to disk
         Args:
         save_dir: directory under which to save the data
-        mod_num:  number of data folders
+        num_files_per_folder: maximum number of saved topic files per folder
         ''' 
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
@@ -374,16 +371,15 @@ class CorpusSimilarity(AbstractCorpus):
                           'sim_list': data['sim_list'],
                           'appears_in': data['appears_in'],
                           'appears_in_special': data['appears_in_special']}
-                folder_name = str(int(tid) % mod_num)
-                dir_path = os.path.join(save_dir, folder_name)
+                path = os.path.join(save_dir, str(int(tid)//num_files_per_folder))
                 # build the subdir for storing topics
-                if not os.path.exists(dir_path):
-                    os.makedirs(dir_path) 
-                filename = os.path.join(dir_path, tid)
+                if not os.path.exists(path):
+                    os.makedirs(path)
+                filename = os.path.join(path, tid)
                 with open(filename, 'w') as f:
                     json.dump(record, f)
                 data['updated'] = False
-                self.logger.info('similarity data for topic %s updated on disk', tid)
+                self.logger.info('Data for topic %s updated on disk', tid)
             else:
                 self.logger.info('No updates for topic %s', tid)
 
@@ -412,6 +408,5 @@ class CorpusInference(AbstractCorpus):
     def load(self, save_dir):
         pass
 
-
-    def save(self, save_dir):
+    def save(self, save_dir, num_files_per_folder):
         pass
