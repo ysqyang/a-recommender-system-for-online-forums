@@ -1,5 +1,5 @@
 # Don't track contents of these folders
-*/_pycache_
+*/__pycache__
 .idea
 tmp
 server/.DS_Store
