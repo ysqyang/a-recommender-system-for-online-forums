@@ -1,0 +1,7 @@
+pika==1.0.0
+django==2.1.5
+gensim==3.4.0
+jieba==0.39
+PyYAML==5.1
+numpy=1.16.2
+scipy==1.2.1
