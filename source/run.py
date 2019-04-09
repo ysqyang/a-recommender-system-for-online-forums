@@ -17,6 +17,7 @@ sys.path.insert(1, config_path)
 
 NUM_SECONDS_PER_DAY = 86400
 
+
 class Save(threading.Thread):
     def __init__(self, topics, specials, interval, lock, topic_path,
                  specials_path, mod_num, logger=None):
@@ -67,7 +68,7 @@ def main(args):
     # read configurations
     while True:
         try:
-            with open('../config/config.yml', 'rb') as f:
+            with open('config/config.yml', 'rb') as f:
                 config = yaml.load(f, Loader=yaml.FullLoader)
                 break
         except Exception as e:

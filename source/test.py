@@ -5,7 +5,7 @@ import yaml
 
 
 def main(args):
-    with open('../config/config.yml', 'rb') as f:
+    with open('config/config.yml', 'rb') as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
 
     with open(config['paths']['topics'], 'r') as f:

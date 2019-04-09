@@ -1,11 +1,11 @@
 paths:
-  data: '../data'
-  stopwords: '../stopwords.txt'
-  topics: '../data/topics'
-  replies: '../data/replies'
-  special_topics: '../data/special_topics'
-  topic_save: '../results/topics'
-  special_save: '../results/specials'
+  data: 'data'
+  stopwords: 'stopwords.txt'
+  topics: 'data/topics'
+  replies: 'data/replies'
+  special_topics: 'data/special_topics'
+  topic_save: 'results/topics'
+  special_save: 'results/specials'
 message_queue:
   host: '192.168.1.102'
   username: 'rabbitadmin'
@@ -79,7 +79,7 @@ miscellaneous:
   timestamp_factor: 1000
   num_topic_files_per_folder: 3000
 logging:
-  dir: '../logs'
+  dir: 'logs'
   run_log_name: 'run'
   serve_log_name: 'serve'
   log_level: 20

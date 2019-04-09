@@ -17,7 +17,7 @@ import utils
 # read configurations
 while True:
     try:
-        with open('../config/config.yml', 'rb') as f:
+        with open('config/config.yml', 'rb') as f:
             config = yaml.load(f, Loader=yaml.FullLoader)
             break
     except Exception as e:
