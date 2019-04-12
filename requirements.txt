@@ -1,5 +1,5 @@
 pika==1.0.0
-django==2.1.5
+django>=2.1.6
 gensim==3.4.0
 jieba==0.39
 pyyaml==5.1
